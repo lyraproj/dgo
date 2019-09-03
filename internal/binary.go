@@ -138,7 +138,6 @@ func (v *binary) CompareTo(other interface{}) (r int, ok bool) {
 		max = top
 	} else if top > max {
 		r = 1
-		top = max
 	}
 	for i := 0; i < max; i++ {
 		c := a[i] - b[i]

@@ -771,7 +771,6 @@ func (v *array) deepCompare(seen []dgo.Value, other deepCompare) (int, bool) {
 		max = top
 	} else if top > max {
 		r = 1
-		top = max
 	}
 
 	for i := 0; i < max; i++ {

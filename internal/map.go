@@ -133,7 +133,7 @@ func (t *structType) Entries() dgo.Array {
 
 func (t *structType) Equals(other interface{}) bool {
 	if ot, ok := other.(*structType); ok {
-		if t.additional == t.additional {
+		if t.additional == ot.additional {
 			return t.entries.Equals(ot.entries)
 		}
 	}

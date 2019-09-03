@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -271,24 +270,6 @@ func TestMap_EntryType(t *testing.T) {
 	})
 }
 
-func ExampleNewMapType_min() {
-	tp := newtype.Map(1)
-	fmt.Println(tp.Instance(vf.Map(map[string]int{`a`: 42})))
-	fmt.Println(tp.Instance(vf.Map(map[string]int{})))
-	// Output:
-	// true
-	// false
-}
-
-func ExampleNewMapType_min_max() {
-	tp := newtype.Map(1, 2)
-	fmt.Println(tp.Instance(vf.Map(map[string]int{`a`: 42, `b`: 84})))
-	fmt.Println(tp.Instance(vf.Map(map[string]int{`a`: 42, `b`: 84, `c`: 126})))
-	// Output:
-	// true
-	// false
-}
-
 func TestNewMapType_max_min(t *testing.T) {
 	tp := newtype.Map(2, 1)
 	require.Equal(t, tp.Min(), 1)
@@ -311,15 +292,6 @@ func TestNewMapType_explicit_unbounded(t *testing.T) {
 	tp := newtype.Map(0, -3)
 	require.Equal(t, tp.Min(), 0)
 	require.Equal(t, tp.Max(), 0)
-}
-
-func ExampleNewMapType_type_min() {
-	tp := newtype.Map(typ.String, typ.String, 2)
-	fmt.Println(tp.Instance(vf.Map(map[string]string{`hello`: `word`, `hi`: `earth`})))
-	fmt.Println(tp.Instance(vf.Map(map[string]string{`hello`: `word`})))
-	// Output:
-	// true
-	// false
 }
 
 func TestNewMapType_badOneArg(t *testing.T) {
@@ -348,15 +320,6 @@ func TestNewMapType_badFourArg(t *testing.T) {
 
 func TestNewMapType_badArgCount(t *testing.T) {
 	require.Panic(t, func() { newtype.Map(typ.String, typ.Integer, 2, 2, true) }, `illegal number of arguments`)
-}
-
-func ExampleNewMapType_type_min_max() {
-	tp := newtype.Map(typ.String, typ.String, 2, 3)
-	fmt.Println(tp.Instance(vf.Map(map[string]string{`hello`: `word`, `hi`: `earth`, `god day`: `sunshine`})))
-	fmt.Println(tp.Instance(vf.Map(map[string]string{`hello`: `word`, `hi`: `earth`, `god day`: `sunshine`, `howdy`: `galaxy`})))
-	// Output:
-	// true
-	// false
 }
 
 func TestMap(t *testing.T) {

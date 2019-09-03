@@ -3,30 +3,12 @@ package internal_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"testing"
 
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/util"
 	"github.com/lyraproj/dgo/vf"
 )
-
-func ExampleUnmarshalJSON() {
-	v, err := vf.UnmarshalJSON([]byte(`["hello",true,1,3.14,null,{"a":1}]`))
-	if err == nil {
-		fmt.Println(v.Equals(vf.Values(`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1})))
-	}
-	// Output: true
-}
-
-func ExampleMarshalJSON() {
-	v, err := vf.MarshalJSON(vf.Values(
-		`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1}))
-	if err == nil {
-		fmt.Println(string(v))
-	}
-	// Output: ["hello",true,1,3.14,null,{"a":1}]
-}
 
 func TestArray_MarshalJSON(t *testing.T) {
 	a := vf.Values(

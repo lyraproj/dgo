@@ -120,8 +120,6 @@ func (v native) HashCode() int {
 	return 1234
 }
 
-var stringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
-
 func (v native) String() string {
 	rv := reflect.Value(v)
 	if rv.CanInterface() {

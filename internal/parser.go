@@ -82,7 +82,6 @@ type parser struct {
 	sr *util.StringReader
 	pe *token
 	lt *token
-	lv dgo.Value
 }
 
 // Parse calls ParseFile with the string "<dgo type expression>" as the fileName
@@ -293,7 +292,6 @@ func (p *parser) oneOf(t *token) {
 			}
 		}
 	}
-	return
 }
 
 func (p *parser) allOf(t *token) {
@@ -309,7 +307,6 @@ func (p *parser) allOf(t *token) {
 			}
 		}
 	}
-	return
 }
 
 func (p *parser) unary(t *token) {
@@ -410,10 +407,8 @@ func (p *parser) typeExpression(t *token) {
 				panic(badSyntax(n, exRightBracket))
 			}
 
-			n = p.lt
 			p.typeExpression(p.nextToken())
-			valueType := p.popLastType()
-			params := &array{slice: []dgo.Value{keyType, valueType}}
+			params := &array{slice: []dgo.Value{keyType, p.popLastType()}}
 			if szc != nil {
 				params.AddAll(szc)
 			}
