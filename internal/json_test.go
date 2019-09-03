@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/util"
-	"github.com/lyraproj/got/vf"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/util"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func ExampleUnmarshalJSON() {

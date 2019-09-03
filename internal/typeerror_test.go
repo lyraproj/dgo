@@ -3,10 +3,10 @@ package internal_test
 import (
 	"testing"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/newtype"
-	"github.com/lyraproj/got/typ"
-	"github.com/lyraproj/got/vf"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func TestTypeError(t *testing.T) {

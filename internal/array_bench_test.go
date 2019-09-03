@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 const elemCount = 500000

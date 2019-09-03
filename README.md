@@ -1,4 +1,4 @@
-# dgo
+# dgo (Dynamic Go)
 
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
 and Performance. It is designed to make working with dynamic values an effortless and type safe task.

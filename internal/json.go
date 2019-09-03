@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 func UnmarshalJSON(b []byte) (dgo.Value, error) {

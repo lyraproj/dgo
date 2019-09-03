@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 	"gopkg.in/yaml.v3"
 )
 
@@ -147,5 +147,5 @@ func yamlDecodeMap(n *yaml.Node) (*hashMap, error) {
 }
 
 func yamlMarshalType(t dgo.Type) (*yaml.Node, error) {
-	return &yaml.Node{Tag: `!puppet.com,2019:got/type`, Kind: yaml.ScalarNode, Value: TypeString(t)}, nil
+	return &yaml.Node{Tag: `!puppet.com,2019:dgo/type`, Kind: yaml.ScalarNode, Value: TypeString(t)}, nil
 }

@@ -3,12 +3,12 @@ package vf
 import (
 	"encoding/json"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
+	"github.com/lyraproj/dgo/util"
 )
 
-// MarshalJSON returns the JSON encoding for the given got.Value
+// MarshalJSON returns the JSON encoding for the given dgo.Value
 func MarshalJSON(v interface{}) ([]byte, error) {
 	// Default Indentable output is JSON
 	if i, ok := v.(util.Indentable); ok {
@@ -17,7 +17,7 @@ func MarshalJSON(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-// UnmarshalJSON decodes the JSON representation of the given bytes into a got.Value
+// UnmarshalJSON decodes the JSON representation of the given bytes into a dgo.Value
 func UnmarshalJSON(b []byte) (dgo.Value, error) {
 	return internal.UnmarshalJSON(b)
 }

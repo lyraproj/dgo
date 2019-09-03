@@ -1,4 +1,4 @@
-// Package got contains the interfaces implemented by the Operands and Values
+// Package dgo contains the interfaces implemented by the Operands and Values
 package dgo
 
 import (

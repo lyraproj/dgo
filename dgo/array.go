@@ -3,7 +3,7 @@ package dgo
 import (
 	"encoding/json"
 
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (

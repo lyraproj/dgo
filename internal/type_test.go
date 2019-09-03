@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"testing"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/newtype"
-	"github.com/lyraproj/got/typ"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/typ"
 )
 
 func TestFromReflected(t *testing.T) {

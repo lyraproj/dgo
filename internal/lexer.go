@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/util"
 )
 
 type tokenType int

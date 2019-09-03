@@ -3,9 +3,9 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/lyraproj/got/dgo"
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/typ"
+	"github.com/lyraproj/dgo/dgo"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/typ"
 )
 
 func TestMeta(t *testing.T) {

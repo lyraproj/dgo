@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lyraproj/got/typ"
-	"github.com/lyraproj/got/vf"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 
-	require "github.com/lyraproj/got/dgo_test"
+	require "github.com/lyraproj/dgo/dgo_test"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,7 +30,7 @@ c:
   - true
   - 1
   - 3.14
-  - !puppet.com,2019:got/type string
+  - !puppet.com,2019:dgo/type string
   - null
 `, string(b))
 }

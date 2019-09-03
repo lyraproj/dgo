@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 type (

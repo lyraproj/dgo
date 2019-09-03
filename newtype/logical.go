@@ -1,8 +1,8 @@
 package newtype
 
 import (
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
 )
 
 // AllOf returns a type that represents all values that matches all of the included types

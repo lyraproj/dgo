@@ -4,11 +4,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/got/dgo"
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/newtype"
-	"github.com/lyraproj/got/typ"
-	"github.com/lyraproj/got/vf"
+	"github.com/lyraproj/dgo/dgo"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func TestAllOfType(t *testing.T) {

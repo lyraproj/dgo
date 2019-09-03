@@ -5,7 +5,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 // CheckAssignableTo checks if the given type t implements the ReverseAssignable interface and if
@@ -21,7 +21,7 @@ func CheckAssignableTo(guard dgo.RecursionGuard, t, other dgo.Type) bool {
 	return false
 }
 
-// TypeFromReflected returns teh got.Type that represents the given reflected type
+// TypeFromReflected returns teh dgo.Type that represents the given reflected type
 func TypeFromReflected(vt reflect.Type) dgo.Type {
 	if pt, ok := wellKnownTypes[vt]; ok {
 		return pt

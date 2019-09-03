@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -629,7 +629,7 @@ func (g *hashMap) Get(key interface{}) (dgo.Value, bool) {
 	tl := len(tbl) - 1
 	if tl >= 0 {
 		// This switch increases performance a great deal because using the direct implementation
-		// instead of the got.Value enables inlining of the HashCode() method
+		// instead of the dgo.Value enables inlining of the HashCode() method
 		switch k := key.(type) {
 		case *hstring:
 			for e := tbl[tl&hash(k.HashCode())]; e != nil; e = e.hashNext {

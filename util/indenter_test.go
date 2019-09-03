@@ -3,10 +3,10 @@ package util_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 
-	"github.com/lyraproj/got/util"
-	"github.com/lyraproj/got/vf"
+	"github.com/lyraproj/dgo/util"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func ExampleToString() {

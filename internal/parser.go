@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 // States:
@@ -85,7 +85,7 @@ type parser struct {
 	lv dgo.Value
 }
 
-// Parse calls ParseFile with the string "<got type expression>" as the fileName
+// Parse calls ParseFile with the string "<dgo type expression>" as the fileName
 func Parse(content string) dgo.Type {
 	return ParseFile(``, content)
 }

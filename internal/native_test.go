@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
-	"github.com/lyraproj/got/typ"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
+	"github.com/lyraproj/dgo/typ"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/vf"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/vf"
 )
 
 type teststruct int

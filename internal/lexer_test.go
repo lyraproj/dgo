@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/util"
 )
 
 func Test_unicodeError(t *testing.T) {

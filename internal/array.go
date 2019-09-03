@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 	"gopkg.in/yaml.v3"
 )
 
@@ -624,7 +624,7 @@ func valueSlice(values []interface{}, frozen bool) []dgo.Value {
 	return cp
 }
 
-// Integers returns a got.Array that represents the given ints
+// Integers returns a dgo.Array that represents the given ints
 func Integers(values []int) dgo.Array {
 	cp := make([]dgo.Value, len(values))
 	for i := range values {
@@ -633,7 +633,7 @@ func Integers(values []int) dgo.Array {
 	return &array{slice: cp, frozen: true}
 }
 
-// Strings returns a got.Array that represents the given strings
+// Strings returns a dgo.Array that represents the given strings
 func Strings(values []string) dgo.Array {
 	cp := make([]dgo.Value, len(values))
 	for i := range values {

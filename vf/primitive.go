@@ -4,17 +4,17 @@ package vf
 import (
 	"reflect"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
 )
 
-// True is the got.Value representation of true
+// True is the dgo.Value representation of true
 const True = internal.True
 
-// False is the got.Value representation of false
+// False is the dgo.Value representation of false
 const False = internal.False
 
-// Nil is the got.Value representation of nil
+// Nil is the dgo.Value representation of nil
 const Nil = internal.Nil
 
 // Boolean returns a Boolean that represents the given bool
@@ -25,27 +25,27 @@ func Boolean(v bool) dgo.Boolean {
 	return False
 }
 
-// Integer returns the given value as a got.Integer
+// Integer returns the given value as a dgo.Integer
 func Integer(value int64) dgo.Integer {
 	return internal.Integer(value)
 }
 
-// Float returns the given value as a got.Float
+// Float returns the given value as a dgo.Float
 func Float(value float64) dgo.Float {
 	return internal.Float(value)
 }
 
-// String returns the given string as a got.String
+// String returns the given string as a dgo.String
 func String(string string) dgo.String {
 	return internal.String(string)
 }
 
-// Value converts the given value into an immutable got.Value
+// Value converts the given value into an immutable dgo.Value
 func Value(v interface{}) dgo.Value {
 	return internal.Value(v)
 }
 
-// ValueFromReflected converts the given reflected value into an immutable got.Value
+// ValueFromReflected converts the given reflected value into an immutable dgo.Value
 func ValueFromReflected(v reflect.Value) dgo.Value {
 	return internal.ValueFromReflected(v)
 }

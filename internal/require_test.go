@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/typ"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/typ"
 )
 
 func ensureFailed(t *testing.T, f func(t *testing.T)) {

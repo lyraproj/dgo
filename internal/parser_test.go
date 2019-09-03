@@ -5,10 +5,10 @@ import (
 	"regexp"
 	"testing"
 
-	require "github.com/lyraproj/got/dgo_test"
-	"github.com/lyraproj/got/newtype"
-	"github.com/lyraproj/got/typ"
-	"github.com/lyraproj/got/vf"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func TestParse_default(t *testing.T) {
@@ -96,5 +96,5 @@ func TestParse_errors(t *testing.T) {
 }
 
 func TestParseFile_errors(t *testing.T) {
-	require.Panic(t, func() { newtype.ParseFile(`foo.got`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.got, line: 1, column: 4\)`)
+	require.Panic(t, func() { newtype.ParseFile(`foo.dgo`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
 }

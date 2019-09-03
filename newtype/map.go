@@ -1,8 +1,8 @@
 package newtype
 
 import (
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
 )
 
 // Map returns a type that represents an Map value

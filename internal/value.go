@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
-// Value returns the got.Value representation of its argument
+// Value returns the dgo.Value representation of its argument
 func Value(v interface{}) dgo.Value {
 	// This function is kept very small to enable inlining so this
 	// if statement should not be baked in to the grand switch
@@ -76,7 +76,7 @@ func value(v interface{}) dgo.Value {
 	}
 }
 
-var gotValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
+var dgoValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 
 func ValueFromReflected(vr reflect.Value) (pv dgo.Value) {
 	// Invalid shouldn't happen, but needs a check
@@ -124,7 +124,7 @@ func ValueFromReflected(vr reflect.Value) (pv dgo.Value) {
 	if pv != nil {
 		return
 	}
-	if vr.Type().AssignableTo(gotValueType) {
+	if vr.Type().AssignableTo(dgoValueType) {
 		return vr.Interface().(dgo.Value)
 	}
 	if vf, ok := wellKnown[vr.Type()]; ok {

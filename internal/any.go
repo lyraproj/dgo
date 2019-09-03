@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/lyraproj/got/dgo"
+import "github.com/lyraproj/dgo/dgo"
 
 // anyType represents all possible values
 type anyType int

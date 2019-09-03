@@ -3,17 +3,17 @@ package vf
 import (
 	"reflect"
 
-	"github.com/lyraproj/got/dgo"
-	"github.com/lyraproj/got/internal"
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/internal"
 )
 
-// Map creates an immutable got.Map from the given argument which must be a go map.
+// Map creates an immutable dgo.Map from the given argument which must be a go map.
 func Map(m interface{}) dgo.Map {
 	return internal.Map(m)
 }
 
-// MutableMap creates an empty got.Map with the given capacity. The map can be optionally constrained
-// by the given type which can be nil, the zero value of a go map, or a got.MapType
+// MutableMap creates an empty dgo.Map with the given capacity. The map can be optionally constrained
+// by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MutableMap(capacity int, typ interface{}) dgo.Map {
 	return internal.MutableMap(capacity, typ)
 }

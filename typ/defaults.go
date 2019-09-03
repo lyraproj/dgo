@@ -1,6 +1,6 @@
 package typ
 
-import "github.com/lyraproj/got/internal"
+import "github.com/lyraproj/dgo/internal"
 
 // AllOf is the default AllOf type. Since it contains no types, everything is
 // assignable to it.

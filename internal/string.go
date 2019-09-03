@@ -10,9 +10,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/lyraproj/got/util"
+	"github.com/lyraproj/dgo/util"
 
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 type (
@@ -175,7 +175,7 @@ func PatternType(pattern *regexp.Regexp) dgo.Type {
 	return &patternType{Regexp: pattern}
 }
 
-// StringType returns a new got.StringType. It can be called with two optional integer arguments denoting
+// StringType returns a new dgo.StringType. It can be called with two optional integer arguments denoting
 // the min and max length of the string. If only one integer is given, it represents the min length.
 //
 // The method can also be called with one string parameter. The returned type will then match that exact

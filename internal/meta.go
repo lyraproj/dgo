@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/lyraproj/got/dgo"
+	"github.com/lyraproj/dgo/dgo"
 )
 
 // metaType is the Type returned by a Type

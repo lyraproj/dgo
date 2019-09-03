@@ -73,9 +73,6 @@ A negation matches all values that doesn't match the given type.
 #### syntax:
 `!<type>` (not applicable in Puppet)
 
-### Struct
-TBD.
-
 ### Type Alias
 TBD.
 
