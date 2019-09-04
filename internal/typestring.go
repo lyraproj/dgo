@@ -95,18 +95,18 @@ func writeElementsExact(typ dgo.Type, prio int, sb *strings.Builder) {
 }
 
 var simpleTypes = map[dgo.TypeIdentifier]string{
-	dgo.IdAny:     `any`,
-	dgo.IdArray:   `[]any`,
-	dgo.IdTrue:    `true`,
-	dgo.IdFalse:   `false`,
-	dgo.IdBoolean: `bool`,
-	dgo.IdNil:     `nil`,
-	dgo.IdError:   `error`,
-	dgo.IdFloat:   `float`,
-	dgo.IdMap:     `map[any]any`,
-	dgo.IdRegexp:  `regexp`,
-	dgo.IdString:  `string`,
-	dgo.IdInteger: `int`,
+	dgo.TiAny:     `any`,
+	dgo.TiArray:   `[]any`,
+	dgo.TiTrue:    `true`,
+	dgo.TiFalse:   `false`,
+	dgo.TiBoolean: `bool`,
+	dgo.TiNil:     `nil`,
+	dgo.TiError:   `error`,
+	dgo.TiFloat:   `float`,
+	dgo.TiMap:     `map[any]any`,
+	dgo.TiRegexp:  `regexp`,
+	dgo.TiString:  `string`,
+	dgo.TiInteger: `int`,
 }
 
 type typeToString func(typ dgo.Type, prio int, sb *strings.Builder)
@@ -115,23 +115,23 @@ var complexTypes map[dgo.TypeIdentifier]typeToString
 
 func init() {
 	complexTypes = map[dgo.TypeIdentifier]typeToString{
-		dgo.IdAnyOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `|`, orPrio, sb) },
-		dgo.IdOneOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `^`, xorPrio, sb) },
-		dgo.IdAllOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `&`, andPrio, sb) },
-		dgo.IdArrayExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiAnyOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `|`, orPrio, sb) },
+		dgo.TiOneOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `^`, xorPrio, sb) },
+		dgo.TiAllOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `&`, andPrio, sb) },
+		dgo.TiArrayExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteByte('{')
 			JoinValueTypes(typ.(dgo.ExactType).Value().(dgo.Iterable), `,`, commaPrio, sb)
 			sb.WriteByte('}')
 		},
-		dgo.IdElementsExact:  func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
-		dgo.IdMapKeysExact:   func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
-		dgo.IdMapValuesExact: func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
-		dgo.IdTuple: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiElementsExact:  func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
+		dgo.TiMapKeysExact:   func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
+		dgo.TiMapValuesExact: func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
+		dgo.TiTuple: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteByte('{')
 			Join(typ.(dgo.TupleType).ElementTypes(), `,`, commaPrio, sb)
 			sb.WriteByte('}')
 		},
-		dgo.IdArrayElementSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiArrayElementSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			at := typ.(dgo.ArrayType)
 			if at.Unbounded() {
 				sb.WriteString(`[]`)
@@ -142,17 +142,17 @@ func init() {
 			}
 			buildTypeString(at.ElementType(), typePrio, sb)
 		},
-		dgo.IdMapExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiMapExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteByte('{')
 			JoinValueTypes(typ.(dgo.ExactType).Value().(dgo.Map).Entries(), `,`, commaPrio, sb)
 			sb.WriteByte('}')
 		},
-		dgo.IdStruct: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiStruct: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteByte('{')
 			Join(typ.(dgo.StructType).Entries(), `,`, commaPrio, sb)
 			sb.WriteByte('}')
 		},
-		dgo.IdMapEntry: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiMapEntry: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			me := typ.(dgo.MapEntryType)
 			buildTypeString(me.KeyType(), commaPrio, sb)
 			if !me.Required() {
@@ -161,13 +161,13 @@ func init() {
 			sb.WriteByte(':')
 			buildTypeString(me.ValueType(), commaPrio, sb)
 		},
-		dgo.IdMapEntryExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiMapEntryExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			me := typ.(dgo.ExactType).Value().(dgo.MapEntry)
 			buildTypeString(me.Key().Type(), commaPrio, sb)
 			sb.WriteByte(':')
 			buildTypeString(me.Value().Type(), commaPrio, sb)
 		},
-		dgo.IdMapSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiMapSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			at := typ.(dgo.MapType)
 			sb.WriteString(`map[`)
 			buildTypeString(at.KeyType(), commaPrio, sb)
@@ -178,32 +178,32 @@ func init() {
 			sb.WriteByte(']')
 			buildTypeString(at.ValueType(), typePrio, sb)
 		},
-		dgo.IdFloatExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiFloatExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteString(util.Ftoa(typ.(dgo.ExactType).Value().(Float).GoFloat()))
 		},
-		dgo.IdFloatRange: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiFloatRange: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.FloatRangeType)
 			writeFloatRange(st.Min(), st.Max(), sb)
 		},
-		dgo.IdIntegerExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiIntegerExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteString(typ.(dgo.ExactType).Value().(fmt.Stringer).String())
 		},
-		dgo.IdIntegerRange: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiIntegerRange: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.IntegerRangeType)
 			writeIntRange(st.Min(), st.Max(), sb)
 		},
-		dgo.IdRegexpExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiRegexpExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteString(`regexp[`)
 			sb.WriteString(strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 			sb.WriteByte(']')
 		},
-		dgo.IdStringExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiStringExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteString(strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 		},
-		dgo.IdStringPattern: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiStringPattern: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			RegexpSlashQuote(sb, typ.(dgo.ExactType).Value().(fmt.Stringer).String())
 		},
-		dgo.IdStringSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiStringSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.StringType)
 			sb.WriteString(`string`)
 			if !st.Unbounded() {
@@ -212,15 +212,15 @@ func init() {
 				sb.WriteByte(']')
 			}
 		},
-		dgo.IdNot: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiNot: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			nt := typ.(dgo.UnaryType)
 			sb.WriteByte('!')
 			buildTypeString(nt.Operand(), typePrio, sb)
 		},
-		dgo.IdNative: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiNative: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			sb.WriteString(typ.(dgo.NativeType).GoType().String())
 		},
-		dgo.IdMeta: func(typ dgo.Type, prio int, sb *strings.Builder) {
+		dgo.TiMeta: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			nt := typ.(dgo.UnaryType)
 			sb.WriteString(`type`)
 			if op := nt.Operand(); op != DefaultAnyType {

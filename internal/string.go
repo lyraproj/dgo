@@ -76,7 +76,7 @@ func (t defaultStringType) Equals(other interface{}) bool {
 }
 
 func (t defaultStringType) HashCode() int {
-	return int(dgo.IdString)
+	return int(dgo.TiString)
 }
 
 func (t defaultStringType) Instance(value interface{}) bool {
@@ -106,7 +106,7 @@ func (t defaultStringType) Type() dgo.Type {
 }
 
 func (t defaultStringType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdString
+	return dgo.TiString
 }
 
 func (t defaultStringType) Unbounded() bool {
@@ -158,7 +158,7 @@ func (t *exactStringType) Type() dgo.Type {
 }
 
 func (t *exactStringType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdStringExact
+	return dgo.TiStringExact
 }
 
 func (t *exactStringType) Unbounded() bool {
@@ -249,7 +249,7 @@ func (t *patternType) String() string {
 }
 
 func (t *patternType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdStringPattern
+	return dgo.TiStringPattern
 }
 
 func (t *patternType) Value() dgo.Value {
@@ -291,7 +291,7 @@ func (t *sizedStringType) Equals(v interface{}) bool {
 }
 
 func (t *sizedStringType) HashCode() int {
-	h := int(dgo.IdStringSized)
+	h := int(dgo.TiStringSized)
 	if t.min > 0 {
 		h = h*31 + t.min
 	}
@@ -333,7 +333,7 @@ func (t *sizedStringType) Type() dgo.Type {
 }
 
 func (t *sizedStringType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdStringSized
+	return dgo.TiStringSized
 }
 
 func (t *sizedStringType) Unbounded() bool {

@@ -43,7 +43,7 @@ func (t errType) String() string {
 }
 
 func (t errType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdError
+	return dgo.TiError
 }
 
 func (e *errw) Equals(other interface{}) bool {

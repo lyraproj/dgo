@@ -41,10 +41,9 @@ func jsonDecodeValue(dec *json.Decoder) (e dgo.Value, err error) {
 	case json.Number:
 		if i, err := t.Int64(); err == nil {
 			return Integer(i), nil
-		} else {
-			f, _ := t.Float64()
-			return Float(f), nil
 		}
+		f, _ := t.Float64()
+		return Float(f), nil
 	default:
 		return Value(t), nil
 	}

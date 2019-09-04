@@ -62,7 +62,7 @@ func (t *exactBinaryType) Type() dgo.Type {
 }
 
 func (t *exactBinaryType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdBinaryExact
+	return dgo.TiBinaryExact
 }
 
 func (t *exactBinaryType) Value() dgo.Value {
@@ -84,7 +84,7 @@ func (t binaryType) Equals(other interface{}) bool {
 }
 
 func (t binaryType) HashCode() int {
-	return int(dgo.IdBinary)
+	return int(dgo.TiBinary)
 }
 
 func (t binaryType) Instance(value interface{}) bool {
@@ -105,7 +105,7 @@ func (t binaryType) Type() dgo.Type {
 }
 
 func (t binaryType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdBinary
+	return dgo.TiBinary
 }
 
 func Binary(bs []byte) dgo.Binary {

@@ -56,49 +56,49 @@ type (
 )
 
 const (
-	IdNil = TypeIdentifier(iota)
-	IdAny
-	IdMeta
-	IdBoolean
-	IdFalse
-	IdTrue
-	IdInteger
-	IdIntegerExact
-	IdIntegerRange
-	IdFloat
-	IdFloatExact
-	IdFloatRange
-	IdBinary
-	IdBinaryExact
-	IdString
-	IdStringExact
-	IdStringPattern
-	IdStringSized
+	TiNil = TypeIdentifier(iota)
+	TiAny
+	TiMeta
+	TiBoolean
+	TiFalse
+	TiTrue
+	TiInteger
+	TiIntegerExact
+	TiIntegerRange
+	TiFloat
+	TiFloatExact
+	TiFloatRange
+	TiBinary
+	TiBinaryExact
+	TiString
+	TiStringExact
+	TiStringPattern
+	TiStringSized
 
-	IdRegexp
-	IdRegexpExact
-	IdNative
+	TiRegexp
+	TiRegexpExact
+	TiNative
 
-	IdArray
-	IdArrayExact
-	IdArrayElementSized
-	IdElementsExact
+	TiArray
+	TiArrayExact
+	TiArrayElementSized
+	TiElementsExact
 
-	IdTuple
+	TiTuple
 
-	IdMap
-	IdMapExact
-	IdMapValuesExact
-	IdMapKeysExact
-	IdMapSized
-	IdMapEntry
-	IdMapEntryExact
-	IdStruct
+	TiMap
+	TiMapExact
+	TiMapValuesExact
+	TiMapKeysExact
+	TiMapSized
+	TiMapEntry
+	TiMapEntryExact
+	TiStruct
 
-	IdNot
-	IdAllOf
-	IdAnyOf
-	IdOneOf
+	TiNot
+	TiAllOf
+	TiAnyOf
+	TiOneOf
 
-	IdError
+	TiError
 )

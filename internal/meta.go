@@ -38,7 +38,7 @@ func (t *metaType) Equals(v interface{}) bool {
 }
 
 func (t *metaType) HashCode() int {
-	return int(dgo.IdMeta)*1321 + t.tp.HashCode()
+	return int(dgo.TiMeta)*1321 + t.tp.HashCode()
 }
 
 func (t *metaType) Instance(v interface{}) bool {
@@ -66,5 +66,5 @@ func (t *metaType) String() string {
 }
 
 func (t *metaType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMeta
+	return dgo.TiMeta
 }

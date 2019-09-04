@@ -198,7 +198,7 @@ func (t *structType) Type() dgo.Type {
 }
 
 func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdStruct
+	return dgo.TiStruct
 }
 
 func (t *structType) Unbounded() bool {
@@ -267,7 +267,7 @@ func (t *entryType) Type() dgo.Type {
 }
 
 func (t *entryType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapEntry
+	return dgo.TiMapEntry
 }
 
 func (t *entryType) ValueType() dgo.Type {
@@ -316,7 +316,7 @@ func (t *exactEntryType) Type() dgo.Type {
 }
 
 func (t *exactEntryType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapEntryExact
+	return dgo.TiMapEntryExact
 }
 
 func (t *exactEntryType) Value() dgo.Value {
@@ -1204,7 +1204,7 @@ func (t *exactMapValuesType) Equals(other interface{}) bool {
 }
 
 func (t *exactMapValuesType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.IdMapValuesExact)
+	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapValuesExact)
 }
 
 func (t *exactMapValuesType) Instance(value interface{}) bool {
@@ -1220,7 +1220,7 @@ func (t *exactMapValuesType) Type() dgo.Type {
 }
 
 func (t *exactMapValuesType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapValuesExact
+	return dgo.TiMapValuesExact
 }
 
 func (t *exactMapKeysType) Assignable(other dgo.Type) bool {
@@ -1261,7 +1261,7 @@ func (t *exactMapKeysType) Equals(other interface{}) bool {
 }
 
 func (t *exactMapKeysType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.IdMapKeysExact)
+	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapKeysExact)
 }
 
 func (t *exactMapKeysType) String() string {
@@ -1273,7 +1273,7 @@ func (t *exactMapKeysType) Type() dgo.Type {
 }
 
 func (t *exactMapKeysType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapKeysExact
+	return dgo.TiMapKeysExact
 }
 
 func (t *sizedMapType) Assignable(other dgo.Type) bool {
@@ -1303,7 +1303,7 @@ func (t *sizedMapType) HashCode() int {
 }
 
 func (t *sizedMapType) deepHashCode(seen []dgo.Value) int {
-	h := int(dgo.IdMap)
+	h := int(dgo.TiMap)
 	if t.min > 0 {
 		h = h*31 + t.min
 	}
@@ -1365,7 +1365,7 @@ func (t *sizedMapType) Type() dgo.Type {
 }
 
 func (t *sizedMapType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapSized
+	return dgo.TiMapSized
 }
 
 func (t *sizedMapType) ValueType() dgo.Type {
@@ -1391,7 +1391,7 @@ func (t defaultMapType) Equals(other interface{}) bool {
 }
 
 func (t defaultMapType) HashCode() int {
-	return int(dgo.IdMap)
+	return int(dgo.TiMap)
 }
 
 func (t defaultMapType) Instance(value interface{}) bool {
@@ -1420,7 +1420,7 @@ func (t defaultMapType) Type() dgo.Type {
 }
 
 func (t defaultMapType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMap
+	return dgo.TiMap
 }
 
 func (t defaultMapType) ValueType() dgo.Type {
@@ -1456,7 +1456,7 @@ func (t *exactMapType) Equals(other interface{}) bool {
 }
 
 func (t *exactMapType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.IdMapExact)
+	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapExact)
 }
 
 func (t *exactMapType) Instance(value interface{}) bool {
@@ -1488,7 +1488,7 @@ func (t *exactMapType) Type() dgo.Type {
 }
 
 func (t *exactMapType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdMapExact
+	return dgo.TiMapExact
 }
 
 func (t *exactMapType) Value() dgo.Value {

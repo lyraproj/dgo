@@ -32,7 +32,7 @@ func (t regexpType) Equals(v interface{}) bool {
 }
 
 func (t regexpType) HashCode() int {
-	return int(dgo.IdRegexp)
+	return int(dgo.TiRegexp)
 }
 
 func (t regexpType) Instance(v interface{}) bool {
@@ -52,7 +52,7 @@ func (t regexpType) Type() dgo.Type {
 }
 
 func (t regexpType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdRegexp
+	return dgo.TiRegexp
 }
 
 func (t *exactRegexpType) Assignable(other dgo.Type) bool {
@@ -67,7 +67,7 @@ func (t *exactRegexpType) Equals(other interface{}) bool {
 }
 
 func (t *exactRegexpType) HashCode() int {
-	return (*Regexp)(t).HashCode()*31 + int(dgo.IdRegexpExact)
+	return (*Regexp)(t).HashCode()*31 + int(dgo.TiRegexpExact)
 }
 
 func (t *exactRegexpType) Instance(value interface{}) bool {
@@ -93,7 +93,7 @@ func (t *exactRegexpType) Type() dgo.Type {
 }
 
 func (t *exactRegexpType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdRegexpExact
+	return dgo.TiRegexpExact
 }
 
 func (t *exactRegexpType) Value() dgo.Value {

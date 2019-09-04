@@ -140,7 +140,7 @@ func (t defaultArrayType) Equals(other interface{}) bool {
 }
 
 func (t defaultArrayType) HashCode() int {
-	return int(dgo.IdArray)
+	return int(dgo.TiArray)
 }
 
 func (t defaultArrayType) Instance(value interface{}) bool {
@@ -165,7 +165,7 @@ func (t defaultArrayType) Type() dgo.Type {
 }
 
 func (t defaultArrayType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdArray
+	return dgo.TiArray
 }
 
 func (t defaultArrayType) Unbounded() bool {
@@ -204,7 +204,7 @@ func (t *sizedArrayType) Equals(other interface{}) bool {
 }
 
 func (t *sizedArrayType) HashCode() int {
-	h := int(dgo.IdArray)
+	h := int(dgo.TiArray)
 	if t.min > 0 {
 		h = h*31 + t.min
 	}
@@ -246,7 +246,7 @@ func (t *sizedArrayType) Type() dgo.Type {
 }
 
 func (t *sizedArrayType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdArrayElementSized
+	return dgo.TiArrayElementSized
 }
 
 func (t *sizedArrayType) Unbounded() bool {
@@ -305,7 +305,7 @@ func (t *exactArrayType) Equals(other interface{}) bool {
 }
 
 func (t *exactArrayType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.IdArrayExact)
+	return (*array)(t).HashCode()*7 + int(dgo.TiArrayExact)
 }
 
 func (t *exactArrayType) Instance(value interface{}) bool {
@@ -337,7 +337,7 @@ func (t *exactArrayType) Type() dgo.Type {
 }
 
 func (t *exactArrayType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdArrayExact
+	return dgo.TiArrayExact
 }
 
 func (t *exactArrayType) Unbounded() bool {
@@ -345,7 +345,7 @@ func (t *exactArrayType) Unbounded() bool {
 }
 
 func (t *exactElementsType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.IdArrayExact)
+	return (*array)(t).HashCode()*7 + int(dgo.TiArrayExact)
 }
 
 func (t *exactElementsType) Assignable(other dgo.Type) bool {
@@ -402,7 +402,7 @@ func (t *exactElementsType) Type() dgo.Type {
 }
 
 func (t *exactElementsType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdElementsExact
+	return dgo.TiElementsExact
 }
 
 var DefaultTupleType = &tupleType{}
@@ -511,7 +511,7 @@ func (t *tupleType) Equals(other interface{}) bool {
 }
 
 func (t *tupleType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.IdTuple)
+	return (*array)(t).HashCode()*7 + int(dgo.TiTuple)
 }
 
 func (t *tupleType) Instance(value interface{}) bool {
@@ -557,7 +557,7 @@ func (t *tupleType) Type() dgo.Type {
 }
 
 func (t *tupleType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdTuple
+	return dgo.TiTuple
 }
 
 func (t *tupleType) Unbounded() bool {

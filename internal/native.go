@@ -42,7 +42,7 @@ func (t *nativeType) Equals(other interface{}) bool {
 }
 
 func (t *nativeType) HashCode() int {
-	return stringHash(t.rt.Name())*31 + int(dgo.IdNative)
+	return stringHash(t.rt.Name())*31 + int(dgo.TiNative)
 }
 
 func (t *nativeType) Type() dgo.Type {
@@ -50,7 +50,7 @@ func (t *nativeType) Type() dgo.Type {
 }
 
 func (t *nativeType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdNative
+	return dgo.TiNative
 }
 
 func (t *nativeType) Instance(value interface{}) bool {

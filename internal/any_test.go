@@ -29,5 +29,5 @@ func TestAny(t *testing.T) {
 	require.Assignable(t, typ.Any, newtype.Not(typ.Any))
 
 	require.Equal(t, `any`, typ.Any.String())
-	require.Equal(t, dgo.IdAny, typ.Any.TypeIdentifier())
+	require.Equal(t, dgo.TiAny, typ.Any.TypeIdentifier())
 }

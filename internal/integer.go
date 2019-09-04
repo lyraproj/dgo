@@ -58,7 +58,7 @@ func (t *integerRangeType) Equals(other interface{}) bool {
 }
 
 func (t *integerRangeType) HashCode() int {
-	h := int(dgo.IdIntegerRange)
+	h := int(dgo.TiIntegerRange)
 	if t.min > 0 {
 		h = h*31 + int(t.min)
 	}
@@ -96,7 +96,7 @@ func (t *integerRangeType) Type() dgo.Type {
 }
 
 func (t *integerRangeType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdIntegerRange
+	return dgo.TiIntegerRange
 }
 
 func (t exactIntegerType) Assignable(other dgo.Type) bool {
@@ -140,7 +140,7 @@ func (t exactIntegerType) Type() dgo.Type {
 }
 
 func (t exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdIntegerExact
+	return dgo.TiIntegerExact
 }
 
 func (t exactIntegerType) Value() dgo.Value {
@@ -162,7 +162,7 @@ func (t integerType) Equals(other interface{}) bool {
 }
 
 func (t integerType) HashCode() int {
-	return int(dgo.IdInteger)
+	return int(dgo.TiInteger)
 }
 
 func (t integerType) Instance(value interface{}) bool {
@@ -194,7 +194,7 @@ func (t integerType) Type() dgo.Type {
 }
 
 func (t integerType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdInteger
+	return dgo.TiInteger
 }
 
 func (v Integer) Type() dgo.Type {

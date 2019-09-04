@@ -86,5 +86,5 @@ func (t *notType) Type() dgo.Type {
 }
 
 func (t *notType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdNot
+	return dgo.TiNot
 }

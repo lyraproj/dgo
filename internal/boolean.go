@@ -60,11 +60,11 @@ func (t booleanType) Type() dgo.Type {
 func (t booleanType) TypeIdentifier() dgo.TypeIdentifier {
 	switch t {
 	case FalseType:
-		return dgo.IdFalse
+		return dgo.TiFalse
 	case TrueType:
-		return dgo.IdTrue
+		return dgo.TiTrue
 	default:
-		return dgo.IdBoolean
+		return dgo.TiBoolean
 	}
 }
 

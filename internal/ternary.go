@@ -68,7 +68,7 @@ func (t *allOfType) Equals(other interface{}) bool {
 }
 
 func (t *allOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.IdAllOf)
+	return (*array)(t).HashCode()*7 + int(dgo.TiAllOf)
 }
 
 func (t *allOfType) Instance(value interface{}) bool {
@@ -102,7 +102,7 @@ func (t *allOfType) Type() dgo.Type {
 }
 
 func (t *allOfType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdAllOf
+	return dgo.TiAllOf
 }
 
 var notAnyType = &notType{DefaultAnyType}
@@ -160,7 +160,7 @@ func (t *anyOfType) Equals(other interface{}) bool {
 }
 
 func (t *anyOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.IdAnyOf)
+	return (*array)(t).HashCode()*7 + int(dgo.TiAnyOf)
 }
 
 func (t *anyOfType) Instance(value interface{}) bool {
@@ -194,7 +194,7 @@ func (t *anyOfType) Type() dgo.Type {
 }
 
 func (t *anyOfType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdAnyOf
+	return dgo.TiAnyOf
 }
 
 // OneOfType returns a type that represents all values that matches exactly one of the included types
@@ -298,5 +298,5 @@ func (t *oneOfType) Type() dgo.Type {
 }
 
 func (t *oneOfType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdOneOf
+	return dgo.TiOneOf
 }

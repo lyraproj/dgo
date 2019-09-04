@@ -66,7 +66,7 @@ func (t nilType) Equals(v interface{}) bool {
 }
 
 func (t nilType) HashCode() int {
-	return int(1 + dgo.IdNil)
+	return int(1 + dgo.TiNil)
 }
 
 func (t nilType) Instance(v interface{}) bool {
@@ -82,5 +82,5 @@ func (t nilType) String() string {
 }
 
 func (t nilType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.IdNil
+	return dgo.TiNil
 }

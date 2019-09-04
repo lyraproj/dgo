@@ -13,10 +13,10 @@ import (
 
 type failingMarshaler struct{}
 
-var failingErr = errors.New("failingErr")
+var errFailing = errors.New("errFailing")
 
 func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
-	return nil, failingErr
+	return nil, errFailing
 }
 
 func TestMap_MarshalYaml(t *testing.T) {
@@ -43,7 +43,7 @@ func TestMap_MarshalYaml_fail(t *testing.T) {
 	if err == nil {
 		t.Fatalf(`no error was returned`)
 	}
-	require.Equal(t, failingErr.Error(), err.Error())
+	require.Equal(t, errFailing.Error(), err.Error())
 }
 
 func TestMap_UnmarshalYAML_Map(t *testing.T) {
