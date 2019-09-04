@@ -76,11 +76,9 @@ func (i *Indenter) String() string {
 		if r == '\n' {
 			// Truncate trailing space
 			wb.Reset()
-		} else {
-			if wb.Len() > 0 {
-				n.Write(wb.Bytes())
-				wb.Reset()
-			}
+		} else if wb.Len() > 0 {
+			n.Write(wb.Bytes())
+			wb.Reset()
 		}
 		n.WriteRune(r)
 	}

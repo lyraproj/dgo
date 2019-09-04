@@ -82,15 +82,16 @@ func nextToken(sr *util.StringReader) (t *token) {
 			tkn := consumeNumber(sr, n, buf, integer)
 			t = &token{buf.String(), tkn}
 		default:
-			if r >= '0' && r <= '9' {
+			switch {
+			case r >= '0' && r <= '9':
 				buf := bytes.NewBufferString(``)
 				tkn := consumeNumber(sr, r, buf, integer)
 				t = &token{buf.String(), tkn}
-			} else if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' {
+			case r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z':
 				buf := bytes.NewBufferString(``)
 				consumeIdentifier(sr, r, buf)
 				t = &token{buf.String(), identifier}
-			} else {
+			default:
 				t = &token{i: tokenType(r)}
 			}
 		}

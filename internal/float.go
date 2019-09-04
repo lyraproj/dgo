@@ -200,24 +200,30 @@ func (v Float) CompareTo(other interface{}) (r int, ok bool) {
 	ok = true
 	if ov, isFloat := ToFloat(other); isFloat {
 		fv := float64(v)
-		if fv > ov {
+		switch {
+		case fv > ov:
 			r = 1
-		} else if fv < ov {
+		case fv < ov:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
-	} else if oi, isInt := ToInt(other); isInt {
+		return
+	}
+	if oi, isInt := ToInt(other); isInt {
 		fv := float64(v)
-		fo := float64(oi)
-		if fv > fo {
+		ov := float64(oi)
+		switch {
+		case fv > ov:
 			r = 1
-		} else if fv < fo {
+		case fv < ov:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
-	} else if other == Nil || other == nil {
+		return
+	}
+	if other == Nil || other == nil {
 		r = 1
 	} else {
 		ok = false

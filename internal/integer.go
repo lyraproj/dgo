@@ -205,23 +205,29 @@ func (v Integer) CompareTo(other interface{}) (r int, ok bool) {
 	ok = true
 	if oi, isInt := ToInt(other); isInt {
 		mv := int64(v)
-		if mv > oi {
+		switch {
+		case mv > oi:
 			r = 1
-		} else if mv < oi {
+		case mv < oi:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
-	} else if ov, isFloat := ToFloat(other); isFloat {
+		return
+	}
+	if ov, isFloat := ToFloat(other); isFloat {
 		fv := float64(v)
-		if fv > ov {
+		switch {
+		case fv > ov:
 			r = 1
-		} else if fv < ov {
+		case fv < ov:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
-	} else if other == Nil || other == nil {
+		return
+	}
+	if other == Nil || other == nil {
 		r = 1
 	} else {
 		ok = false

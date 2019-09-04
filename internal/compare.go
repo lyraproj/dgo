@@ -33,11 +33,11 @@ func (s *doubleSeen) Append(a, b dgo.Value) dgo.RecursionGuard {
 		return s
 	}
 	c := *s
-	if !s.seenInA {
-		c.aSeen = append(s.aSeen, a)
+	if !c.seenInA {
+		c.aSeen = append(c.aSeen, a)
 	}
-	if !s.seenInB {
-		c.bSeen = append(s.bSeen, b)
+	if !c.seenInB {
+		c.bSeen = append(c.bSeen, b)
 	}
 	return &c
 }

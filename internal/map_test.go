@@ -640,36 +640,6 @@ func TestMap_With(t *testing.T) {
 	require.Equal(t, mc, map[int]string{1: `a`, 2: `b`, 3: `c`})
 }
 
-func TestMap_WithAll(t *testing.T) {
-	m := vf.MutableMap(1, nil)
-	m.PutAll(vf.Map(map[string]int{
-		`first`:  1,
-		`second`: 2,
-	}))
-	require.Equal(t, m, map[string]int{
-		`first`:  1,
-		`second`: 2,
-	})
-
-	m.PutAll(vf.Map(map[string]int{}))
-	require.Equal(t, m, map[string]int{
-		`first`:  1,
-		`second`: 2,
-	})
-
-	m.PutAll(vf.Map(map[string]int{
-		`first`:  1,
-		`second`: 2,
-	}))
-	require.Equal(t, m, map[string]int{
-		`first`:  1,
-		`second`: 2,
-	})
-
-	m = vf.Map(map[string]int{`first`: 1})
-	require.Panic(t, func() { m.PutAll(vf.Map(map[string]int{`first`: 1})) }, `frozen`)
-}
-
 func TestMap_Without(t *testing.T) {
 	om := vf.Map(map[string]interface{}{
 		`first`:  1,

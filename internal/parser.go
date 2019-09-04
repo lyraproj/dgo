@@ -346,13 +346,14 @@ func (p *parser) typeExpression(t *token) {
 		if n.i == dotdot {
 			p.nextToken()
 			n = p.peekToken()
-			if n.i == integer {
+			switch n.i {
+			case integer:
 				p.nextToken()
 				tp = IntegerRangeType(i, tokenInt(n))
-			} else if n.i == float {
+			case float:
 				p.nextToken()
 				tp = FloatRangeType(float64(i), tokenFloat(n))
-			} else {
+			default:
 				tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
 			}
 		} else {
@@ -376,13 +377,14 @@ func (p *parser) typeExpression(t *token) {
 		}
 	case dotdot: // Unbounded at lower end
 		n := p.peekToken()
-		if n.i == integer {
+		switch n.i {
+		case integer:
 			p.nextToken()
 			tp = IntegerRangeType(math.MinInt64, tokenInt(n))
-		} else if n.i == float {
+		case float:
 			p.nextToken()
 			tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n))
-		} else {
+		default:
 			panic(badSyntax(n, exIntOrFloat))
 		}
 	case identifier:

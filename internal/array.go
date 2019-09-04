@@ -1140,14 +1140,13 @@ func (v *array) ToMapFromEntries() (dgo.Map, bool) {
 			} else {
 				return nil, false
 			}
-		} else {
-			if nd.hashNext != nil {
-				// Copy node, it belongs to another map
-				c := *nd
-				c.next = nil // this one might not get assigned below
-				nd = &c
-			}
+		} else if nd.hashNext != nil {
+			// Copy node, it belongs to another map
+			c := *nd
+			c.next = nil // this one might not get assigned below
+			nd = &c
 		}
+
 		hk := hl & hash(nd.key.HashCode())
 		nd.hashNext = tbl[hk]
 		nd.prev = m.last

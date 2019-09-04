@@ -360,19 +360,21 @@ func (v *hstring) CompareTo(other interface{}) (r int, ok bool) {
 	ok = true
 	switch ov := other.(type) {
 	case *hstring:
-		if v.s > ov.s {
+		switch {
+		case v.s > ov.s:
 			r = 1
-		} else if v.s < ov.s {
+		case v.s < ov.s:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
 	case string:
-		if v.s > ov {
+		switch {
+		case v.s > ov:
 			r = 1
-		} else if v.s < ov {
+		case v.s < ov:
 			r = -1
-		} else {
+		default:
 			r = 0
 		}
 	case nilValue:

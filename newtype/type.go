@@ -12,7 +12,7 @@ func FromReflected(vt reflect.Type) dgo.Type {
 	return internal.TypeFromReflected(vt)
 }
 
-// ParseFile parses the given content into a dgo.Type.
+// Parse parses the given content into a dgo.Type.
 func Parse(content string) dgo.Type {
 	return internal.Parse(content)
 }

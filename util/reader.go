@@ -62,7 +62,7 @@ func (r *StringReader) Peek() rune {
 	return c
 }
 
-// Peek returns the second next rune in the string or 0 if the end as been reached. The position is not affected
+// Peek2 returns the second next rune in the string or 0 if the end as been reached. The position is not affected
 func (r *StringReader) Peek2() rune {
 	if r.p >= len(r.s) {
 		return 0
