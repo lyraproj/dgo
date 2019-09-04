@@ -70,17 +70,17 @@ func (i *Indenter) String() string {
 		}
 		if r == ' ' || r == '\t' {
 			// Defer whitespace output
-			wb.WriteByte(byte(r))
+			WriteByte(wb, byte(r))
 			continue
 		}
 		if r == '\n' {
 			// Truncate trailing space
 			wb.Reset()
 		} else if wb.Len() > 0 {
-			n.Write(wb.Bytes())
+			_, _ = n.Write(wb.Bytes())
 			wb.Reset()
 		}
-		n.WriteRune(r)
+		WriteRune(n, r)
 	}
 	return n.String()
 }
@@ -97,7 +97,7 @@ func (i *Indenter) Write(p []byte) (n int, err error) {
 
 // AppendRune appends a rune to the internal buffer without checking for newlines
 func (i *Indenter) AppendRune(r rune) {
-	i.b.WriteRune(r)
+	WriteRune(i.b, r)
 }
 
 // Append appends a string to the internal buffer without checking for newlines
@@ -172,7 +172,7 @@ func (i *Indenter) Printf(s string, args ...interface{}) {
 // NewLine writes a newline followed by the current indent after trimming trailing whitespaces
 func (i *Indenter) NewLine() {
 	if len(i.s) > 0 {
-		i.b.WriteByte('\n')
+		WriteByte(i.b, '\n')
 		for n := 0; n < i.i; n++ {
 			WriteString(i.b, i.s)
 		}

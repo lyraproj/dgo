@@ -112,7 +112,7 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 		default:
 			if r >= '0' && r <= '9' {
 				sr.Next()
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				continue
 			}
 			if unicode.IsLetter(r) {
@@ -139,12 +139,12 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 		case 0:
 			panic(errors.New("unexpected end"))
 		case '+', '-':
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 			r = sr.Next()
 			fallthrough
 		default:
 			if isDigit(r) {
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				consumeUnsignedInteger(sr, buf)
 				return
 			}
@@ -162,7 +162,7 @@ func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
 		default:
 			if isHex(r) {
 				sr.Next()
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				continue
 			}
 			return
@@ -171,26 +171,26 @@ func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
 }
 
 func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t tokenType) tokenType {
-	buf.WriteRune(start)
+	util.WriteRune(buf, start)
 	firstZero := t != float && start == '0'
 
 	for r := sr.Peek(); r != 0; r = sr.Peek() {
 		switch r {
 		case '0':
 			sr.Next()
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		case 'e', 'E':
 			sr.Next()
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 			consumeExponent(sr, buf)
 			return float
 		case 'x', 'X':
 			if firstZero {
 				sr.Next()
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				r = sr.Next()
 				if isHex(r) {
-					buf.WriteRune(r)
+					util.WriteRune(buf, r)
 					consumeHexInteger(sr, buf)
 					return t
 				}
@@ -202,7 +202,7 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 			}
 			if t != float {
 				sr.Next()
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				r = sr.Next()
 				if isDigit(r) {
 					return consumeNumber(sr, r, buf, float)
@@ -214,7 +214,7 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 				return t
 			}
 			sr.Next()
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		}
 	}
 	return t
@@ -234,13 +234,13 @@ func consumeRegexp(sr *util.StringReader) string {
 				panic(errors.New("unterminated regexp"))
 			case '/': // Escape is removed
 			default:
-				buf.WriteByte('\\')
+				util.WriteRune(buf, '\\')
 			}
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		case 0, '\n':
 			panic(errors.New("unterminated regexp"))
 		default:
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		}
 	}
 }
@@ -254,7 +254,7 @@ func consumeQuotedString(sr *util.StringReader) string {
 		}
 		switch r {
 		default:
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		case 0:
 			panic(errors.New("unterminated string"))
 		case '\n':
@@ -275,7 +275,7 @@ func consumeQuotedString(sr *util.StringReader) string {
 			case '"':
 			case '\\':
 			}
-			buf.WriteRune(r)
+			util.WriteRune(buf, r)
 		}
 	}
 }
@@ -290,12 +290,12 @@ func consumeRawString(sr *util.StringReader) string {
 		if r == 0 {
 			panic(errors.New("unterminated string"))
 		}
-		buf.WriteRune(r)
+		util.WriteRune(buf, r)
 	}
 }
 
 func consumeIdentifier(sr *util.StringReader, start rune, buf *bytes.Buffer) {
-	buf.WriteRune(start)
+	util.WriteRune(buf, start)
 	for {
 		r := sr.Peek()
 		switch r {
@@ -304,7 +304,7 @@ func consumeIdentifier(sr *util.StringReader, start rune, buf *bytes.Buffer) {
 		default:
 			if r == '_' || r >= '0' && r <= '9' || r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' {
 				sr.Next()
-				buf.WriteRune(r)
+				util.WriteRune(buf, r)
 				continue
 			}
 			return

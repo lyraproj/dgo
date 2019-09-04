@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/lyraproj/dgo/util"
+
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -23,7 +25,7 @@ func buildStringKeys(count int) []string {
 		l := len(s)
 		p := 0
 		for r := 0; r < rand.Intn(rndLen)+l; r++ {
-			b.WriteByte(s[p])
+			util.WriteByte(b, s[p])
 			p++
 			if p >= l {
 				p = 0

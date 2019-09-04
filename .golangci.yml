@@ -1,5 +1,6 @@
+issues:
+  exclude-use-default: false
+
 linters-settings:
   gocyclo:
     min-complexity: 15
-  golint:
-    min-confidence: 1.0

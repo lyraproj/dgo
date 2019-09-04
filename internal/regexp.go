@@ -1,9 +1,10 @@
 package internal
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
 )
@@ -131,26 +132,26 @@ func (v *regexpVal) Type() dgo.Type {
 // RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped
 // and writes it on the given builder.
 func RegexpSlashQuote(sb *strings.Builder, str string) {
-	sb.WriteByte('/')
+	util.WriteByte(sb, '/')
 	for _, c := range str {
 		switch c {
 		case '\t':
-			sb.WriteString(`\t`)
+			util.WriteString(sb, `\t`)
 		case '\n':
-			sb.WriteString(`\n`)
+			util.WriteString(sb, `\n`)
 		case '\r':
-			sb.WriteString(`\r`)
+			util.WriteString(sb, `\r`)
 		case '/':
-			sb.WriteString(`\/`)
+			util.WriteString(sb, `\/`)
 		case '\\':
-			sb.WriteString(`\\`)
+			util.WriteString(sb, `\\`)
 		default:
 			if c < 0x20 {
-				_, _ = fmt.Fprintf(sb, `\u{%X}`, c)
+				util.Fprintf(sb, `\u{%X}`, c)
 			} else {
-				sb.WriteRune(c)
+				util.WriteRune(sb, c)
 			}
 		}
 	}
-	sb.WriteByte('/')
+	util.WriteByte(sb, '/')
 }
