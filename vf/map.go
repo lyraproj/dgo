@@ -22,5 +22,5 @@ func MutableMap(capacity int, typ interface{}) dgo.Map {
 // immutable and the type will reflect exactly that map and nothing else. If frozen is false, the
 // created Map will be mutable and its type will be derived from the reflected map.
 func MapFromReflected(rm reflect.Value, frozen bool) dgo.Map {
-	return internal.MapFromReflected(rm, frozen)
+	return internal.MapFromReflected(rm, frozen).(dgo.Map)
 }

@@ -321,6 +321,158 @@ func (p *parser) unary(t *token) {
 	}
 }
 
+func (p *parser) mapExpression() dgo.Value {
+	n := p.nextToken()
+	if n.i != '[' {
+		panic(badSyntax(n, exLeftBracket))
+	}
+
+	// Deal with key type and size constraint
+	p.anyOf(p.nextToken())
+	keyType := p.popLastType()
+
+	n = p.nextToken()
+	var szc *array
+	if n.i == ',' {
+		// get size arguments
+		p.params()
+		szc = p.popLast().(*array)
+	} else if n.i != ']' {
+		panic(badSyntax(n, exRightBracket))
+	}
+
+	p.typeExpression(p.nextToken())
+	params := &array{slice: []dgo.Value{keyType, p.popLastType()}}
+	if szc != nil {
+		params.AddAll(szc)
+	}
+	return MapType(sliceToInterfaces(params)...)
+}
+
+func (p *parser) meta() dgo.Value {
+	n := p.nextToken()
+	if n.i != '[' {
+		panic(badSyntax(n, exLeftBracket))
+	}
+
+	// Deal with key type and size constraint
+	p.anyOf(p.nextToken())
+	typ := p.popLastType()
+	if p.nextToken().i != ']' {
+		panic(badSyntax(n, exRightBracket))
+	}
+	return &metaType{typ}
+}
+
+func (p *parser) string() dgo.Value {
+	if p.peekToken().i == '[' {
+		// get size arguments
+		p.nextToken()
+		p.params()
+		szc := p.popLast().(*array)
+		return StringType(sliceToInterfaces(szc)...)
+	}
+	return DefaultStringType
+}
+
+func (p *parser) identifier(t *token) dgo.Value {
+	var tp dgo.Value
+	switch t.s {
+	case `map`:
+		tp = p.mapExpression()
+	case `type`:
+		tp = p.meta()
+	case `any`:
+		tp = DefaultAnyType
+	case `bool`:
+		tp = DefaultBooleanType
+	case `int`:
+		tp = DefaultIntegerType
+	case `float`:
+		tp = DefaultFloatType
+	case `string`:
+		tp = p.string()
+	case `binary`:
+		tp = DefaultBinaryType
+	case `true`:
+		tp = True
+	case `false`:
+		tp = False
+	case `nil`:
+		tp = Nil
+	default:
+		panic(fmt.Errorf(`unknown identifier '%s'`, t.s))
+	}
+	return tp
+}
+
+func (p *parser) float(t *token) dgo.Value {
+	var tp dgo.Value
+	f := tokenFloat(t)
+	n := p.peekToken()
+	if n.i == dotdot {
+		p.nextToken()
+		n = p.peekToken()
+		if n.i == integer || n.i == float {
+			p.nextToken()
+			tp = FloatRangeType(f, tokenFloat(n))
+		} else {
+			p.nextToken()
+			tp = FloatRangeType(f, math.MaxFloat64) // Unbounded at upper end
+		}
+	} else {
+		tp = Float(f)
+	}
+	return tp
+}
+
+func (p *parser) integer(t *token) dgo.Value {
+	var tp dgo.Value
+	i := tokenInt(t)
+	n := p.peekToken()
+	if n.i == dotdot {
+		p.nextToken()
+		n = p.peekToken()
+		switch n.i {
+		case integer:
+			p.nextToken()
+			tp = IntegerRangeType(i, tokenInt(n))
+		case float:
+			p.nextToken()
+			tp = FloatRangeType(float64(i), tokenFloat(n))
+		default:
+			tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
+		}
+	} else {
+		tp = Integer(i)
+	}
+	return tp
+}
+
+func (p *parser) dotRange(t *token) dgo.Value {
+	var tp dgo.Value
+	n := p.peekToken()
+	switch n.i {
+	case integer:
+		p.nextToken()
+		tp = IntegerRangeType(math.MinInt64, tokenInt(n))
+	case float:
+		p.nextToken()
+		tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n))
+	default:
+		panic(badSyntax(n, exIntOrFloat))
+	}
+	return tp
+}
+
+func (p *parser) array(t *token) dgo.Value {
+	p.params()
+	params := p.popLast().(*array)
+	p.typeExpression(p.nextToken())
+	params.Insert(0, p.popLastType())
+	return ArrayType(sliceToInterfaces(params)...)
+}
+
 func (p *parser) typeExpression(t *token) {
 	var tp dgo.Value
 	switch t.i {
@@ -335,128 +487,15 @@ func (p *parser) typeExpression(t *token) {
 		}
 		return
 	case '[':
-		p.params()
-		params := p.popLast().(*array)
-		p.typeExpression(p.nextToken())
-		params.Insert(0, p.popLastType())
-		tp = ArrayType(sliceToInterfaces(params)...)
+		tp = p.array(t)
 	case integer:
-		i := tokenInt(t)
-		n := p.peekToken()
-		if n.i == dotdot {
-			p.nextToken()
-			n = p.peekToken()
-			switch n.i {
-			case integer:
-				p.nextToken()
-				tp = IntegerRangeType(i, tokenInt(n))
-			case float:
-				p.nextToken()
-				tp = FloatRangeType(float64(i), tokenFloat(n))
-			default:
-				tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
-			}
-		} else {
-			tp = Integer(i)
-		}
+		tp = p.integer(t)
 	case float:
-		f := tokenFloat(t)
-		n := p.peekToken()
-		if n.i == dotdot {
-			p.nextToken()
-			n = p.peekToken()
-			if n.i == integer || n.i == float {
-				p.nextToken()
-				tp = FloatRangeType(f, tokenFloat(n))
-			} else {
-				p.nextToken()
-				tp = FloatRangeType(f, math.MaxFloat64) // Unbounded at upper end
-			}
-		} else {
-			tp = Float(f)
-		}
+		tp = p.float(t)
 	case dotdot: // Unbounded at lower end
-		n := p.peekToken()
-		switch n.i {
-		case integer:
-			p.nextToken()
-			tp = IntegerRangeType(math.MinInt64, tokenInt(n))
-		case float:
-			p.nextToken()
-			tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n))
-		default:
-			panic(badSyntax(n, exIntOrFloat))
-		}
+		tp = p.dotRange(t)
 	case identifier:
-		switch t.s {
-		case `map`:
-			n := p.nextToken()
-			if n.i != '[' {
-				panic(badSyntax(n, exLeftBracket))
-			}
-
-			// Deal with key type and size constraint
-			p.anyOf(p.nextToken())
-			keyType := p.popLastType()
-
-			n = p.nextToken()
-			var szc *array
-			if n.i == ',' {
-				// get size arguments
-				p.params()
-				szc = p.popLast().(*array)
-			} else if n.i != ']' {
-				panic(badSyntax(n, exRightBracket))
-			}
-
-			p.typeExpression(p.nextToken())
-			params := &array{slice: []dgo.Value{keyType, p.popLastType()}}
-			if szc != nil {
-				params.AddAll(szc)
-			}
-			tp = MapType(sliceToInterfaces(params)...)
-		case `type`:
-			n := p.nextToken()
-			if n.i != '[' {
-				panic(badSyntax(n, exLeftBracket))
-			}
-
-			// Deal with key type and size constraint
-			p.anyOf(p.nextToken())
-			typ := p.popLastType()
-			if p.nextToken().i != ']' {
-				panic(badSyntax(n, exRightBracket))
-			}
-			tp = &metaType{typ}
-		case `any`:
-			tp = DefaultAnyType
-		case `bool`:
-			tp = DefaultBooleanType
-		case `int`:
-			tp = DefaultIntegerType
-		case `float`:
-			tp = DefaultFloatType
-		case `string`:
-			if p.peekToken().i == '[' {
-				// get size arguments
-				p.nextToken()
-				p.params()
-				szc := p.popLast().(*array)
-				tp = StringType(sliceToInterfaces(szc)...)
-			} else {
-				tp = DefaultStringType
-			}
-		case `binary`:
-			tp = DefaultBinaryType
-		case `true`:
-			tp = True
-		case `false`:
-			tp = False
-		case `nil`:
-			tp = Nil
-		default:
-			panic(fmt.Errorf(`unknown identifier '%s'`, t.s))
-		}
+		tp = p.identifier(t)
 	case stringLiteral:
 		tp = String(t.s)
 	case regexpLiteral:

@@ -407,10 +407,13 @@ func Map(m interface{}) dgo.Map {
 	if rm.Kind() != reflect.Map {
 		panic(fmt.Errorf(`illegal argument: %tst is not a map`, m))
 	}
-	return MapFromReflected(rm, true)
+	return MapFromReflected(rm, true).(dgo.Map)
 }
 
-func MapFromReflected(rm reflect.Value, frozen bool) dgo.Map {
+func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
+	if rm.IsNil() {
+		return Nil
+	}
 	keys := rm.MapKeys()
 	top := len(keys)
 	ic := top
@@ -1063,70 +1066,86 @@ func hash(h int) int {
 	return h ^ (h >> 16)
 }
 
+func mapTypeOne(args []interface{}) dgo.MapType {
+	// min integer
+	a0, ok := Value(args[0]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Map`, `Integer`, args, 0))
+	}
+	return newMapType(nil, nil, int(a0.GoInt()), math.MaxInt64)
+}
+
+func mapTypeTwo(args []interface{}) dgo.MapType {
+	// key and value types or min and max integers
+	switch a0 := Value(args[0]).(type) {
+	case dgo.Type:
+		a1, ok := Value(args[1]).(dgo.Type)
+		if !ok {
+			panic(illegalArgument(`Map`, `Type`, args, 1))
+		}
+		return newMapType(a0, a1, 0, math.MaxInt64)
+	case dgo.Integer:
+		a1, ok := Value(args[1]).(dgo.Integer)
+		if !ok {
+			panic(illegalArgument(`Map`, `Integer`, args, 1))
+		}
+		return newMapType(nil, nil, int(a0.GoInt()), int(a1.GoInt()))
+	default:
+		panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
+	}
+}
+
+func mapTypeThree(args []interface{}) dgo.MapType {
+	// key and value types, and min integer
+	a0, ok := Value(args[0]).(dgo.Type)
+	if !ok {
+		panic(illegalArgument(`Map`, `Type`, args, 0))
+	}
+	a1, ok := Value(args[1]).(dgo.Type)
+	if !ok {
+		panic(illegalArgument(`Map`, `Type`, args, 1))
+	}
+	a2, ok := Value(args[2]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Map`, `Integer`, args, 2))
+	}
+	return newMapType(a0, a1, int(a2.GoInt()), math.MaxInt64)
+}
+
+func mapTypeFour(args []interface{}) dgo.MapType {
+	// key and value types, and min and max integers
+	a0, ok := Value(args[0]).(dgo.Type)
+	if !ok {
+		panic(illegalArgument(`Map`, `Type`, args, 0))
+	}
+	a1, ok := Value(args[1]).(dgo.Type)
+	if !ok {
+		panic(illegalArgument(`Map`, `Type`, args, 1))
+	}
+	a2, ok := Value(args[2]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Map`, `Integer`, args, 2))
+	}
+	a3, ok := Value(args[3]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Map`, `Integer`, args, 3))
+	}
+	return newMapType(a0, a1, int(a2.GoInt()), int(a3.GoInt()))
+}
+
 // MapType returns a type that represents an Map value
 func MapType(args ...interface{}) dgo.MapType {
 	switch len(args) {
 	case 0:
 		return DefaultMapType
 	case 1:
-		// min integer
-		a0, ok := Value(args[0]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 0))
-		}
-		return newMapType(nil, nil, int(a0.GoInt()), math.MaxInt64)
+		return mapTypeOne(args)
 	case 2:
-		// key and value types or min and max integers
-		switch a0 := Value(args[0]).(type) {
-		case dgo.Type:
-			a1, ok := Value(args[1]).(dgo.Type)
-			if !ok {
-				panic(illegalArgument(`Map`, `Type`, args, 1))
-			}
-			return newMapType(a0, a1, 0, math.MaxInt64)
-		case dgo.Integer:
-			a1, ok := Value(args[1]).(dgo.Integer)
-			if !ok {
-				panic(illegalArgument(`Map`, `Integer`, args, 1))
-			}
-			return newMapType(nil, nil, int(a0.GoInt()), int(a1.GoInt()))
-		default:
-			panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
-		}
+		return mapTypeTwo(args)
 	case 3:
-		// key and value types, and min integer
-		a0, ok := Value(args[0]).(dgo.Type)
-		if !ok {
-			panic(illegalArgument(`Map`, `Type`, args, 0))
-		}
-		a1, ok := Value(args[1]).(dgo.Type)
-		if !ok {
-			panic(illegalArgument(`Map`, `Type`, args, 1))
-		}
-		a2, ok := Value(args[2]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 2))
-		}
-		return newMapType(a0, a1, int(a2.GoInt()), math.MaxInt64)
+		return mapTypeThree(args)
 	case 4:
-		// key and value types, and min and max integers
-		a0, ok := Value(args[0]).(dgo.Type)
-		if !ok {
-			panic(illegalArgument(`Map`, `Type`, args, 0))
-		}
-		a1, ok := Value(args[1]).(dgo.Type)
-		if !ok {
-			panic(illegalArgument(`Map`, `Type`, args, 1))
-		}
-		a2, ok := Value(args[2]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 2))
-		}
-		a3, ok := Value(args[3]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 3))
-		}
-		return newMapType(a0, a1, int(a2.GoInt()), int(a3.GoInt()))
+		return mapTypeFour(args)
 	default:
 		panic(fmt.Errorf(`illegal number of arguments for MapType. Expected 0 - 4, got %d`, len(args)))
 	}

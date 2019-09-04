@@ -21,7 +21,7 @@ func CheckAssignableTo(guard dgo.RecursionGuard, t, other dgo.Type) bool {
 	return false
 }
 
-// TypeFromReflected returns teh dgo.Type that represents the given reflected type
+// TypeFromReflected returns the dgo.Type that represents the given reflected type
 func TypeFromReflected(vt reflect.Type) dgo.Type {
 	if pt, ok := wellKnownTypes[vt]; ok {
 		return pt

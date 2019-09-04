@@ -35,7 +35,7 @@ func yamlEncodeValue(v dgo.Value) (*yaml.Node, error) {
 			if n, ok := yv.(*yaml.Node); ok {
 				return n, nil
 			}
-			return yamlEncodeValue(value(yv))
+			return yamlEncodeValue(Value(yv))
 		}
 	}
 	n := &yaml.Node{}

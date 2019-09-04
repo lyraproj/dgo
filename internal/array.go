@@ -43,47 +43,59 @@ type (
 
 const DefaultArrayType = defaultArrayType(0)
 
+func arrayTypeOne(args []interface{}) dgo.ArrayType {
+	switch a0 := Value(args[0]).(type) {
+	case dgo.Type:
+		return newArrayType(a0, 0, math.MaxInt64)
+	case dgo.Integer:
+		return newArrayType(nil, int(a0.GoInt()), math.MaxInt64)
+	default:
+		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+	}
+}
+
+func arrayTypeTwo(args []interface{}) dgo.ArrayType {
+	a1, ok := Value(args[1]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Array`, `Integer`, args, 1))
+	}
+	switch a0 := Value(args[0]).(type) {
+	case dgo.Type:
+		return newArrayType(a0, int(a1.GoInt()), math.MaxInt64)
+	case dgo.Integer:
+		return newArrayType(nil, int(a0.GoInt()), int(a1.GoInt()))
+	default:
+		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+	}
+}
+
+func arrayTypeThree(args []interface{}) dgo.ArrayType {
+	a0, ok := Value(args[0]).(dgo.Type)
+	if !ok {
+		panic(illegalArgument(`Array`, `Type`, args, 0))
+	}
+	a1, ok := Value(args[1]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`Array`, `Integer`, args, 1))
+	}
+	a2, ok := Value(args[2]).(dgo.Integer)
+	if !ok {
+		panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
+	}
+	return newArrayType(a0, int(a1.GoInt()), int(a2.GoInt()))
+}
+
 // ArrayType returns a type that represents an Array value
 func ArrayType(args ...interface{}) dgo.ArrayType {
 	switch len(args) {
 	case 0:
 		return DefaultArrayType
 	case 1:
-		switch a0 := Value(args[0]).(type) {
-		case dgo.Type:
-			return newArrayType(a0, 0, math.MaxInt64)
-		case dgo.Integer:
-			return newArrayType(nil, int(a0.GoInt()), math.MaxInt64)
-		default:
-			panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
-		}
+		return arrayTypeOne(args)
 	case 2:
-		a1, ok := Value(args[1]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Array`, `Integer`, args, 1))
-		}
-		switch a0 := Value(args[0]).(type) {
-		case dgo.Type:
-			return newArrayType(a0, int(a1.GoInt()), math.MaxInt64)
-		case dgo.Integer:
-			return newArrayType(nil, int(a0.GoInt()), int(a1.GoInt()))
-		default:
-			panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
-		}
+		return arrayTypeTwo(args)
 	case 3:
-		a0, ok := Value(args[0]).(dgo.Type)
-		if !ok {
-			panic(illegalArgument(`Array`, `Type`, args, 0))
-		}
-		a1, ok := Value(args[1]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`Array`, `Integer`, args, 1))
-		}
-		a2, ok := Value(args[2]).(dgo.Integer)
-		if !ok {
-			panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
-		}
-		return newArrayType(a0, int(a1.GoInt()), int(a2.GoInt()))
+		return arrayTypeThree(args)
 	default:
 		panic(fmt.Errorf(`illegal number of arguments for Array. Expected 0 - 3, got %d`, len(args)))
 	}
@@ -411,52 +423,68 @@ func (t *tupleType) Assignable(other dgo.Type) bool {
 	return Assignable(nil, t, other)
 }
 
-func (t *tupleType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
+func (t *tupleType) deepAssignable1(guard dgo.RecursionGuard, ot *tupleType) bool {
 	es := t.slice
+	os := ot.slice
+	if len(os) != len(es) {
+		return false
+	}
+	for i := range es {
+		if !Assignable(guard, es[i].(dgo.Type), os[i].(dgo.Type)) {
+			return false
+		}
+	}
+	return true
+}
+
+func (t *tupleType) deepAssignable2(guard dgo.RecursionGuard, ot *exactArrayType) bool {
+	es := t.slice
+	os := ot.slice
+	if len(os) != len(es) {
+		return false
+	}
+	for i := range es {
+		if !Instance(guard, es[i].(dgo.Type), os[i]) {
+			return false
+		}
+	}
+	return true
+
+}
+
+func (t *tupleType) deepAssignable3(guard dgo.RecursionGuard, ot *sizedArrayType) bool {
+	es := t.slice
+	if ot.Min() == len(es) && ot.Max() == len(es) {
+		et := ot.ElementType()
+		for i := range es {
+			if !Assignable(guard, es[i].(dgo.Type), et) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (t *tupleType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
+	dflt := len(t.slice) == 0
 	switch ot := other.(type) {
 	case defaultArrayType:
-		return len(es) == 0
+		return dflt
 	case *tupleType:
-		if len(es) == 0 {
+		if dflt {
 			return true
 		}
-		os := ot.slice
-		if len(os) != len(es) {
-			return false
-		}
-		for i := range es {
-			if !Assignable(guard, es[i].(dgo.Type), os[i].(dgo.Type)) {
-				return false
-			}
-		}
-		return true
+		return t.deepAssignable1(guard, ot)
 	case *exactArrayType:
-		if len(es) == 0 {
+		if dflt {
 			return true
 		}
-		os := ot.slice
-		if len(os) != len(es) {
-			return false
-		}
-		for i := range es {
-			if !Instance(guard, es[i].(dgo.Type), os[i]) {
-				return false
-			}
-		}
-		return true
+		return t.deepAssignable2(guard, ot)
 	case *sizedArrayType:
-		if len(es) == 0 {
+		if dflt {
 			return true
 		}
-		if ot.Min() == len(es) && ot.Max() == len(es) {
-			et := ot.ElementType()
-			for i := range es {
-				if !Assignable(guard, es[i].(dgo.Type), et) {
-					return false
-				}
-			}
-		}
-		return true
+		return t.deepAssignable3(guard, ot)
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -550,7 +578,10 @@ func Array(values []dgo.Value) dgo.Array {
 	return &array{slice: arr, frozen: true}
 }
 
-func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Array {
+func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
+	if vr.IsNil() {
+		return Nil
+	}
 	top := vr.Len()
 	arr := make([]dgo.Value, top)
 	for i := 0; i < top; i++ {

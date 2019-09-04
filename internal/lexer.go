@@ -78,27 +78,28 @@ func nextToken(sr *util.StringReader) (t *token) {
 			if n < '0' || n > '9' {
 				panic(badToken(r))
 			}
-			buf := bytes.NewBufferString(string(r))
-			tkn := consumeNumber(sr, n, buf, integer)
-			t = &token{buf.String(), tkn}
+			fallthrough
 		default:
-			switch {
-			case r >= '0' && r <= '9':
-				buf := bytes.NewBufferString(``)
-				tkn := consumeNumber(sr, r, buf, integer)
-				t = &token{buf.String(), tkn}
-			case r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z':
-				buf := bytes.NewBufferString(``)
-				consumeIdentifier(sr, r, buf)
-				t = &token{buf.String(), identifier}
-			default:
-				t = &token{i: tokenType(r)}
-			}
+			t = buildToken(r, sr)
 		}
 		break
 	}
-
 	return t
+}
+
+func buildToken(r rune, sr *util.StringReader) *token {
+	switch {
+	case r >= '0' && r <= '9':
+		buf := bytes.NewBufferString(``)
+		tkn := consumeNumber(sr, r, buf, integer)
+		return &token{buf.String(), tkn}
+	case r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z':
+		buf := bytes.NewBufferString(``)
+		consumeIdentifier(sr, r, buf)
+		return &token{buf.String(), identifier}
+	default:
+		return &token{i: tokenType(r)}
+	}
 }
 
 func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
@@ -123,6 +124,14 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 	}
 }
 
+func isDigit(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+
+func isHex(r rune) bool {
+	return r >= '0' && r <= '9' || r >= 'A' && r <= 'F' || r >= 'a' && r <= 'f'
+}
+
 func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 	for {
 		r := sr.Next()
@@ -134,7 +143,7 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 			r = sr.Next()
 			fallthrough
 		default:
-			if r >= '0' && r <= '9' {
+			if isDigit(r) {
 				buf.WriteRune(r)
 				consumeUnsignedInteger(sr, buf)
 				return
@@ -151,7 +160,7 @@ func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
 		case 0:
 			return
 		default:
-			if r >= '0' && r <= '9' || r >= 'A' && r <= 'F' || r >= 'a' && r <= 'f' {
+			if isHex(r) {
 				sr.Next()
 				buf.WriteRune(r)
 				continue
@@ -164,15 +173,12 @@ func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
 func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t tokenType) tokenType {
 	buf.WriteRune(start)
 	firstZero := t != float && start == '0'
-	for {
-		r := sr.Peek()
+
+	for r := sr.Peek(); r != 0; r = sr.Peek() {
 		switch r {
-		case 0:
-			return t
 		case '0':
 			sr.Next()
 			buf.WriteRune(r)
-			continue
 		case 'e', 'E':
 			sr.Next()
 			buf.WriteRune(r)
@@ -183,7 +189,7 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 				sr.Next()
 				buf.WriteRune(r)
 				r = sr.Next()
-				if r >= '0' && r <= '9' || r >= 'A' && r <= 'F' || r >= 'a' && r <= 'f' {
+				if isHex(r) {
 					buf.WriteRune(r)
 					consumeHexInteger(sr, buf)
 					return t
@@ -194,25 +200,24 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 			if sr.Peek2() == '.' {
 				return t
 			}
-			if t == float {
-				panic(badToken(r))
-			}
-			sr.Next()
-			buf.WriteRune(r)
-			r = sr.Next()
-			if r >= '0' && r <= '9' {
-				return consumeNumber(sr, r, buf, float)
+			if t != float {
+				sr.Next()
+				buf.WriteRune(r)
+				r = sr.Next()
+				if isDigit(r) {
+					return consumeNumber(sr, r, buf, float)
+				}
 			}
 			panic(badToken(r))
 		default:
-			if r >= '0' && r <= '9' {
-				sr.Next()
-				buf.WriteRune(r)
-				continue
+			if !isDigit(r) {
+				return t
 			}
-			return t
+			sr.Next()
+			buf.WriteRune(r)
 		}
 	}
+	return t
 }
 
 func consumeRegexp(sr *util.StringReader) string {

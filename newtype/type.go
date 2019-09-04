@@ -7,7 +7,7 @@ import (
 	"github.com/lyraproj/dgo/internal"
 )
 
-// FromReflected returns teh dgo.Type that represents the given reflected type
+// FromReflected returns the dgo.Type that represents the given reflected type
 func FromReflected(vt reflect.Type) dgo.Type {
 	return internal.TypeFromReflected(vt)
 }
