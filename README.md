@@ -18,8 +18,8 @@ In many situations it is desirable to declare more restrictive type constraints.
 Others can be found in [Python Type Hints](https://www.python.org/dev/peps/pep-0484/) and
 [Puppet Types](/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md).
 
-Dgo defines a [type language of its own](docs/types.md) which is designed to be close to Go itself. A parser is
-and stringifier is provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
+Dgo defines a [type language of its own](docs/types.md) which is designed to be close to Go itself. A parser
+and a stringifier are provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
 
 ## Immutability
 
@@ -64,7 +64,7 @@ The functionality of the Dgo basic types is exposed through interfaces to enable
 
 ## Performance
 
-Dgo is designed with performance in mind. The Map implementation is, although it's generic, actually faster than
+Dgo is designed with performance in mind. The Map implementation is, although it's generic, actually faster
 than a `map[string]interface{}`. It is a lot faster than a `map[interface{}]interface{}` required if you want to
 use dynamic keyes with Go. Nevertheless, the Dgo Map can use any value as a key, even arrays, maps, and types. 
 
