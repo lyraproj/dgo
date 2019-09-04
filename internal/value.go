@@ -27,7 +27,7 @@ func value(v interface{}) dgo.Value {
 	case nil:
 		dv = Nil
 	case bool:
-		dv = Boolean(v)
+		dv = boolean(v)
 	case string:
 		dv = String(v)
 	case []byte:
@@ -37,7 +37,7 @@ func value(v interface{}) dgo.Value {
 	case []int:
 		dv = Integers(v)
 	case *regexp.Regexp:
-		dv = (*Regexp)(v)
+		dv = (*regexpVal)(v)
 	case error:
 		dv = &errw{v}
 	case reflect.Value:
@@ -46,14 +46,15 @@ func value(v interface{}) dgo.Value {
 
 	if dv == nil {
 		if i, ok := ToInt(v); ok {
-			dv = Integer(i)
+			dv = intVal(i)
 		} else if f, ok := ToFloat(v); ok {
-			dv = Float(f)
+			dv = floatVal(f)
 		}
 	}
 	return dv
 }
 
+// ValueFromReflected converts the given reflected value into an immutable dgo.Value
 func ValueFromReflected(vr reflect.Value) dgo.Value {
 	// Invalid shouldn't happen, but needs a check
 	if !vr.IsValid() {

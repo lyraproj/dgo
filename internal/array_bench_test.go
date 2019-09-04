@@ -14,7 +14,7 @@ func x(_ dgo.Value) {}
 func BenchmarkRange(b *testing.B) {
 	s := make([]dgo.Value, elemCount)
 	for i := 0; i < elemCount; i++ {
-		s[i] = Integer(i)
+		s[i] = intVal(i)
 	}
 
 	b.ResetTimer()
@@ -31,7 +31,7 @@ func BenchmarkRange(b *testing.B) {
 func BenchmarkRangeIndex(b *testing.B) {
 	s := make([]dgo.Value, elemCount)
 	for i := 0; i < elemCount; i++ {
-		s[i] = Integer(i)
+		s[i] = intVal(i)
 	}
 
 	b.ResetTimer()
@@ -48,7 +48,7 @@ func BenchmarkRangeIndex(b *testing.B) {
 func BenchmarkLenIndex(b *testing.B) {
 	s := make([]dgo.Value, elemCount)
 	for i := 0; i < elemCount; i++ {
-		s[i] = Integer(i)
+		s[i] = intVal(i)
 	}
 
 	b.ResetTimer()

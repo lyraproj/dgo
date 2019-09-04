@@ -12,9 +12,14 @@ type (
 	oneOfType array
 )
 
+// DefaultAllOfType is the unconstrained AllOf type
 var DefaultAllOfType = &allOfType{}
+
+// DefaultAnyOfType is the unconstrained AnyOf type
 var DefaultAnyOfType = &anyOfType{}
-var DefaultOneOfType = &allOfType{}
+
+// DefaultOneOfType is the unconstrained OneOf type
+var DefaultOneOfType = &oneOfType{}
 
 // AllOfType returns a type that represents all values that matches all of the included types
 func AllOfType(types []dgo.Type) dgo.Type {

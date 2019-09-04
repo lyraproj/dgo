@@ -50,6 +50,7 @@ type deepCompare interface {
 	deepCompare(seen []dgo.Value, other deepCompare) (int, bool)
 }
 
+// Assignable checks if b is assignable to a while guarding for endless recursion
 func Assignable(guard dgo.RecursionGuard, a dgo.Type, b dgo.Type) bool {
 	if a == b {
 		return true
@@ -74,6 +75,7 @@ func Assignable(guard dgo.RecursionGuard, a dgo.Type, b dgo.Type) bool {
 	return da.DeepAssignable(guard, b)
 }
 
+// Instance checks if b is an instance of a to a while guarding for endless recursion
 func Instance(guard dgo.RecursionGuard, a dgo.Type, b dgo.Value) bool {
 	da, ok := a.(dgo.DeepInstance)
 	if !ok {
@@ -180,8 +182,4 @@ func recursionHit(seen []dgo.Value, this dgo.Value) bool {
 		}
 	}
 	return false
-}
-
-func SameInstance(a, b interface{}) bool {
-	return a == b
 }

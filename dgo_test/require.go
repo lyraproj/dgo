@@ -71,7 +71,7 @@ func NotEqual(t *testing.T, a, b interface{}) {
 // Same will fail unless a and b are the same valuess
 func Same(t *testing.T, a, b interface{}) {
 	t.Helper()
-	if !internal.SameInstance(a, b) {
+	if a != b {
 		t.Error(`not same instance`)
 	}
 }
@@ -79,7 +79,7 @@ func Same(t *testing.T, a, b interface{}) {
 // NotSame will fail if a and b are the same values
 func NotSame(t *testing.T, a, b interface{}) {
 	t.Helper()
-	if internal.SameInstance(a, b) {
+	if a == b {
 		t.Error(`same instance`)
 	}
 }

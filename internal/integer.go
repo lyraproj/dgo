@@ -11,7 +11,8 @@ import (
 )
 
 type (
-	Integer int64
+	// intVal is an int64 that implements the dgo.Value interface
+	intVal int64
 
 	integerType int
 
@@ -23,8 +24,10 @@ type (
 	}
 )
 
+// DefaultIntegerType is the unconstrained Integer type
 const DefaultIntegerType = integerType(0)
 
+// IntegerRangeType returns a dgo.IntegerRangeType that is limited to the inclusive range given by min and max
 func IntegerRangeType(min, max int64) dgo.IntegerRangeType {
 	if min == max {
 		return exactIntegerType(min)
@@ -111,7 +114,7 @@ func (t exactIntegerType) Equals(other interface{}) bool {
 }
 
 func (t exactIntegerType) HashCode() int {
-	return Integer(t).HashCode() * 5
+	return intVal(t).HashCode() * 5
 }
 
 func (t exactIntegerType) Instance(value interface{}) bool {
@@ -144,7 +147,7 @@ func (t exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t exactIntegerType) Value() dgo.Value {
-	v := (Integer)(t)
+	v := (intVal)(t)
 	return v
 }
 
@@ -197,11 +200,16 @@ func (t integerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiInteger
 }
 
-func (v Integer) Type() dgo.Type {
+// Integer returns the dgo.Integer for the given int64
+func Integer(v int64) dgo.Integer {
+	return intVal(v)
+}
+
+func (v intVal) Type() dgo.Type {
 	return exactIntegerType(v)
 }
 
-func (v Integer) CompareTo(other interface{}) (r int, ok bool) {
+func (v intVal) CompareTo(other interface{}) (r int, ok bool) {
 	ok = true
 	if oi, isInt := ToInt(other); isInt {
 		mv := int64(v)
@@ -235,39 +243,41 @@ func (v Integer) CompareTo(other interface{}) (r int, ok bool) {
 	return
 }
 
-func (v Integer) Equals(other interface{}) bool {
+func (v intVal) Equals(other interface{}) bool {
 	i, ok := ToInt(other)
 	return ok && int64(v) == i
 }
 
-func (v Integer) HashCode() int {
+func (v intVal) HashCode() int {
 	return int(v ^ (v >> 32))
 }
 
-func (v Integer) MarshalYAML() (interface{}, error) {
+func (v intVal) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!int`, Value: v.String()}, nil
 }
 
-func (v Integer) String() string {
+func (v intVal) String() string {
 	return strconv.Itoa(int(v))
 }
 
-func (v Integer) ToFloat() float64 {
+func (v intVal) ToFloat() float64 {
 	return float64(v)
 }
 
-func (v Integer) ToInt() int64 {
+func (v intVal) ToInt() int64 {
 	return int64(v)
 }
 
-func (v Integer) GoInt() int64 {
+func (v intVal) GoInt() int64 {
 	return int64(v)
 }
 
+// ToInt returns the given value as a int64 if, and only if, the value type is one of the go int types. An
+// additional boolean is returned to indicate if that was the case or not.
 func ToInt(value interface{}) (v int64, ok bool) {
 	ok = true
 	switch value := value.(type) {
-	case Integer:
+	case intVal:
 		v = int64(value)
 	case int:
 		v = int64(value)

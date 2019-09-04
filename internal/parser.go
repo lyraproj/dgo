@@ -421,7 +421,7 @@ func (p *parser) float(t *token) dgo.Value {
 			tp = FloatRangeType(f, math.MaxFloat64) // Unbounded at upper end
 		}
 	} else {
-		tp = Float(f)
+		tp = floatVal(f)
 	}
 	return tp
 }
@@ -444,7 +444,7 @@ func (p *parser) integer(t *token) dgo.Value {
 			tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
 		}
 	} else {
-		tp = Integer(i)
+		tp = intVal(i)
 	}
 	return tp
 }

@@ -20,13 +20,6 @@ func ExampleValueFromReflected() {
 	// Output: true
 }
 
-func TestSameInstance(t *testing.T) {
-	require.True(t, vf.SameInstance(vf.Nil, vf.Nil))
-	require.False(t, vf.SameInstance(vf.True, vf.Nil))
-	require.True(t, vf.SameInstance(vf.True, vf.True))
-	require.False(t, vf.SameInstance(vf.String(`hello`), vf.String(`hello)`)))
-}
-
 func TestValue(t *testing.T) {
 	s := vf.String(`a`)
 	require.Same(t, s, vf.Value(s))

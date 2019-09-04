@@ -5,6 +5,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// UnmarshalYAML decodes the YAML representation of the given bytes into a dgo.Value
 func UnmarshalYAML(b []byte) (dgo.Value, error) {
 	var n yaml.Node
 	err := yaml.Unmarshal(b, &n)
@@ -53,19 +54,19 @@ func yamlDecodeScalar(n *yaml.Node) (dgo.Value, error) {
 		if err := n.Decode(&x); err != nil {
 			return nil, err
 		}
-		v = Boolean(x)
+		v = boolean(x)
 	case `!!int`:
 		var x int64
 		if err := n.Decode(&x); err != nil {
 			return nil, err
 		}
-		v = Integer(x)
+		v = intVal(x)
 	case `!!float`:
 		var x float64
 		if err := n.Decode(&x); err != nil {
 			return nil, err
 		}
-		v = Float(x)
+		v = floatVal(x)
 	case `!!str`:
 		v = makeHString(n.Value)
 	/* TODO: timestamp and binary

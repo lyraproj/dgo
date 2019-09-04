@@ -11,7 +11,8 @@ import (
 )
 
 type (
-	Float float64
+	// floatVal is a float64 that implements the dgo.Value interface
+	floatVal float64
 
 	floatType int
 
@@ -23,8 +24,10 @@ type (
 	}
 )
 
+// DefaultFloatType is the unconstrained floatVal type
 const DefaultFloatType = floatType(0)
 
+// FloatRangeType returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
 func FloatRangeType(min, max float64) dgo.FloatRangeType {
 	if min == max {
 		return exactFloatType(min)
@@ -109,7 +112,7 @@ func (t exactFloatType) Equals(other interface{}) bool {
 }
 
 func (t exactFloatType) HashCode() int {
-	return Float(t).HashCode() * 3
+	return floatVal(t).HashCode() * 3
 }
 
 func (t exactFloatType) Instance(value interface{}) bool {
@@ -142,7 +145,7 @@ func (t exactFloatType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t exactFloatType) Value() dgo.Value {
-	v := (Float)(t)
+	v := (floatVal)(t)
 	return v
 }
 
@@ -192,11 +195,16 @@ func (t floatType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiFloat
 }
 
-func (v Float) Type() dgo.Type {
+// Float returns the dgo.Float for the given float64
+func Float(f float64) dgo.Float {
+	return floatVal(f)
+}
+
+func (v floatVal) Type() dgo.Type {
 	return exactFloatType(v)
 }
 
-func (v Float) CompareTo(other interface{}) (r int, ok bool) {
+func (v floatVal) CompareTo(other interface{}) (r int, ok bool) {
 	ok = true
 	if ov, isFloat := ToFloat(other); isFloat {
 		fv := float64(v)
@@ -231,39 +239,41 @@ func (v Float) CompareTo(other interface{}) (r int, ok bool) {
 	return
 }
 
-func (v Float) Equals(other interface{}) bool {
+func (v floatVal) Equals(other interface{}) bool {
 	f, ok := ToFloat(other)
 	return ok && float64(v) == f
 }
 
-func (v Float) HashCode() int {
+func (v floatVal) HashCode() int {
 	return int(v)
 }
 
-func (v Float) MarshalYAML() (interface{}, error) {
+func (v floatVal) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!float`, Value: v.String()}, nil
 }
 
-func (v Float) String() string {
+func (v floatVal) String() string {
 	return util.Ftoa(float64(v))
 }
 
-func (v Float) ToFloat() float64 {
+func (v floatVal) ToFloat() float64 {
 	return float64(v)
 }
 
-func (v Float) ToInt() int64 {
+func (v floatVal) ToInt() int64 {
 	return int64(v)
 }
 
-func (v Float) GoFloat() float64 {
+func (v floatVal) GoFloat() float64 {
 	return float64(v)
 }
 
+// ToFloat returns the given value as a float64 if, and only if, the value is a float32 or float64. An
+// additional boolean is returned to indicate if that was the case or not.
 func ToFloat(value interface{}) (v float64, ok bool) {
 	ok = true
 	switch value := value.(type) {
-	case Float:
+	case floatVal:
 		v = float64(value)
 	case float64:
 		v = value

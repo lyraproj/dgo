@@ -73,6 +73,7 @@ type (
 	}
 )
 
+// Struct returns a new Struct type built from the given MapEntryTypes.
 func Struct(entries []dgo.MapEntryType) dgo.StructType {
 	m := &hashMap{table: make([]*hashNode, tableSizeFor(len(entries)))}
 	for i := range entries {
@@ -205,6 +206,7 @@ func (t *structType) Unbounded() bool {
 	return t.additional && t.Min() == 0
 }
 
+// StructEntry returns a new MapEntryType initiated with the given parameters
 func StructEntry(key string, valueType dgo.Type, required bool) dgo.MapEntryType {
 	return &entryType{key: String(key).Type(), value: valueType, required: required}
 }
@@ -402,6 +404,7 @@ func (v *hashNode) copyFreeze() {
 
 var emptyMap = &hashMap{frozen: true}
 
+// Map creates an immutable dgo.Map from the given argument which must be a go map.
 func Map(m interface{}) dgo.Map {
 	rm := reflect.ValueOf(m)
 	if rm.Kind() != reflect.Map {
@@ -410,6 +413,9 @@ func Map(m interface{}) dgo.Map {
 	return MapFromReflected(rm, true).(dgo.Map)
 }
 
+// MapFromReflected creates a Map from a reflected map. If frozen is true, the created Map will be
+// immutable and the type will reflect exactly that map and nothing else. If frozen is false, the
+// created Map will be mutable and its type will be derived from the reflected map.
 func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
 	if rm.IsNil() {
 		return Nil
@@ -464,6 +470,8 @@ func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
 	return m
 }
 
+// MutableMap creates an empty dgo.Map with the given capacity. The map can be optionally constrained
+// by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MutableMap(capacity int, typ interface{}) dgo.Map {
 	if capacity <= 0 {
 		capacity = initialCapacity
@@ -640,7 +648,7 @@ func (g *hashMap) Get(key interface{}) (dgo.Value, bool) {
 					return e.value, true
 				}
 			}
-		case Integer:
+		case intVal:
 			for e := tbl[tl&hash(k.HashCode())]; e != nil; e = e.hashNext {
 				if k == e.key {
 					return e.value, true
@@ -752,7 +760,7 @@ func (g *hashMap) MarshalYAML() (interface{}, error) {
 }
 
 func (g *hashMap) Merge(associations dgo.Map) dgo.Map {
-	if associations.Len() == 0 || SameInstance(g, associations) {
+	if associations.Len() == 0 || g == associations {
 		return g
 	}
 	l := g.len
@@ -1070,7 +1078,7 @@ func mapTypeOne(args []interface{}) dgo.MapType {
 	// min integer
 	a0, ok := Value(args[0]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 0))
+		panic(illegalArgument(`Map`, `intVal`, args, 0))
 	}
 	return newMapType(nil, nil, int(a0.GoInt()), math.MaxInt64)
 }
@@ -1087,11 +1095,11 @@ func mapTypeTwo(args []interface{}) dgo.MapType {
 	case dgo.Integer:
 		a1, ok := Value(args[1]).(dgo.Integer)
 		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 1))
+			panic(illegalArgument(`Map`, `intVal`, args, 1))
 		}
 		return newMapType(nil, nil, int(a0.GoInt()), int(a1.GoInt()))
 	default:
-		panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Map`, `Type or intVal`, args, 0))
 	}
 }
 
@@ -1107,7 +1115,7 @@ func mapTypeThree(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 2))
+		panic(illegalArgument(`Map`, `intVal`, args, 2))
 	}
 	return newMapType(a0, a1, int(a2.GoInt()), math.MaxInt64)
 }
@@ -1124,11 +1132,11 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 2))
+		panic(illegalArgument(`Map`, `intVal`, args, 2))
 	}
 	a3, ok := Value(args[3]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 3))
+		panic(illegalArgument(`Map`, `intVal`, args, 3))
 	}
 	return newMapType(a0, a1, int(a2.GoInt()), int(a3.GoInt()))
 }
@@ -1376,6 +1384,7 @@ func (t *sizedMapType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
 }
 
+// DefaultMapType is the unconstrained Map type
 const DefaultMapType = defaultMapType(0)
 
 func (t defaultMapType) Assignable(other dgo.Type) bool {

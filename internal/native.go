@@ -15,8 +15,10 @@ type (
 	}
 )
 
+// DefaultNativeType is the unconstrained Native type
 var DefaultNativeType = &nativeType{}
 
+// Native creates the dgo representation of a reflect.Value.
 func Native(rv reflect.Value) dgo.Native {
 	return native(rv)
 }

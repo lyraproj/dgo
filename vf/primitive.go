@@ -17,6 +17,16 @@ const False = internal.False
 // Nil is the dgo.Value representation of nil
 const Nil = internal.Nil
 
+// Binary creates a new Binary that contains a copy of the given slice
+func Binary(bs []byte) dgo.Binary {
+	return internal.Binary(bs)
+}
+
+// BinaryFromString creates a new Binary from the base64 encoded string
+func BinaryFromString(base64 string) dgo.Binary {
+	return internal.BinaryFromString(base64)
+}
+
 // Boolean returns a Boolean that represents the given bool
 func Boolean(v bool) dgo.Boolean {
 	if v {
@@ -48,9 +58,4 @@ func Value(v interface{}) dgo.Value {
 // ValueFromReflected converts the given reflected value into an immutable dgo.Value
 func ValueFromReflected(v reflect.Value) dgo.Value {
 	return internal.ValueFromReflected(v)
-}
-
-// SameInstance returns true if the two arguments represent the same object instance.
-func SameInstance(a, b dgo.Value) bool {
-	return internal.SameInstance(a, b)
 }

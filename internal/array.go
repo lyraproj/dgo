@@ -41,6 +41,7 @@ type (
 	exactElementsType array
 )
 
+// DefaultArrayType is the unconstrained Array type
 const DefaultArrayType = defaultArrayType(0)
 
 func arrayTypeOne(args []interface{}) dgo.ArrayType {
@@ -50,14 +51,14 @@ func arrayTypeOne(args []interface{}) dgo.ArrayType {
 	case dgo.Integer:
 		return newArrayType(nil, int(a0.GoInt()), math.MaxInt64)
 	default:
-		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Array`, `Type or intVal`, args, 0))
 	}
 }
 
 func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `Integer`, args, 1))
+		panic(illegalArgument(`Array`, `intVal`, args, 1))
 	}
 	switch a0 := Value(args[0]).(type) {
 	case dgo.Type:
@@ -65,7 +66,7 @@ func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	case dgo.Integer:
 		return newArrayType(nil, int(a0.GoInt()), int(a1.GoInt()))
 	default:
-		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Array`, `Type or intVal`, args, 0))
 	}
 }
 
@@ -76,11 +77,11 @@ func arrayTypeThree(args []interface{}) dgo.ArrayType {
 	}
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `Integer`, args, 1))
+		panic(illegalArgument(`Array`, `intVal`, args, 1))
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
+		panic(illegalArgument(`ArrayType`, `intVal`, args, 2))
 	}
 	return newArrayType(a0, int(a1.GoInt()), int(a2.GoInt()))
 }
@@ -405,8 +406,10 @@ func (t *exactElementsType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiElementsExact
 }
 
+// DefaultTupleType is the unconstrained Tuple type
 var DefaultTupleType = &tupleType{}
 
+// TupleType creates a new TupleTupe based on the given types
 func TupleType(types []dgo.Type) dgo.TupleType {
 	l := len(types)
 	if l == 0 {
@@ -564,6 +567,7 @@ func (t *tupleType) Unbounded() bool {
 	return len(t.slice) == 0
 }
 
+// Array creates a new frozen array that contains a copy of the given slice
 func Array(values []dgo.Value) dgo.Array {
 	arr := make([]dgo.Value, len(values))
 	for i := range values {
@@ -578,6 +582,7 @@ func Array(values []dgo.Value) dgo.Array {
 	return &array{slice: arr, frozen: true}
 }
 
+// ArrayFromReflected creates a new array that contains a copy of the given reflected slice
 func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	if vr.IsNil() {
 		return Nil
@@ -596,6 +601,8 @@ func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	return &array{slice: arr, frozen: frozen}
 }
 
+// MutableArray creates a new mutable array that wraps the given slice. Unset entries in the
+// slice will be replaced by Nil.
 func MutableArray(t dgo.ArrayType, values []dgo.Value) dgo.Array {
 	if t != nil {
 		l := len(values)
@@ -629,6 +636,7 @@ func MutableArray(t dgo.ArrayType, values []dgo.Value) dgo.Array {
 	return &array{slice: ReplaceNil(values), typ: t, frozen: false}
 }
 
+// MutableValues returns a frozen dgo.Array that represents the given values
 func MutableValues(t dgo.ArrayType, values []interface{}) dgo.Array {
 	s := make([]dgo.Value, len(values))
 	for i := range values {
@@ -659,7 +667,7 @@ func valueSlice(values []interface{}, frozen bool) []dgo.Value {
 func Integers(values []int) dgo.Array {
 	cp := make([]dgo.Value, len(values))
 	for i := range values {
-		cp[i] = Integer(values[i])
+		cp[i] = intVal(values[i])
 	}
 	return &array{slice: cp, frozen: true}
 }
@@ -673,6 +681,7 @@ func Strings(values []string) dgo.Array {
 	return &array{slice: cp, frozen: true}
 }
 
+// Values returns a frozen dgo.Array that represents the given values
 func Values(values []interface{}) dgo.Array {
 	return &array{slice: valueSlice(values, true), frozen: true}
 }

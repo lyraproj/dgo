@@ -5,6 +5,7 @@ import "github.com/lyraproj/dgo/dgo"
 // anyType represents all possible values
 type anyType int
 
+// DefaultAnyType is the unconstrained Any type
 const DefaultAnyType = anyType(0)
 
 func (t anyType) Assignable(other dgo.Type) bool {

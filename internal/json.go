@@ -8,6 +8,7 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 )
 
+// UnmarshalJSON decodes the JSON representation of the given bytes into a dgo.Value
 func UnmarshalJSON(b []byte) (dgo.Value, error) {
 	dec := json.NewDecoder(bytes.NewReader(b))
 	dec.UseNumber()
@@ -40,10 +41,10 @@ func jsonDecodeValue(dec *json.Decoder) (e dgo.Value, err error) {
 		}
 	case json.Number:
 		if i, err := t.Int64(); err == nil {
-			return Integer(i), nil
+			return intVal(i), nil
 		}
 		f, _ := t.Float64()
-		return Float(f), nil
+		return floatVal(f), nil
 	default:
 		return Value(t), nil
 	}

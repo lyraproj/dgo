@@ -42,7 +42,7 @@ func BenchmarkHashMapStrings(b *testing.B) {
 	m := MutableMap(int(c), nil)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
-		m.Put(key, Integer(i))
+		m.Put(key, intVal(i))
 		k[i] = key
 	}
 
@@ -64,7 +64,7 @@ func BenchmarkHashMapStringsNoHashCache(b *testing.B) {
 	m := MutableMap(int(c), nil)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
-		m.Put(key, Integer(i))
+		m.Put(key, intVal(i))
 		k[i] = key
 	}
 
@@ -84,8 +84,8 @@ func BenchmarkHashMapIntegers(b *testing.B) {
 	c := float64(sz) / loadFactor
 	m := MutableMap(int(c), nil)
 	for i := 0; i < sz; i++ {
-		key := Integer(rand.Intn(sz * rndFactor))
-		m.Put(key, Integer(i))
+		key := intVal(rand.Intn(sz * rndFactor))
+		m.Put(key, intVal(i))
 		k[i] = key
 	}
 
@@ -104,7 +104,7 @@ func BenchmarkMapStringKeys(b *testing.B) {
 
 	k := buildStringKeys(sz)
 	for i := 0; i < sz; i++ {
-		m[k[i]] = Integer(i)
+		m[k[i]] = intVal(i)
 	}
 
 	b.ResetTimer()

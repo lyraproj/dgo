@@ -33,7 +33,7 @@ func IntegerRange(min, max int64) dgo.IntegerRangeType {
 	return internal.IntegerRangeType(min, max)
 }
 
-// FloatRange returns a dgo.Type that is limited to the inclusive range given by min and max
+// FloatRange returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
 func FloatRange(min, max float64) dgo.FloatRangeType {
 	return internal.FloatRangeType(min, max)
 }

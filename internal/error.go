@@ -12,6 +12,7 @@ type (
 	errType int
 )
 
+// DefaultErrorType is the unconstrained Error type
 const DefaultErrorType = errType(0)
 
 func (t errType) Type() dgo.Type {

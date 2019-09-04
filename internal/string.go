@@ -41,6 +41,7 @@ type (
 	}
 )
 
+// DefaultStringType is the unconstrained String type
 const DefaultStringType = defaultStringType(0)
 
 // EnumType returns a StringType that represents all of the given strings
@@ -59,6 +60,7 @@ func EnumType(strings []string) dgo.Type {
 	return &anyOfType{slice: ts, frozen: true}
 }
 
+// String returns the dgo.String for the given string
 func String(s string) dgo.String {
 	return makeHString(s)
 }
@@ -191,16 +193,16 @@ func StringType(args ...interface{}) dgo.StringType {
 		case dgo.Integer:
 			return SizedStringType(int(a0.GoInt()), math.MaxInt64)
 		}
-		panic(illegalArgument(`StringType`, `Integer or String`, args, 0))
+		panic(illegalArgument(`StringType`, `intVal or String`, args, 0))
 	case 2:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			var a1 dgo.Integer
 			if a1, ok = Value(args[1]).(dgo.Integer); ok {
 				return SizedStringType(int(a0.GoInt()), int(a1.GoInt()))
 			}
-			panic(illegalArgument(`StringType`, `Integer`, args, 1))
+			panic(illegalArgument(`StringType`, `intVal`, args, 1))
 		}
-		panic(illegalArgument(`StringType`, `Integer`, args, 0))
+		panic(illegalArgument(`StringType`, `intVal`, args, 0))
 	}
 	panic(fmt.Errorf(`illegal number of arguments for StringType. Expected 0 - 2, got %d`, len(args)))
 }
@@ -253,7 +255,7 @@ func (t *patternType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *patternType) Value() dgo.Value {
-	return (*Regexp)(t.Regexp)
+	return (*regexpVal)(t.Regexp)
 }
 
 // SizedStringType returns a StringType that is constrained to strings whose length is within the

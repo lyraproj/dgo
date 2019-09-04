@@ -64,10 +64,12 @@ func (v *sizeError) Type() dgo.Type {
 	return DefaultErrorType
 }
 
+// IllegalAssignment returns the error that represents an assignment type constraint mismatch
 func IllegalAssignment(t dgo.Type, v dgo.Value) dgo.Value {
 	return &typeError{t, v.Type()}
 }
 
+// IllegalSize returns the error that represents an size constraint mismatch
 func IllegalSize(t dgo.Type, sz int) dgo.Value {
 	return &sizeError{t, sz}
 }

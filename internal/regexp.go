@@ -14,9 +14,10 @@ type (
 
 	exactRegexpType regexp.Regexp
 
-	Regexp regexp.Regexp
+	regexpVal regexp.Regexp
 )
 
+// DefaultRegexpType is the unconstrained Regexp type
 const DefaultRegexpType = regexpType(0)
 
 func (t regexpType) Assignable(ot dgo.Type) bool {
@@ -36,7 +37,7 @@ func (t regexpType) HashCode() int {
 }
 
 func (t regexpType) Instance(v interface{}) bool {
-	_, ok := v.(*Regexp)
+	_, ok := v.(*regexpVal)
 	if !ok {
 		_, ok = v.(*regexp.Regexp)
 	}
@@ -67,11 +68,11 @@ func (t *exactRegexpType) Equals(other interface{}) bool {
 }
 
 func (t *exactRegexpType) HashCode() int {
-	return (*Regexp)(t).HashCode()*31 + int(dgo.TiRegexpExact)
+	return (*regexpVal)(t).HashCode()*31 + int(dgo.TiRegexpExact)
 }
 
 func (t *exactRegexpType) Instance(value interface{}) bool {
-	if ot, ok := value.(*Regexp); ok {
+	if ot, ok := value.(*regexpVal); ok {
 		return t.IsInstance((*regexp.Regexp)(ot))
 	}
 	if ot, ok := value.(*regexp.Regexp); ok {
@@ -97,16 +98,16 @@ func (t *exactRegexpType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *exactRegexpType) Value() dgo.Value {
-	v := (*Regexp)(t)
+	v := (*regexpVal)(t)
 	return v
 }
 
-func (v *Regexp) GoRegexp() *regexp.Regexp {
+func (v *regexpVal) GoRegexp() *regexp.Regexp {
 	return (*regexp.Regexp)(v)
 }
 
-func (v *Regexp) Equals(other interface{}) bool {
-	if ot, ok := other.(*Regexp); ok {
+func (v *regexpVal) Equals(other interface{}) bool {
+	if ot, ok := other.(*regexpVal); ok {
 		return (*regexp.Regexp)(v).String() == (*regexp.Regexp)(ot).String()
 	}
 	if ot, ok := other.(*regexp.Regexp); ok {
@@ -115,18 +116,20 @@ func (v *Regexp) Equals(other interface{}) bool {
 	return false
 }
 
-func (v *Regexp) HashCode() int {
+func (v *regexpVal) HashCode() int {
 	return stringHash((*regexp.Regexp)(v).String())
 }
 
-func (v *Regexp) String() string {
+func (v *regexpVal) String() string {
 	return (*regexp.Regexp)(v).String()
 }
 
-func (v *Regexp) Type() dgo.Type {
+func (v *regexpVal) Type() dgo.Type {
 	return (*exactRegexpType)(v)
 }
 
+// RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped
+// and writes it on the given builder.
 func RegexpSlashQuote(sb *strings.Builder, str string) {
 	sb.WriteByte('/')
 	for _, c := range str {

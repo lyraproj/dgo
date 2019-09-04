@@ -52,8 +52,10 @@ func (nilValue) Type() dgo.Type {
 	return DefaultNilType
 }
 
+// DefaultNilType is the singleton Nil type
 const DefaultNilType = nilType(0)
 
+// Nil is the singleton dgo.Value for Nil
 const Nil = nilValue(0)
 
 func (t nilType) Assignable(ot dgo.Type) bool {

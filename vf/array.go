@@ -10,7 +10,8 @@ func Array(slice []dgo.Value) dgo.Array {
 	return internal.Array(slice)
 }
 
-// MutableArray returns a mutable dgo.Array that wraps the given slice
+// MutableArray creates a new mutable array that wraps the given slice. Unset entries in the
+// slice will be replaced by Nil.
 func MutableArray(typ dgo.ArrayType, slice []dgo.Value) dgo.Array {
 	return internal.MutableArray(typ, slice)
 }

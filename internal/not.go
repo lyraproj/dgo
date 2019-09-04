@@ -6,8 +6,10 @@ type notType struct {
 	Negated dgo.Type
 }
 
+// DefaultNotType is the unconstrained Not type
 var DefaultNotType = &notType{DefaultAnyType}
 
+// NotType returns a type that represents all values that are not represented by the given type
 func NotType(t dgo.Type) dgo.Type {
 	// Avoid double negation
 	if nt, ok := t.(*notType); ok {

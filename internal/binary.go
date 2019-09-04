@@ -19,6 +19,7 @@ type (
 	exactBinaryType binary
 )
 
+// DefaultBinaryType is the unconstrained Binary type
 const DefaultBinaryType = binaryType(0)
 
 func (t *exactBinaryType) Assignable(other dgo.Type) bool {
@@ -108,12 +109,14 @@ func (t binaryType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBinary
 }
 
+// Binary creates a new Binary that contains a copy of the given slice
 func Binary(bs []byte) dgo.Binary {
 	c := make([]byte, len(bs))
 	copy(c, bs)
 	return &binary{bytes: c, frozen: true}
 }
 
+// BinaryFromString creates a new Binary from the base64 encoded string
 func BinaryFromString(s string) dgo.Binary {
 	bs, err := base64.StdEncoding.Strict().DecodeString(s)
 	if err != nil {
