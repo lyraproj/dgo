@@ -149,29 +149,34 @@ func TestBinary_Equal(t *testing.T) {
 	require.False(t, a.Equals(b))
 	b = vf.Binary([]byte{1, 2}, true)
 	require.True(t, a.Equals(b))
+	require.True(t, a.Equals([]byte{1, 2}))
+	require.False(t, a.Equals(`12`))
 	require.Equal(t, a.HashCode(), b.HashCode())
 	require.True(t, a.Equals(vf.Value([]uint8{1, 2})))
 	require.True(t, a.Equals(vf.Value(reflect.ValueOf([]uint8{1, 2}))))
 }
 
 func TestBinary_Freeze(t *testing.T) {
-	a := vf.MutableValues(nil, `a`, `b`, vf.MutableArray(nil, []dgo.Value{vf.String(`c`)}))
+	a := vf.Binary([]byte{1, 2}, false)
 	require.False(t, a.Frozen())
+	a.Freeze()
+	require.True(t, a.Frozen())
+}
 
-	sa := a.Get(2).(dgo.Array)
-	require.False(t, sa.Frozen())
-
-	// In place recursive freeze
+func TestBinary_FrozenCopy(t *testing.T) {
+	a := vf.Binary([]byte{1, 2}, false)
+	b := a.FrozenCopy().(dgo.Binary)
+	require.False(t, a.Frozen())
+	require.True(t, b.Frozen())
 	a.Freeze()
 
-	// Sub Array is frozen in place
-	require.Same(t, a.Get(2), sa)
+	b = a.FrozenCopy().(dgo.Binary)
+	require.Same(t, a, b)
 	require.True(t, a.Frozen())
-	require.True(t, sa.Frozen())
 }
 
 func TestBinary_FrozenEqual(t *testing.T) {
-	f := vf.Values(1, 2, 3)
+	f := vf.Binary([]byte{1, 2}, true)
 	require.True(t, f.Frozen(), `not frozen`)
 
 	a := f.Copy(false)

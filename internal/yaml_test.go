@@ -20,7 +20,7 @@ func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
 }
 
 func TestMap_MarshalYaml(t *testing.T) {
-	m := vf.Map(map[string]interface{}{"a": 1, "b": "two", "c": vf.Values(`hello`, true, 1, 3.14, typ.String, nil)})
+	m := vf.Map(map[string]interface{}{"a": 1, "b": "two", "c": vf.Values(`hello`, true, 1, 3.14, vf.BinaryFromString(`AQQD`), typ.String, nil)})
 	b, err := yaml.Marshal(m)
 	require.Nil(t, err)
 	require.Equal(t, `a: 1
@@ -30,6 +30,7 @@ c:
   - true
   - 1
   - 3.14
+  - !!binary AQQD
   - !puppet.com,2019:dgo/type string
   - null
 `, string(b))
