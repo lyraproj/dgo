@@ -48,6 +48,9 @@ func (t token) String() (s string) {
 }
 
 func badToken(r rune) error {
+	if r == 0 {
+		return errors.New(`unexpected end`)
+	}
 	return fmt.Errorf("unexpected character '%c'", r)
 }
 
@@ -82,9 +85,14 @@ func nextToken(sr *util.StringReader) (t *token) {
 		case '-', '+':
 			n := sr.Next()
 			if n < '0' || n > '9' {
-				panic(badToken(r))
+				panic(badToken(n))
 			}
-			fallthrough
+			buf := bytes.NewBufferString(``)
+			if r == '-' {
+				util.WriteRune(buf, r)
+			}
+			tkn := consumeNumber(sr, n, buf, integer)
+			return &token{buf.String(), tkn}
 		default:
 			t = buildToken(r, sr)
 		}
@@ -113,6 +121,7 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 		r := sr.Peek()
 		switch r {
 		case 0:
+			return
 		case '.':
 			panic(badToken(r))
 		default:
@@ -122,7 +131,6 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 				continue
 			}
 			if unicode.IsLetter(r) {
-				sr.Next()
 				panic(badToken(r))
 			}
 			return

@@ -98,6 +98,30 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[]string[1][2]`) }, `expected end of expression, got '\['`)
 	require.Panic(t, func() { newtype.Parse(`[]string[1`) }, `expected one of ',' or '\]', got EOF`)
 	require.Panic(t, func() { newtype.Parse(`apple`) }, `unknown identifier 'apple'`)
+	require.Panic(t, func() { newtype.Parse(`-two`) }, `unexpected character 't'`)
+	require.Panic(t, func() { newtype.Parse(`[3e,0]`) }, `unexpected character ','`)
+	require.Panic(t, func() { newtype.Parse(`[3e1.0]`) }, `unexpected character '.'`)
+	require.Panic(t, func() { newtype.Parse(`[3e23r,4]`) }, `unexpected character 'r'`)
+	require.Panic(t, func() { newtype.Parse(`[3e1`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[3e`) }, `unexpected end`)
+	require.Panic(t, func() { newtype.Parse(`[0x`) }, `unexpected end`)
+	require.Panic(t, func() { newtype.Parse(`[0x4`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[1. 3]`) }, `unexpected character ' '`)
+	require.Panic(t, func() { newtype.Parse(`[1 . 3]`) }, `expected one of ',' or ']', got '.'`)
+	require.Panic(t, func() { newtype.Parse(`[/\`) }, `unterminated regexp`)
+	require.Panic(t, func() { newtype.Parse(`[/\/`) }, `unterminated regexp`)
+	require.Panic(t, func() { newtype.Parse(`[/\//`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[/\t/`) }, `expected one of ',' or ']', got EOF`)
+
+	require.Panic(t, func() { newtype.Parse(`["\`) }, `unterminated string`)
+	require.Panic(t, func() { newtype.Parse(`["\"`) }, `unterminated string`)
+	require.Panic(t, func() { newtype.Parse(`["\y"`) }, `illegal escape`)
+	require.Panic(t, func() {
+		newtype.Parse(`["
+"`)
+	}, `unterminated string`)
+	require.Panic(t, func() { newtype.Parse(`["\""`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`["\t"`) }, `expected one of ',' or ']', got EOF`)
 }
 
 func TestParseFile_errors(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"github.com/lyraproj/dgo/util"
 )
 
-func Test_unicodeError(t *testing.T) {
+func Test_nextToken_unicodeError(t *testing.T) {
 	sr := util.NewStringReader(string([]byte{0x82, 0xff}))
 	defer func() {
 		err, ok := recover().(error)
@@ -28,8 +28,10 @@ func Example_nextToken() {
     value: "String\nWith \\Escape",
     raw: ` + "`" + `String\nWith \\Escape` + "`" + `,
     array: [a, b, c],
-    map: {x:, 3}
-    group: (x, 3)
+    signed: -23,
+    positive: +1.2,
+    map: {x:, 3},
+    group: (x, 3),
     limit: boo<x, 3>
   }`
 	sr := util.NewStringReader(src)
@@ -82,6 +84,14 @@ func Example_nextToken() {
 	//c
 	//']'
 	//','
+	//signed
+	//':'
+	//-23
+	//','
+	//positive
+	//':'
+	//1.2
+	//','
 	//map
 	//':'
 	//'{'
@@ -90,6 +100,7 @@ func Example_nextToken() {
 	//','
 	//3
 	//'}'
+	//','
 	//group
 	//':'
 	//'('
@@ -97,6 +108,7 @@ func Example_nextToken() {
 	//','
 	//3
 	//')'
+	//','
 	//limit
 	//':'
 	//boo
