@@ -489,6 +489,13 @@ func MutableMap(capacity int, typ interface{}) dgo.Map {
 		switch typ := typ.(type) {
 		case dgo.MapType:
 			mt = typ
+		case dgo.String:
+			s := typ.GoString()
+			if t, ok := Parse(s).(dgo.MapType); ok {
+				mt = t
+			} else {
+				panic(fmt.Errorf("expression '%s' does not evaluate to a MapType", s))
+			}
 		default:
 			mt = TypeFromReflected(reflect.TypeOf(typ)).(dgo.MapType)
 		}
@@ -705,6 +712,15 @@ func (g *hashMap) Keys() dgo.Array {
 
 func (g *hashMap) Len() int {
 	return g.len
+}
+
+func (g *hashMap) Map(mapper dgo.EntryMapper) dgo.Map {
+	c := &hashMap{len: g.len, frozen: g.frozen}
+	g.resize(c, 0)
+	for e := c.first; e != nil; e = e.next {
+		e.value = Value(mapper(e))
+	}
+	return c
 }
 
 func (g *hashMap) MarshalJSON() ([]byte, error) {

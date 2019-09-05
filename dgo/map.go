@@ -31,8 +31,8 @@ type (
 	// EntryDoer performs some task on behalf of a caller
 	EntryDoer func(entry MapEntry)
 
-	// EntryMapper maps an entry to another entry
-	EntryMapper func(entry MapEntry) Value
+	// EntryMapper maps produces the value of an entry to a new value
+	EntryMapper func(entry MapEntry) interface{}
 
 	// EntryPredicate returns true of false based on the given entry
 	EntryPredicate func(entry MapEntry) bool
@@ -97,6 +97,10 @@ type (
 
 		// Len returns the number of associations in this map
 		Len() int
+
+		// Map returns a new map with the same keys where each value has been replaced using the
+		// given mapper function.
+		Map(mapper EntryMapper) Map
 
 		// Merge returns a Map where all associations from this and the given Map are merged. The associations of the
 		// given map have priority.

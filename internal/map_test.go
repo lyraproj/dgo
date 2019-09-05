@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -596,6 +597,16 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 	require.True(t, m.All(func(e dgo.MapEntry) bool {
 		return e.Frozen()
 	}), `map entries are not frozen after freeze`)
+}
+
+func TestMap_Map(t *testing.T) {
+	a := vf.Map(map[string]string{`a`: `value a`, `b`: `value b`, `c`: `value c`})
+	require.Equal(t, vf.Map(map[string]string{`a`: `the a`, `b`: `the b`, `c`: `the c`}), a.Map(func(e dgo.MapEntry) interface{} {
+		return strings.Replace(e.Value().String(), `value`, `the`, 0)
+	}))
+	require.Equal(t, vf.Values(vf.Nil, vf.Nil, vf.Nil), a.Map(func(e dgo.MapEntry) interface{} {
+		return nil
+	}))
 }
 
 func TestMap_Remove(t *testing.T) {
