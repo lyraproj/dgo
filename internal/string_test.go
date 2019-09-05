@@ -58,6 +58,7 @@ func TestStringDefault(t *testing.T) {
 	require.Instance(t, tp, `doh`)
 	require.NotInstance(t, tp, 1)
 	require.Assignable(t, tp, tp)
+	require.Assignable(t, tp, typ.DgoString)
 	require.Instance(t, tp.Type(), tp)
 	require.Assignable(t, tp, newtype.Pattern(regexp.MustCompile(`^doh$`)))
 	require.NotAssignable(t, newtype.String(3, 3), tp)
@@ -129,6 +130,10 @@ func TestStringType(t *testing.T) {
 
 	tp = newtype.String(1)
 	require.Equal(t, tp, newtype.String(1, math.MaxInt64))
+	require.Assignable(t, tp, typ.DgoString)
+
+	tp = newtype.String(2)
+	require.NotAssignable(t, tp, typ.DgoString)
 
 	tp = newtype.String(3, 5)
 	require.Instance(t, tp, `doh`)
@@ -165,6 +170,23 @@ func TestStringType(t *testing.T) {
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, `string[3,5]`, tp.String())
+}
+
+func TestDgoStringType(t *testing.T) {
+	s := `dgo`
+	require.Assignable(t, typ.DgoString, vf.String(s).Type())
+	require.Instance(t, typ.DgoString, s)
+	require.Instance(t, typ.DgoString, vf.String(s))
+
+	s = `map[string]1..3`
+	require.Instance(t, typ.DgoString, s)
+	require.Instance(t, typ.DgoString, vf.String(s))
+	require.Assignable(t, typ.DgoString, vf.String(s).Type())
+
+	s = `hello`
+	require.NotInstance(t, typ.DgoString, s)
+	require.NotInstance(t, typ.DgoString, vf.String(s))
+	require.NotAssignable(t, typ.DgoString, vf.String(s).Type())
 }
 
 func TestString(t *testing.T) {

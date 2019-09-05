@@ -32,11 +32,16 @@ func TestParse_exact(t *testing.T) {
 	require.Equal(t, newtype.Tuple(vf.Value("pelle").Type(), vf.Value(3.14).Type(), typ.Boolean), newtype.Parse(`{"pelle", 3.14, bool}`))
 
 	st := newtype.Parse(`{"a":1..5,"b"?:2}`)
-	require.Equal(t, newtype.Struct(
+	require.Equal(t, newtype.Struct(false,
 		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5), true),
 		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
 
-	require.Equal(t, `{"a":1..5,"b"?:2}`, st.String())
+	st = newtype.Parse(`{"a":1..5,"b"?:2,...}`)
+	require.Equal(t, newtype.Struct(true,
+		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5), true),
+		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
+
+	require.Equal(t, `{"a":1..5,"b"?:2,...}`, st.String())
 }
 
 func TestParse_sized(t *testing.T) {

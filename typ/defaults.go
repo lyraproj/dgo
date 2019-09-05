@@ -52,10 +52,13 @@ const Integer = internal.DefaultIntegerType
 const Regexp = internal.DefaultRegexpType
 
 // Binary is a type that represents all Binary values
-const Binary = internal.DefaultBinaryType
+var Binary = internal.DefaultBinaryType
 
 // String is a type that represents all strings
 const String = internal.DefaultStringType
+
+// DgoString is a type that represents all strings with Dgo syntax
+const DgoString = internal.DefaultDgoStringType
 
 // Error is a type that represents all implementation of error
 const Error = internal.DefaultErrorType

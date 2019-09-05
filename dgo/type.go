@@ -82,8 +82,6 @@ const (
 	TiFloatRange
 	// TiBinary is the type identifier for the Binary type
 	TiBinary
-	// TiBinaryExact is the type identifier for the exact Binary type
-	TiBinaryExact
 	// TiString is the type identifier for the String type
 	TiString
 	// TiStringExact is the type identifier for the exact String type
@@ -140,4 +138,7 @@ const (
 
 	// TiError is the type identifier for for the Error type
 	TiError
+
+	// TiDgoString is the type identifier for for the DgoString type
+	TiDgoString
 )

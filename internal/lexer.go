@@ -21,6 +21,7 @@ const (
 	regexpLiteral
 	stringLiteral
 	dotdot
+	dotdotdot
 )
 
 type token struct {
@@ -32,7 +33,7 @@ func (t token) String() (s string) {
 	switch t.i {
 	case end:
 		s = "end"
-	case identifier, integer, float, dotdot:
+	case identifier, integer, float, dotdot, dotdotdot:
 		s = t.s
 	case regexpLiteral:
 		sb := &strings.Builder{}
@@ -69,7 +70,12 @@ func nextToken(sr *util.StringReader) (t *token) {
 		case '.':
 			if sr.Peek() == '.' {
 				sr.Next()
-				t = &token{`..`, dotdot}
+				if sr.Peek() == '.' {
+					sr.Next()
+					t = &token{`...`, dotdotdot}
+				} else {
+					t = &token{`..`, dotdot}
+				}
 			} else {
 				t = &token{i: tokenType(r)}
 			}

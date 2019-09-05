@@ -17,9 +17,11 @@ const False = internal.False
 // Nil is the dgo.Value representation of nil
 const Nil = internal.Nil
 
-// Binary creates a new Binary that contains a copy of the given slice
-func Binary(bs []byte) dgo.Binary {
-	return internal.Binary(bs)
+// Binary creates a new Binary based on the given slice. If frozen is true, the
+// binary will be immutable and contain a copy of the slice, otherwise the slice
+// is simply wrapped and modifications to its elements will also modify the binary.
+func Binary(bs []byte, frozen bool) dgo.Binary {
+	return internal.Binary(bs, frozen)
 }
 
 // BinaryFromString creates a new Binary from the base64 encoded string

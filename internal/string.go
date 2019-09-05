@@ -26,6 +26,9 @@ type (
 	// defaultStringType represents an string without constraints
 	defaultStringType int
 
+	// defaultDgoStringType represents strings that conform to Dgo type syntax
+	defaultDgoStringType int
+
 	// exactStringType only represents its own string
 	exactStringType hstring
 
@@ -41,8 +44,76 @@ type (
 	}
 )
 
+func (t defaultDgoStringType) String() string {
+	return TypeString(t)
+}
+
+func (t defaultDgoStringType) Type() dgo.Type {
+	return &metaType{t}
+}
+
+func (t defaultDgoStringType) Equals(other interface{}) bool {
+	return t == other
+}
+
+func (t defaultDgoStringType) HashCode() int {
+	return int(dgo.TiDgoString)
+}
+
+func (t defaultDgoStringType) Assignable(other dgo.Type) bool {
+	if t == other {
+		return true
+	}
+	if ot, ok := other.(*exactStringType); ok {
+		return t.Instance(ot.s)
+	}
+	return CheckAssignableTo(nil, other, t)
+}
+
+func (t defaultDgoStringType) Instance(value interface{}) (ok bool) {
+	var s string
+	var ov *hstring
+	ov, ok = value.(*hstring)
+	if ok {
+		s = ov.s
+	} else {
+		s, ok = value.(string)
+	}
+	if ok {
+		ok = len(s) > 0
+		if ok {
+			defer func() {
+				if recover() != nil {
+					ok = false
+				}
+			}()
+			Parse(s)
+		}
+	}
+	return
+}
+
+func (t defaultDgoStringType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiDgoString
+}
+
+func (t defaultDgoStringType) Max() int {
+	return math.MaxInt64
+}
+
+func (t defaultDgoStringType) Min() int {
+	return 1
+}
+
+func (t defaultDgoStringType) Unbounded() bool {
+	return false
+}
+
 // DefaultStringType is the unconstrained String type
 const DefaultStringType = defaultStringType(0)
+
+// DefaultDgoStringType is the unconstrained Dgo String type
+const DefaultDgoStringType = defaultDgoStringType(0)
 
 // EnumType returns a StringType that represents all of the given strings
 func EnumType(strings []string) dgo.Type {
@@ -67,7 +138,7 @@ func String(s string) dgo.String {
 
 func (t defaultStringType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultStringType, *exactStringType, *sizedStringType, *patternType:
+	case defaultStringType, defaultDgoStringType, *exactStringType, *sizedStringType, *patternType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -193,16 +264,16 @@ func StringType(args ...interface{}) dgo.StringType {
 		case dgo.Integer:
 			return SizedStringType(int(a0.GoInt()), math.MaxInt64)
 		}
-		panic(illegalArgument(`StringType`, `intVal or String`, args, 0))
+		panic(illegalArgument(`StringType`, `Integer or String`, args, 0))
 	case 2:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			var a1 dgo.Integer
 			if a1, ok = Value(args[1]).(dgo.Integer); ok {
 				return SizedStringType(int(a0.GoInt()), int(a1.GoInt()))
 			}
-			panic(illegalArgument(`StringType`, `intVal`, args, 1))
+			panic(illegalArgument(`StringType`, `Integer`, args, 1))
 		}
-		panic(illegalArgument(`StringType`, `intVal`, args, 0))
+		panic(illegalArgument(`StringType`, `Integer`, args, 0))
 	}
 	panic(fmt.Errorf(`illegal number of arguments for StringType. Expected 0 - 2, got %d`, len(args)))
 }
@@ -277,6 +348,8 @@ func SizedStringType(min, max int) dgo.StringType {
 
 func (t *sizedStringType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
+	case defaultDgoStringType:
+		return t.min <= 1
 	case *exactStringType:
 		return t.IsInstance(ot.s)
 	case *sizedStringType:

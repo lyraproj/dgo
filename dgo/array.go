@@ -95,6 +95,10 @@ type (
 		// that is greater or equal to the length of the array will result in a panic.
 		Get(position int) Value
 
+		// GoSlice returns the internal slice or, in case the Array is frozen, a copy
+		// of the internal slice.
+		GoSlice() []Value
+
 		// IndexOf returns the index of the given value in this Array. The index is determined
 		// by calling the Equals method on each element until a matching element is found. The
 		// method returns -1 to indicate not found.

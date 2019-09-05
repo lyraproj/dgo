@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lyraproj/dgo/internal"
+
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/newtype"
@@ -266,6 +268,7 @@ func TestTupleType(t *testing.T) {
 	require.Equal(t, typ.Tuple, tt)
 	require.Assignable(t, tt, typ.Array)
 	require.Assignable(t, tt, typ.Tuple)
+	require.Assignable(t, tt, newtype.Tuple(typ.String, typ.Integer, typ.Float))
 	require.Assignable(t, tt, vf.Values(`one`, 2, 3.0).Type())
 	require.Equal(t, 0, tt.Min())
 	require.Equal(t, math.MaxInt64, tt.Max())
@@ -273,6 +276,7 @@ func TestTupleType(t *testing.T) {
 
 	tt = newtype.Tuple(typ.String, typ.Integer, typ.Float)
 	require.Assignable(t, tt, tt)
+	require.Assignable(t, tt, newtype.Tuple(typ.String, typ.Integer, typ.Float))
 	require.NotAssignable(t, tt, newtype.Tuple(typ.String, typ.Integer, typ.Boolean))
 	require.Assignable(t, typ.Array, tt)
 	require.Assignable(t, newtype.Array(0, 3), tt)
@@ -621,6 +625,15 @@ func TestArray_Copy(t *testing.T) {
 	c = c.Copy(true)
 	require.True(t, c.Frozen())
 	require.Same(t, c, c.Copy(true))
+}
+
+func TestArray_FromReflected(t *testing.T) {
+	vs := []dgo.Value{vf.Integer(2), vf.String(`b`)}
+	a := internal.ArrayFromReflected(reflect.ValueOf(vs), false).(dgo.Array)
+	require.Equal(t, reflect.ValueOf(a.GoSlice()).Pointer(), reflect.ValueOf(vs).Pointer())
+
+	a = internal.ArrayFromReflected(reflect.ValueOf(vs), true).(dgo.Array)
+	require.NotEqual(t, reflect.ValueOf(a.GoSlice()).Pointer(), reflect.ValueOf(vs).Pointer())
 }
 
 func TestArray_Equal(t *testing.T) {

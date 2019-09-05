@@ -51,14 +51,14 @@ func arrayTypeOne(args []interface{}) dgo.ArrayType {
 	case dgo.Integer:
 		return newArrayType(nil, int(a0.GoInt()), math.MaxInt64)
 	default:
-		panic(illegalArgument(`Array`, `Type or intVal`, args, 0))
+		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
 	}
 }
 
 func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `intVal`, args, 1))
+		panic(illegalArgument(`Array`, `Integer`, args, 1))
 	}
 	switch a0 := Value(args[0]).(type) {
 	case dgo.Type:
@@ -66,7 +66,7 @@ func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	case dgo.Integer:
 		return newArrayType(nil, int(a0.GoInt()), int(a1.GoInt()))
 	default:
-		panic(illegalArgument(`Array`, `Type or intVal`, args, 0))
+		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
 	}
 }
 
@@ -77,11 +77,11 @@ func arrayTypeThree(args []interface{}) dgo.ArrayType {
 	}
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `intVal`, args, 1))
+		panic(illegalArgument(`Array`, `Integer`, args, 1))
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`ArrayType`, `intVal`, args, 2))
+		panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
 	}
 	return newArrayType(a0, int(a1.GoInt()), int(a2.GoInt()))
 }
@@ -587,16 +587,32 @@ func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	if vr.IsNil() {
 		return Nil
 	}
+
+	ix := vr.Interface()
+	if bs, ok := ix.([]byte); ok {
+		return Binary(bs, frozen)
+	}
+
 	top := vr.Len()
-	arr := make([]dgo.Value, top)
-	for i := 0; i < top; i++ {
-		v := ValueFromReflected(vr.Index(i))
+	var arr []dgo.Value
+	if vs, ok := ix.([]dgo.Value); ok {
+		arr = vs
 		if frozen {
-			if f, ok := v.(dgo.Freezable); ok {
-				v = f.FrozenCopy()
+			arr = sliceCopy(arr)
+		}
+	} else {
+		arr = make([]dgo.Value, top)
+		for i := 0; i < top; i++ {
+			arr[i] = ValueFromReflected(vr.Index(i))
+		}
+	}
+
+	if frozen {
+		for i := range arr {
+			if f, ok := arr[i].(dgo.Freezable); ok {
+				arr[i] = f.FrozenCopy()
 			}
 		}
-		arr[i] = v
 	}
 	return &array{slice: arr, frozen: frozen}
 }
@@ -835,9 +851,7 @@ func (v *array) Copy(frozen bool) dgo.Array {
 	if frozen && v.frozen {
 		return v
 	}
-	cp := make([]dgo.Value, len(v.slice))
-	copy(cp, v.slice)
-
+	cp := sliceCopy(v.slice)
 	if frozen {
 		for i := range cp {
 			if f, ok := cp[i].(dgo.Freezable); ok {
@@ -892,6 +906,13 @@ func (v *array) Frozen() bool {
 
 func (v *array) FrozenCopy() dgo.Value {
 	return v.Copy(true)
+}
+
+func (v *array) GoSlice() []dgo.Value {
+	if v.frozen {
+		return sliceCopy(v.slice)
+	}
+	return v.slice
 }
 
 func (v *array) HashCode() int {
@@ -1051,8 +1072,7 @@ func (v *array) SameValues(other dgo.Array) bool {
 	// Keep track of elements that have been found equal using a copy
 	// where such elements are set to nil. This avoids excessive calls
 	// to Equals
-	vs := make([]dgo.Value, l)
-	copy(vs, b)
+	vs := sliceCopy(b)
 	for i := range a {
 		ea := a[i]
 		f := false
@@ -1111,8 +1131,7 @@ func (v *array) Sort() dgo.Array {
 	if len(sa) < 2 {
 		return v
 	}
-	sorted := make([]dgo.Value, len(sa))
-	copy(sorted, sa)
+	sorted := sliceCopy(sa)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		a := sorted[i]
 		b := sorted[j]
@@ -1368,4 +1387,10 @@ func assignableToAll(guard dgo.RecursionGuard, t dgo.Type, vs []dgo.Value) bool 
 
 func frozenArray(f string) error {
 	return fmt.Errorf(`%s called on a frozen Array`, f)
+}
+
+func sliceCopy(s []dgo.Value) []dgo.Value {
+	c := make([]dgo.Value, len(s))
+	copy(c, s)
+	return c
 }

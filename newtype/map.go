@@ -15,7 +15,8 @@ func StructEntry(key string, valueType dgo.Type, required bool) dgo.MapEntryType
 	return internal.StructEntry(key, valueType, required)
 }
 
-// Struct returns a new Struct type built from the given MapEntryTypes.
-func Struct(entries ...dgo.MapEntryType) dgo.StructType {
-	return internal.Struct(entries)
+// Struct returns a new Struct type built from the given MapEntryTypes. If
+// additional is true, the struct will allow additional unconstrained entries
+func Struct(additional bool, entries ...dgo.MapEntryType) dgo.StructType {
+	return internal.Struct(additional, entries)
 }

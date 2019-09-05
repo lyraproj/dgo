@@ -31,7 +31,7 @@ func value(v interface{}) dgo.Value {
 	case string:
 		dv = String(v)
 	case []byte:
-		dv = Binary(v)
+		dv = Binary(v, true)
 	case []string:
 		dv = Strings(v)
 	case []int:

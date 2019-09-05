@@ -96,18 +96,19 @@ func writeElementsExact(typ dgo.Type, prio int, sb *strings.Builder) {
 }
 
 var simpleTypes = map[dgo.TypeIdentifier]string{
-	dgo.TiAny:     `any`,
-	dgo.TiArray:   `[]any`,
-	dgo.TiTrue:    `true`,
-	dgo.TiFalse:   `false`,
-	dgo.TiBoolean: `bool`,
-	dgo.TiNil:     `nil`,
-	dgo.TiError:   `error`,
-	dgo.TiFloat:   `float`,
-	dgo.TiMap:     `map[any]any`,
-	dgo.TiRegexp:  `regexp`,
-	dgo.TiString:  `string`,
-	dgo.TiInteger: `int`,
+	dgo.TiAny:       `any`,
+	dgo.TiArray:     `[]any`,
+	dgo.TiBoolean:   `bool`,
+	dgo.TiDgoString: `dgo`,
+	dgo.TiError:     `error`,
+	dgo.TiFalse:     `false`,
+	dgo.TiFloat:     `float`,
+	dgo.TiInteger:   `int`,
+	dgo.TiMap:       `map[any]any`,
+	dgo.TiNil:       `nil`,
+	dgo.TiRegexp:    `regexp`,
+	dgo.TiString:    `string`,
+	dgo.TiTrue:      `true`,
 }
 
 type typeToString func(typ dgo.Type, prio int, sb *strings.Builder)
@@ -123,6 +124,15 @@ func init() {
 			util.WriteByte(sb, '{')
 			joinValueTypes(typ.(dgo.ExactType).Value().(dgo.Iterable), `,`, commaPrio, sb)
 			util.WriteByte(sb, '}')
+		},
+		dgo.TiBinary: func(typ dgo.Type, prio int, sb *strings.Builder) {
+			st := typ.(dgo.BinaryType)
+			util.WriteString(sb, `binary`)
+			if !st.Unbounded() {
+				util.WriteByte(sb, '[')
+				writeSizeBoundaries(int64(st.Min()), int64(st.Max()), sb)
+				util.WriteByte(sb, ']')
+			}
 		},
 		dgo.TiElementsExact:  func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
 		dgo.TiMapKeysExact:   func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
@@ -150,7 +160,11 @@ func init() {
 		},
 		dgo.TiStruct: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
-			join(typ.(dgo.StructType).Entries(), `,`, commaPrio, sb)
+			st := typ.(dgo.StructType)
+			join(st.Entries(), `,`, commaPrio, sb)
+			if st.Additional() {
+				util.WriteString(sb, `,...`)
+			}
 			util.WriteByte(sb, '}')
 		},
 		dgo.TiMapEntry: func(typ dgo.Type, prio int, sb *strings.Builder) {

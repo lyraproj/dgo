@@ -74,19 +74,19 @@ type (
 )
 
 // Struct returns a new Struct type built from the given MapEntryTypes.
-func Struct(entries []dgo.MapEntryType) dgo.StructType {
+func Struct(additional bool, entries []dgo.MapEntryType) dgo.StructType {
 	m := &hashMap{table: make([]*hashNode, tableSizeFor(len(entries)))}
 	for i := range entries {
 		e := entries[i]
-		k := e.KeyType()
-		if ek, ok := k.(dgo.ExactType); ok {
-			m.Put(ek.Value(), e)
-		} else {
-			m.Put(e.KeyType(), e)
+		switch k := e.KeyType().(type) {
+		case *exactStringType, exactIntegerType, exactFloatType, *exactArrayType, *exactMapType, booleanType:
+			m.Put(k.(dgo.ExactType).Value(), e)
+		default:
+			panic(`non exact key types is not yet supported`)
 		}
 	}
 	m.Freeze()
-	return &structType{additional: false, entries: m}
+	return &structType{additional: additional, entries: m}
 }
 
 func (t *structType) Additional() bool {
@@ -105,12 +105,12 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 		oc := 0
 		for me := mm.first; me != nil; me = me.next {
 			et := me.value.(*entryType)
-			if ot, ok := om.Get(me.key); ok {
+			if oe, ok := om.Get(me.key); ok {
 				oc++
-				if !Assignable(guard, et, ot.(*entryType)) {
+				if !Assignable(guard, et, oe.(*entryType)) {
 					return false
 				}
-			} else if et.required {
+			} else if et.required || ot.additional { // additional included since key is allowed with unconstrained value
 				return false
 			}
 		}
@@ -211,12 +211,20 @@ func StructEntry(key string, valueType dgo.Type, required bool) dgo.MapEntryType
 	return &entryType{key: String(key).Type(), value: valueType, required: required}
 }
 
+// StructEntry2 returns a new MapEntryType initiated with the given parameters
+func StructEntry2(keyType, valueType dgo.Type, required bool) dgo.MapEntryType {
+	return &entryType{key: keyType, value: valueType, required: required}
+}
+
 func (t *entryType) Assignable(other dgo.Type) bool {
 	return Assignable(nil, t, other)
 }
 
 func (t *entryType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
 	if ot, ok := other.(*entryType); ok {
+		if t.required && !ot.required {
+			return false
+		}
 		return Assignable(guard, t.key, ot.key) && Assignable(guard, t.value, ot.value)
 	}
 	return CheckAssignableTo(guard, other, t)
@@ -1078,7 +1086,7 @@ func mapTypeOne(args []interface{}) dgo.MapType {
 	// min integer
 	a0, ok := Value(args[0]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `intVal`, args, 0))
+		panic(illegalArgument(`Map`, `Integer`, args, 0))
 	}
 	return newMapType(nil, nil, int(a0.GoInt()), math.MaxInt64)
 }
@@ -1095,11 +1103,11 @@ func mapTypeTwo(args []interface{}) dgo.MapType {
 	case dgo.Integer:
 		a1, ok := Value(args[1]).(dgo.Integer)
 		if !ok {
-			panic(illegalArgument(`Map`, `intVal`, args, 1))
+			panic(illegalArgument(`Map`, `Integer`, args, 1))
 		}
 		return newMapType(nil, nil, int(a0.GoInt()), int(a1.GoInt()))
 	default:
-		panic(illegalArgument(`Map`, `Type or intVal`, args, 0))
+		panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
 	}
 }
 
@@ -1115,7 +1123,7 @@ func mapTypeThree(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `intVal`, args, 2))
+		panic(illegalArgument(`Map`, `Integer`, args, 2))
 	}
 	return newMapType(a0, a1, int(a2.GoInt()), math.MaxInt64)
 }
@@ -1132,11 +1140,11 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `intVal`, args, 2))
+		panic(illegalArgument(`Map`, `Integer`, args, 2))
 	}
 	a3, ok := Value(args[3]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `intVal`, args, 3))
+		panic(illegalArgument(`Map`, `Integer`, args, 3))
 	}
 	return newMapType(a0, a1, int(a2.GoInt()), int(a3.GoInt()))
 }

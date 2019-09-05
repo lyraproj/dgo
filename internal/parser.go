@@ -12,8 +12,9 @@ import (
 
 // States:
 const (
-	exListComma   = iota // Expect comma or end of array
-	exParamsComma        // Expect comma or end of parameter list
+	exListComma = iota
+	exListEnd
+	exParamsComma
 	exLeftBracket
 	exRightBracket
 	exRightParen
@@ -55,6 +56,8 @@ func expect(state int) (s string) {
 		s = `']'`
 	case exListComma:
 		s = `one of ',' or '}'`
+	case exListEnd:
+		s = `'}'`
 	case exRightParen:
 		s = `')'`
 	case exIntOrFloat:
@@ -152,8 +155,18 @@ func (p *parser) parse(t *token) {
 
 func (p *parser) list() {
 	szp := len(p.d)
+	elipsis := false
 	for {
 		t := p.nextToken()
+		if t.i == dotdotdot {
+			elipsis = true
+			t = p.nextToken()
+			if t.i == '}' {
+				break
+			}
+			panic(badSyntax(t, exListEnd))
+		}
+
 		if t.i == '}' {
 			// Right bracket instead of element indicates an empty array or an extraneous comma. Both are OK
 			break
@@ -173,49 +186,58 @@ func (p *parser) list() {
 	if len(as) > 0 {
 		ar := &array{slice: as}
 		if _, ok := as[0].(dgo.MapEntry); ok {
-			var m dgo.Map
-			if m, ok = ar.ToMapFromEntries(); ok {
-				m.Each(func(e dgo.MapEntry) {
-					hn := e.(*hashNode)
-					et := &entryType{}
-					k := hn.key
-					if kt, ok := k.(dgo.Type); ok {
-						et.key = kt
-					} else {
-						et.key = k.Type()
-					}
-					v := hn.value
-					et.required = true
-					if ov, optional := v.(*optionalValue); optional {
-						et.required = false
-						v = ov.value
-					}
-					if vt, ok := v.(dgo.Type); ok {
-						et.value = vt
-					} else {
-						et.value = v.Type()
-					}
-					hn.value = et
-				})
-				tv = &structType{additional: false, entries: m.(*hashMap)}
-			}
+			tv = makeStructType(ar, elipsis)
 		}
 		if tv == nil {
-			ar = ar.Copy(false).(*array)
-			// Convert literal values to types and create a tupleType
-			as = ar.slice
-			for i := range as {
-				v := as[i]
-				if _, ok := v.(dgo.Type); !ok {
-					as[i] = v.Type()
-				}
-			}
-			tv = (*tupleType)(ar)
+			tv = makeTupleType(ar)
 		}
 	} else {
 		tv = &array{}
 	}
 	p.d = append(p.d[:szp], tv)
+}
+
+func makeTupleType(ar dgo.Array) dgo.TupleType {
+	// Convert literal values to types and create a tupleType
+	as := sliceCopy(ar.GoSlice())
+	for i := range as {
+		v := as[i]
+		if _, ok := v.(dgo.Type); !ok {
+			as[i] = v.Type()
+		}
+	}
+	return &tupleType{slice: as, frozen: true}
+}
+
+func makeStructType(ar dgo.Array, elipsis bool) dgo.StructType {
+	m, ok := ar.ToMapFromEntries()
+	if !ok {
+		return nil
+	}
+
+	m.Each(func(e dgo.MapEntry) {
+		hn := e.(*hashNode)
+		et := &entryType{}
+		k := hn.key
+		if kt, isType := k.(dgo.Type); isType {
+			et.key = kt
+		} else {
+			et.key = k.Type()
+		}
+		v := hn.value
+		et.required = true
+		if ov, optional := v.(*optionalValue); optional {
+			et.required = false
+			v = ov.value
+		}
+		if vt, isType := v.(dgo.Type); isType {
+			et.value = vt
+		} else {
+			et.value = v.Type()
+		}
+		hn.value = et
+	})
+	return &structType{additional: elipsis, entries: m.(*hashMap)}
 }
 
 func (p *parser) params() {
@@ -390,6 +412,8 @@ func (p *parser) identifier(t *token) dgo.Value {
 		tp = DefaultIntegerType
 	case `float`:
 		tp = DefaultFloatType
+	case `dgo`:
+		tp = DefaultDgoStringType
 	case `string`:
 		tp = p.string()
 	case `binary`:
