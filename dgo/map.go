@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/lyraproj/dgo/util"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -17,13 +18,9 @@ type (
 		Value() Value
 	}
 
-	// MapEntryType describes a MapEntry
-	MapEntryType interface {
-		Type
-
-		KeyType() Type
-
-		ValueType() Type
+	// StructEntry describes a MapEntry
+	StructEntry interface {
+		MapEntry
 
 		Required() bool
 	}
@@ -46,6 +43,8 @@ type (
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler
+		yaml.Marshaler
+		yaml.Unmarshaler
 
 		// All returns true if the predicate returns true for all entries of this Map.
 		All(predicate EntryPredicate) bool
@@ -151,7 +150,7 @@ type (
 
 	// StructType represents maps with explicitly defined typed entries.
 	StructType interface {
-		SizedType
+		MapType
 
 		// Additional returns true if the maps that is described by this type are allowed to
 		// have additional entries.

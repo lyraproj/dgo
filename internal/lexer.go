@@ -29,10 +29,11 @@ type token struct {
 	i tokenType
 }
 
-func (t token) String() (s string) {
+func (t *token) String() (s string) {
+	if t == nil || t.i == end {
+		return "EOT"
+	}
 	switch t.i {
-	case end:
-		s = "end"
 	case identifier, integer, float, dotdot, dotdotdot:
 		s = t.s
 	case regexpLiteral:

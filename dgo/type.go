@@ -34,7 +34,7 @@ type (
 
 	// DeepInstance is implemented by values that need deep Intance comparisons.
 	DeepInstance interface {
-		DeepInstance(guard RecursionGuard, other Value) bool
+		DeepInstance(guard RecursionGuard, value interface{}) bool
 	}
 
 	// ReverseAssignable indicates that the check for assignable must continue by delegating to the
@@ -104,8 +104,6 @@ const (
 	TiArrayExact
 	// TiArrayElementSized is the type identifier for the element and size constrained Array type
 	TiArrayElementSized
-	// TiElementsExact is the type identifier for the element type of an exact Array type
-	TiElementsExact
 
 	// TiTuple is the type identifier for the Tuple type
 	TiTuple
@@ -114,10 +112,6 @@ const (
 	TiMap
 	// TiMapExact is the type identifier for exact Map type
 	TiMapExact
-	// TiMapValuesExact is the type identifier the value type of the exact Map type
-	TiMapValuesExact
-	// TiMapKeysExact is the type identifier for the key type of the exact Map type
-	TiMapKeysExact
 	// TiMapSized is the type identifier for the key, value, and size constrained Map type
 	TiMapSized
 	// TiMapEntry is the type identifier for the map entry type of a Struct type
@@ -131,6 +125,8 @@ const (
 	TiNot
 	// TiAllOf is the type identifier for the AllOf type
 	TiAllOf
+	// TiAllOfValue is the type identifier for the AllOf type that uses the type of its contained values
+	TiAllOfValue
 	// TiAnyOf is the type identifier for the AnyOf type
 	TiAnyOf
 	// TiOneOf is the type identifier for the OneOf type

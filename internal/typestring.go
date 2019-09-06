@@ -26,16 +26,15 @@ func TypeString(typ dgo.Type) string {
 	return bld.String()
 }
 
-func join(v dgo.Array, s string, prio int, sb *strings.Builder) {
-	v.EachWithIndex(func(v dgo.Value, i int) {
-		if i > 0 {
-			util.WriteString(sb, s)
-		}
-		buildTypeString(v.(dgo.Type), prio, sb)
-	})
+func joinTypes(v dgo.Iterable, s string, prio int, sb *strings.Builder) {
+	joinX(v, typeAsType, s, prio, sb)
 }
 
 func joinValueTypes(v dgo.Iterable, s string, prio int, sb *strings.Builder) {
+	joinX(v, valueAsType, s, prio, sb)
+}
+
+func joinX(v dgo.Iterable, tc func(dgo.Value) dgo.Type, s string, prio int, sb *strings.Builder) {
 	first := true
 	v.Each(func(v dgo.Value) {
 		if first {
@@ -43,7 +42,22 @@ func joinValueTypes(v dgo.Iterable, s string, prio int, sb *strings.Builder) {
 		} else {
 			util.WriteString(sb, s)
 		}
-		buildTypeString(v.Type(), prio, sb)
+		buildTypeString(tc(v), prio, sb)
+	})
+}
+
+func joinStructEntries(v dgo.Array, sb *strings.Builder) {
+	v.EachWithIndex(func(v dgo.Value, i int) {
+		if i > 0 {
+			util.WriteByte(sb, ',')
+		}
+		e := v.(dgo.StructEntry)
+		buildTypeString(e.Key().(dgo.Type), commaPrio, sb)
+		if !e.Required() {
+			util.WriteByte(sb, '?')
+		}
+		util.WriteByte(sb, ':')
+		buildTypeString(e.Value().(dgo.Type), commaPrio, sb)
 	})
 }
 
@@ -75,22 +89,12 @@ func writeFloatRange(min, max float64, sb *strings.Builder) {
 	}
 }
 
-func writeTernary(typ dgo.Type, prio int, op string, opPrio int, sb *strings.Builder) {
+func writeTernary(typ dgo.Type, tc func(dgo.Value) dgo.Type, prio int, op string, opPrio int, sb *strings.Builder) {
 	if prio >= orPrio {
 		util.WriteByte(sb, '(')
 	}
-	join(typ.(dgo.TernaryType).Operands(), op, opPrio, sb)
+	joinX(typ.(dgo.TernaryType).Operands(), tc, op, opPrio, sb)
 	if prio >= orPrio {
-		util.WriteByte(sb, ')')
-	}
-}
-
-func writeElementsExact(typ dgo.Type, prio int, sb *strings.Builder) {
-	if prio >= andPrio {
-		util.WriteByte(sb, '(')
-	}
-	joinValueTypes(typ.(dgo.Iterable), `&`, andPrio, sb)
-	if prio >= andPrio {
 		util.WriteByte(sb, ')')
 	}
 }
@@ -117,9 +121,18 @@ var complexTypes map[dgo.TypeIdentifier]typeToString
 
 func init() {
 	complexTypes = map[dgo.TypeIdentifier]typeToString{
-		dgo.TiAnyOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `|`, orPrio, sb) },
-		dgo.TiOneOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `^`, xorPrio, sb) },
-		dgo.TiAllOf: func(typ dgo.Type, prio int, sb *strings.Builder) { writeTernary(typ, prio, `&`, andPrio, sb) },
+		dgo.TiAnyOf: func(typ dgo.Type, prio int, sb *strings.Builder) {
+			writeTernary(typ, typeAsType, prio, `|`, orPrio, sb)
+		},
+		dgo.TiOneOf: func(typ dgo.Type, prio int, sb *strings.Builder) {
+			writeTernary(typ, typeAsType, prio, `^`, xorPrio, sb)
+		},
+		dgo.TiAllOf: func(typ dgo.Type, prio int, sb *strings.Builder) {
+			writeTernary(typ, typeAsType, prio, `&`, andPrio, sb)
+		},
+		dgo.TiAllOfValue: func(typ dgo.Type, prio int, sb *strings.Builder) {
+			writeTernary(typ, valueAsType, prio, `&`, andPrio, sb)
+		},
 		dgo.TiArrayExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
 			joinValueTypes(typ.(dgo.ExactType).Value().(dgo.Iterable), `,`, commaPrio, sb)
@@ -134,12 +147,9 @@ func init() {
 				util.WriteByte(sb, ']')
 			}
 		},
-		dgo.TiElementsExact:  func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
-		dgo.TiMapKeysExact:   func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
-		dgo.TiMapValuesExact: func(typ dgo.Type, prio int, sb *strings.Builder) { writeElementsExact(typ, prio, sb) },
 		dgo.TiTuple: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
-			join(typ.(dgo.TupleType).ElementTypes(), `,`, commaPrio, sb)
+			joinTypes(typ.(dgo.TupleType).ElementTypes(), `,`, commaPrio, sb)
 			util.WriteByte(sb, '}')
 		},
 		dgo.TiArrayElementSized: func(typ dgo.Type, prio int, sb *strings.Builder) {
@@ -161,20 +171,24 @@ func init() {
 		dgo.TiStruct: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
 			st := typ.(dgo.StructType)
-			join(st.Entries(), `,`, commaPrio, sb)
+			ea := st.Entries()
+			joinStructEntries(ea, sb)
 			if st.Additional() {
-				util.WriteString(sb, `,...`)
+				if ea.Len() > 0 {
+					util.WriteByte(sb, ',')
+				}
+				util.WriteString(sb, `...`)
 			}
 			util.WriteByte(sb, '}')
 		},
 		dgo.TiMapEntry: func(typ dgo.Type, prio int, sb *strings.Builder) {
-			me := typ.(dgo.MapEntryType)
-			buildTypeString(me.KeyType(), commaPrio, sb)
+			me := typ.(dgo.StructEntry)
+			buildTypeString(me.Key().(dgo.Type), commaPrio, sb)
 			if !me.Required() {
 				util.WriteByte(sb, '?')
 			}
 			util.WriteByte(sb, ':')
-			buildTypeString(me.ValueType(), commaPrio, sb)
+			buildTypeString(me.Value().(dgo.Type), commaPrio, sb)
 		},
 		dgo.TiMapEntryExact: func(typ dgo.Type, prio int, sb *strings.Builder) {
 			me := typ.(dgo.ExactType).Value().(dgo.MapEntry)

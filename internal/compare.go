@@ -76,7 +76,7 @@ func Assignable(guard dgo.RecursionGuard, a dgo.Type, b dgo.Type) bool {
 }
 
 // Instance checks if b is an instance of a to a while guarding for endless recursion
-func Instance(guard dgo.RecursionGuard, a dgo.Type, b dgo.Value) bool {
+func Instance(guard dgo.RecursionGuard, a dgo.Type, b interface{}) bool {
 	da, ok := a.(dgo.DeepInstance)
 	if !ok {
 		return a.Instance(b)
@@ -84,10 +84,11 @@ func Instance(guard dgo.RecursionGuard, a dgo.Type, b dgo.Value) bool {
 
 	_, ok = b.(deepEqual) // only deepEqual implementations may be recursive
 	if ok {
+		bv := b.(dgo.Value)
 		if guard == nil {
-			guard = &doubleSeen{aSeen: []dgo.Value{a}, bSeen: []dgo.Value{b}}
+			guard = &doubleSeen{aSeen: []dgo.Value{a}, bSeen: []dgo.Value{bv}}
 		} else {
-			guard = guard.Append(a, b)
+			guard = guard.Append(a, bv)
 			if guard.Hit() {
 				return true
 			}
@@ -109,7 +110,7 @@ func deepHashCode(seen []dgo.Value, e dgo.Value) int {
 // equals performs a deep equality comparison of a and b using the Value.Equals method. The given seen slice
 // is used to prevent endless recursion. The rationale using a slice rather than a map for this is that the
 // depth is typically very limited. The seen slice should be nil at the point where the comparison starts.
-func equals(seen []dgo.Value, a dgo.Value, b dgo.Value) bool {
+func equals(seen []dgo.Value, a dgo.Value, b interface{}) bool {
 	if a == b {
 		return true
 	}
@@ -121,7 +122,7 @@ func equals(seen []dgo.Value, a dgo.Value, b dgo.Value) bool {
 		// Recursion, so assume true
 		return true
 	}
-	db, ok := b.(deepEqual)
+	db, ok := Value(b).(deepEqual)
 	if !ok {
 		// Must be false since only one implements deepEqual
 		return false

@@ -38,6 +38,15 @@ func TestAllOfType(t *testing.T) {
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpAnd)
 
 	require.Equal(t, `("a"|"b"|"c")&("b"|"c"|"d")`, tp.String())
+
+	tp = newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), newtype.Pattern(regexp.MustCompile(`b`)), newtype.Pattern(regexp.MustCompile(`c`)))
+	require.Instance(t, tp, `abc`)
+	require.NotInstance(t, tp, `c`)
+
+	require.Assignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), newtype.Pattern(regexp.MustCompile(`b`)), newtype.Pattern(regexp.MustCompile(`c`))))
+	require.NotAssignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), newtype.Pattern(regexp.MustCompile(`b`))))
+	require.Assignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type()))
+	require.NotAssignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type(), typ.String))
 }
 
 func TestAnyOfType(t *testing.T) {

@@ -31,7 +31,7 @@ func Assignable(t *testing.T, a, b dgo.Type) {
 func NotAssignable(t *testing.T, a, b dgo.Type) {
 	t.Helper()
 	if a.Assignable(b) {
-		t.Errorf(`%s is a assignable from %s`, a, b)
+		t.Errorf(`%s is assignable from %s`, a, b)
 	}
 }
 

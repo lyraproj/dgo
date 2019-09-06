@@ -48,6 +48,14 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 	return &nativeType{vt}
 }
 
+func typeAsType(v dgo.Value) dgo.Type {
+	return v.(dgo.Type)
+}
+
+func valueAsType(v dgo.Value) dgo.Type {
+	return v.Type()
+}
+
 func illegalArgument(name, expected string, args []interface{}, argno int) error {
 	return fmt.Errorf(`illegal argument %d for %s with %d arguments. Expected %s, got %tst`, argno+1, name, len(args), expected, args[argno])
 }

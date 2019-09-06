@@ -135,7 +135,7 @@ func yamlDecodeMap(n *yaml.Node) (*hashMap, error) {
 		}
 		i++
 		hk := hl & hash(k.HashCode())
-		nd := &hashNode{key: k, value: v, hashNext: tbl[hk], prev: m.last}
+		nd := &hashNode{mapEntry: mapEntry{key: k, value: v}, hashNext: tbl[hk], prev: m.last}
 		if m.first == nil {
 			m.first = nd
 		} else {

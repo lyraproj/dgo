@@ -78,7 +78,7 @@ func jsonDecodeMap(dec *json.Decoder) (*hashMap, error) {
 		if err != nil {
 			return nil, err
 		}
-		nd := &hashNode{key: k, value: v, prev: m.last}
+		nd := &hashNode{mapEntry: mapEntry{key: k, value: v}, prev: m.last}
 		if m.first == nil {
 			m.first = nd
 		} else {

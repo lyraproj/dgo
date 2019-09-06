@@ -42,6 +42,14 @@ func TestParse_exact(t *testing.T) {
 		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	require.Equal(t, `{"a":1..5,"b"?:2,...}`, st.String())
+
+	st = newtype.Parse(`{}`)
+	require.Equal(t, newtype.Struct(false), st)
+	require.Equal(t, `{}`, st.String())
+
+	st = newtype.Parse(`{...}`)
+	require.Equal(t, newtype.Struct(true), st)
+	require.Equal(t, `{...}`, st.String())
 }
 
 func TestParse_sized(t *testing.T) {
@@ -63,13 +71,25 @@ func TestParse_nestedSized(t *testing.T) {
 
 func TestParse_range(t *testing.T) {
 	require.Equal(t, newtype.IntegerRange(1, 10), newtype.Parse(`1..10`))
+	require.Equal(t, newtype.IntegerRange(1, 9), newtype.Parse(`1...10`))
 	require.Equal(t, newtype.IntegerRange(1, math.MaxInt64), newtype.Parse(`1..`))
 	require.Equal(t, newtype.IntegerRange(math.MinInt64, 0), newtype.Parse(`..0`))
+	require.Equal(t, newtype.IntegerRange(math.MinInt64, -1), newtype.Parse(`...0`))
 	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1.0..10`))
 	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1..10.0`))
 	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1.0..10.0`))
 	require.Equal(t, newtype.FloatRange(1, math.MaxFloat64), newtype.Parse(`1.0..`))
 	require.Equal(t, newtype.FloatRange(-math.MaxFloat64, 0), newtype.Parse(`..0.0`))
+
+	require.Panic(t, func() { newtype.Parse(`1.0...10`) }, `float boundary on ... range: \(column: 4\)`)
+	require.Panic(t, func() { newtype.Parse(`1...10.0`) }, `float boundary on ... range: \(column: 5\)`)
+	require.Panic(t, func() { newtype.Parse(`1.0...10.0`) }, `float boundary on ... range: \(column: 4\)`)
+	require.Panic(t, func() { newtype.Parse(`1.0...`) }, `float boundary on ... range: \(column: 4\)`)
+	require.Panic(t, func() { newtype.Parse(`...0.0`) }, `float boundary on ... range: \(column: 4\)`)
+	require.Panic(t, func() { newtype.Parse(`.."b"`) }, `expected an integer or a float, got "b"`)
+	require.Panic(t, func() { newtype.Parse(`../a*/`) }, `expected an integer or a float, got /a\*/`)
+	require.Panic(t, func() { newtype.Parse(`..."b"`) }, `expected an integer, got "b"`)
+	require.Panic(t, func() { newtype.Parse(`.../a*/`) }, `expected an integer, got /a\*/`)
 }
 
 func TestParse_unary(t *testing.T) {
@@ -87,41 +107,50 @@ func TestParse_ternary(t *testing.T) {
 	require.Equal(t, newtype.Enum(`a`, `b`, `c`), newtype.Parse(`"a"|"b"|"c"`))
 }
 
+func TestParse_string(t *testing.T) {
+	require.Equal(t, vf.String("\r").Type(), newtype.Parse(`"\r"`))
+	require.Equal(t, vf.String("\n").Type(), newtype.Parse(`"\n"`))
+	require.Equal(t, vf.String("\t").Type(), newtype.Parse(`"\t"`))
+	require.Equal(t, vf.String("\"").Type(), newtype.Parse(`"\""`))
+
+	require.Equal(t, vf.String("\"").Type(), newtype.Parse("`\"`"))
+
+	require.Panic(t, func() { newtype.Parse(`"\`) }, `unterminated string`)
+	require.Panic(t, func() { newtype.Parse(`"\"`) }, `unterminated string`)
+	require.Panic(t, func() { newtype.Parse(`"\y"`) }, `illegal escape`)
+	require.Panic(t, func() {
+		newtype.Parse(`["
+"`)
+	}, `unterminated string`)
+
+	require.Panic(t, func() { newtype.Parse("`x") }, `unterminated string`)
+}
+
 func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[1 23]`) }, `expected one of ',' or '\]', got 23: \(column: 4\)`)
 	require.Panic(t, func() { newtype.Parse(`map{}`) }, `expected '\[', got '\{': \(column: 4\)`)
 	require.Panic(t, func() { newtype.Parse(`map[string}string`) }, `expected '\]', got '\}': \(column: 11\)`)
 	require.Panic(t, func() { newtype.Parse(`map[string](string|int]`) }, `expected '\)', got '\]': \(column: 23\)`)
-	require.Panic(t, func() { newtype.Parse(`.."b"`) }, `expected an literal integer or a float, got "b"`)
 	require.Panic(t, func() { newtype.Parse(`{1 23}`) }, `expected one of ',' or '\}', got 23`)
 	require.Panic(t, func() { newtype.Parse(`[}int`) }, `expected a type expression, got '\}'`)
 	require.Panic(t, func() { newtype.Parse(`[]string[1][2]`) }, `expected end of expression, got '\['`)
-	require.Panic(t, func() { newtype.Parse(`[]string[1`) }, `expected one of ',' or '\]', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[]string[1`) }, `expected one of ',' or '\]', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`apple`) }, `unknown identifier 'apple'`)
 	require.Panic(t, func() { newtype.Parse(`-two`) }, `unexpected character 't'`)
 	require.Panic(t, func() { newtype.Parse(`[3e,0]`) }, `unexpected character ','`)
 	require.Panic(t, func() { newtype.Parse(`[3e1.0]`) }, `unexpected character '.'`)
 	require.Panic(t, func() { newtype.Parse(`[3e23r,4]`) }, `unexpected character 'r'`)
-	require.Panic(t, func() { newtype.Parse(`[3e1`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[3e1`) }, `expected one of ',' or ']', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`[3e`) }, `unexpected end`)
 	require.Panic(t, func() { newtype.Parse(`[0x`) }, `unexpected end`)
-	require.Panic(t, func() { newtype.Parse(`[0x4`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[0x4`) }, `expected one of ',' or ']', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`[1. 3]`) }, `unexpected character ' '`)
 	require.Panic(t, func() { newtype.Parse(`[1 . 3]`) }, `expected one of ',' or ']', got '.'`)
 	require.Panic(t, func() { newtype.Parse(`[/\`) }, `unterminated regexp`)
 	require.Panic(t, func() { newtype.Parse(`[/\/`) }, `unterminated regexp`)
-	require.Panic(t, func() { newtype.Parse(`[/\//`) }, `expected one of ',' or ']', got EOF`)
-	require.Panic(t, func() { newtype.Parse(`[/\t/`) }, `expected one of ',' or ']', got EOF`)
-
-	require.Panic(t, func() { newtype.Parse(`["\`) }, `unterminated string`)
-	require.Panic(t, func() { newtype.Parse(`["\"`) }, `unterminated string`)
-	require.Panic(t, func() { newtype.Parse(`["\y"`) }, `illegal escape`)
-	require.Panic(t, func() {
-		newtype.Parse(`["
-"`)
-	}, `unterminated string`)
-	require.Panic(t, func() { newtype.Parse(`["\""`) }, `expected one of ',' or ']', got EOF`)
-	require.Panic(t, func() { newtype.Parse(`["\t"`) }, `expected one of ',' or ']', got EOF`)
+	require.Panic(t, func() { newtype.Parse(`[/\//`) }, `expected one of ',' or ']', got EOT`)
+	require.Panic(t, func() { newtype.Parse(`[/\t/`) }, `expected one of ',' or ']', got EOT`)
+	require.Panic(t, func() { newtype.Parse(`{"a":string,...`) }, `expected '}', got EOT`)
 }
 
 func TestParseFile_errors(t *testing.T) {

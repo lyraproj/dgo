@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/lyraproj/dgo/util"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -56,6 +57,8 @@ type (
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler
+		yaml.Marshaler
+		yaml.Unmarshaler
 
 		// Add adds the given value to the end of this array. It panics if the receiver is frozen.
 		Add(val interface{})
@@ -75,6 +78,9 @@ type (
 		// AppendToSlice appends all values of this array to the given slice and returns the
 		// result of the append.
 		AppendToSlice([]Value) []Value
+
+		// ContainsAll returns true if this Array contains all elements of the other Array
+		ContainsAll(other Array) bool
 
 		// Copy returns a copy of the Array. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Array
@@ -146,7 +152,7 @@ type (
 		// method panics if the receiver is frozen.
 		RemoveValue(value interface{}) bool
 
-		// SameValues returns true if the other Array is of the same size and contains the same values
+		// SameValues returns true if this Array is the same size as the other Array and contains all of its values
 		SameValues(other Array) bool
 
 		// Select returns a new Array where only values for which the predicate returned true

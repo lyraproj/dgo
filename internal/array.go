@@ -36,9 +36,6 @@ type (
 
 	// exactArrayType only matches the array that it represents
 	exactArrayType array
-
-	// exactElementsType is a type that represents the element type of an existing array.
-	exactElementsType array
 )
 
 // DefaultArrayType is the unconstrained Array type
@@ -219,10 +216,10 @@ func (t *sizedArrayType) HashCode() int {
 }
 
 func (t *sizedArrayType) Instance(value interface{}) bool {
-	return Instance(nil, t, Value(value))
+	return Instance(nil, t, value)
 }
 
-func (t *sizedArrayType) DeepInstance(guard dgo.RecursionGuard, value dgo.Value) bool {
+func (t *sizedArrayType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
 	if ov, ok := value.(*array); ok {
 		l := len(ov.slice)
 		return t.min <= l && l <= t.max && allInstance(guard, t.elementType, ov.slice)
@@ -285,8 +282,13 @@ func (t *exactArrayType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type
 }
 
 func (t *exactArrayType) ElementType() dgo.Type {
-	et := (*exactElementsType)(t)
-	return et
+	switch len(t.slice) {
+	case 0:
+		return DefaultAnyType
+	case 1:
+		return t.slice[0].Type()
+	}
+	return (*allOfValueType)(t)
 }
 
 func (t *exactArrayType) ElementTypes() dgo.Array {
@@ -343,67 +345,6 @@ func (t *exactArrayType) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *exactArrayType) Unbounded() bool {
 	return false
-}
-
-func (t *exactElementsType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiArrayExact)
-}
-
-func (t *exactElementsType) Assignable(other dgo.Type) bool {
-	return Assignable(nil, t, other)
-}
-
-func (t *exactElementsType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	if ot, ok := other.(*exactElementsType); ok {
-		return (*array)(t).Equals((*array)(ot))
-	}
-	if assignableToAll(guard, other, t.slice) {
-		return true
-	}
-	return CheckAssignableTo(guard, other, t)
-}
-
-func (t *exactElementsType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool {
-	return allInstance(guard, other, t.slice)
-}
-
-func (t *exactElementsType) Each(doer dgo.Doer) {
-	(*array)(t).Each(doer)
-}
-
-func (t *exactElementsType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactElementsType); ok {
-		return (*array)(t).Equals((*array)(ot))
-	}
-	return false
-}
-
-func (t *exactElementsType) Instance(vi interface{}) bool {
-	val := Value(vi)
-	es := t.slice
-	for i := range es {
-		if !val.Equals(es[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func (t *exactElementsType) Value() dgo.Value {
-	a := (*array)(t)
-	return a
-}
-
-func (t *exactElementsType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactElementsType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *exactElementsType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiElementsExact
 }
 
 // DefaultTupleType is the unconstrained Tuple type
@@ -493,12 +434,14 @@ func (t *tupleType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) boo
 }
 
 func (t *tupleType) ElementType() dgo.Type {
-	// ElementType is restricted to a type that can be assigned from all element types
-	if len(t.slice) == 0 {
+	switch len(t.slice) {
+	case 0:
 		return DefaultAnyType
+	case 1:
+		return t.slice[0].(dgo.Type)
+	default:
+		return (*allOfType)(t)
 	}
-	et := (*allOfType)(t)
-	return et
 }
 
 func (t *tupleType) ElementTypes() dgo.Array {
@@ -518,10 +461,10 @@ func (t *tupleType) HashCode() int {
 }
 
 func (t *tupleType) Instance(value interface{}) bool {
-	return Instance(nil, t, Value(value))
+	return Instance(nil, t, value)
 }
 
-func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value dgo.Value) bool {
+func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
 	if ov, ok := value.(*array); ok {
 		es := t.slice
 		if len(es) == 0 {
@@ -877,7 +820,7 @@ func (v *array) EachWithIndex(doer dgo.DoWithIndex) {
 }
 
 func (v *array) Equals(other interface{}) bool {
-	return equals(nil, v, Value(other))
+	return equals(nil, v, other)
 }
 
 func (v *array) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -1058,11 +1001,15 @@ func (v *array) Reject(predicate dgo.Predicate) dgo.Array {
 }
 
 func (v *array) SameValues(other dgo.Array) bool {
+	return len(v.slice) == other.Len() && v.ContainsAll(other)
+}
+
+func (v *array) ContainsAll(other dgo.Array) bool {
 	oa := other.(*array)
 	a := v.slice
 	b := oa.slice
 	l := len(a)
-	if l != len(b) {
+	if l < len(b) {
 		return false
 	}
 	if l == 0 {
@@ -1171,7 +1118,7 @@ func (v *array) ToMap() dgo.Map {
 			i++
 		}
 		hk := hl & hash(mk.HashCode())
-		nd := &hashNode{key: mk, value: mv, hashNext: tbl[hk], prev: m.last}
+		nd := &hashNode{mapEntry: mapEntry{key: mk, value: mv}, hashNext: tbl[hk], prev: m.last}
 		if m.first == nil {
 			m.first = nd
 		} else {
@@ -1195,7 +1142,7 @@ func (v *array) ToMapFromEntries() (dgo.Map, bool) {
 		if !ok {
 			var ea *array
 			if ea, ok = ms[i].(*array); ok && len(ea.slice) == 2 {
-				nd = &hashNode{key: ea.slice[0], value: ea.slice[1]}
+				nd = &hashNode{mapEntry: mapEntry{key: ea.slice[0], value: ea.slice[1]}}
 			} else {
 				return nil, false
 			}
@@ -1247,7 +1194,7 @@ nextVal:
 				continue nextVal
 			}
 		}
-		tbl[hk] = &hashNode{key: k, hashNext: tbl[hk]}
+		tbl[hk] = &hashNode{mapEntry: mapEntry{key: k}, hashNext: tbl[hk]}
 		u[ui] = k
 		ui++
 	}

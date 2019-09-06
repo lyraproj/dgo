@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -18,7 +19,9 @@ const (
 	exLeftBracket
 	exRightBracket
 	exRightParen
+	exInt
 	exIntOrFloat
+	exFloatDotDotDot
 	exTypeExpression
 	exEnd
 )
@@ -60,8 +63,12 @@ func expect(state int) (s string) {
 		s = `'}'`
 	case exRightParen:
 		s = `')'`
+	case exInt:
+		s = `an integer`
 	case exIntOrFloat:
-		s = `an literal integer or a float`
+		s = `an integer or a float`
+	case exFloatDotDotDot:
+		s = `float boundary on ... range`
 	case exTypeExpression:
 		s = `a type expression`
 	case exEnd:
@@ -71,13 +78,10 @@ func expect(state int) (s string) {
 }
 
 func badSyntax(t *token, state int) error {
-	var ts string
-	if t.i == 0 {
-		ts = `EOF`
-	} else {
-		ts = t.String()
+	if state == exFloatDotDotDot {
+		return errors.New(expect(state))
 	}
-	return fmt.Errorf(`expected %s, got %s`, expect(state), ts)
+	return fmt.Errorf(`expected %s, got %s`, expect(state), t)
 }
 
 type parser struct {
@@ -155,11 +159,11 @@ func (p *parser) parse(t *token) {
 
 func (p *parser) list() {
 	szp := len(p.d)
-	elipsis := false
+	ellipsis := false
 	for {
 		t := p.nextToken()
 		if t.i == dotdotdot {
-			elipsis = true
+			ellipsis = true
 			t = p.nextToken()
 			if t.i == '}' {
 				break
@@ -186,13 +190,13 @@ func (p *parser) list() {
 	if len(as) > 0 {
 		ar := &array{slice: as}
 		if _, ok := as[0].(dgo.MapEntry); ok {
-			tv = makeStructType(ar, elipsis)
+			tv = makeStructType(as, ellipsis)
 		}
 		if tv == nil {
 			tv = makeTupleType(ar)
 		}
 	} else {
-		tv = &array{}
+		tv = makeStructType(nil, ellipsis)
 	}
 	p.d = append(p.d[:szp], tv)
 }
@@ -209,35 +213,35 @@ func makeTupleType(ar dgo.Array) dgo.TupleType {
 	return &tupleType{slice: as, frozen: true}
 }
 
-func makeStructType(ar dgo.Array, elipsis bool) dgo.StructType {
-	m, ok := ar.ToMapFromEntries()
-	if !ok {
-		return nil
-	}
-
-	m.Each(func(e dgo.MapEntry) {
-		hn := e.(*hashNode)
-		et := &entryType{}
-		k := hn.key
-		if kt, isType := k.(dgo.Type); isType {
-			et.key = kt
-		} else {
-			et.key = k.Type()
+func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructType {
+	l := len(as)
+	keys := make([]dgo.Value, l)
+	values := make([]dgo.Value, l)
+	required := make([]byte, l)
+	for i := range as {
+		hn, ok := as[i].(dgo.MapEntry)
+		if !ok {
+			return nil
 		}
-		v := hn.value
-		et.required = true
+		k := hn.Key()
+		v := hn.Value()
+		var kt, vt dgo.Value
+		var isType bool
+		if kt, isType = k.(dgo.Type); !isType {
+			kt = k.Type()
+		}
+		keys[i] = kt
 		if ov, optional := v.(*optionalValue); optional {
-			et.required = false
 			v = ov.value
-		}
-		if vt, isType := v.(dgo.Type); isType {
-			et.value = vt
 		} else {
-			et.value = v.Type()
+			required[i] = 1
 		}
-		hn.value = et
-	})
-	return &structType{additional: elipsis, entries: m.(*hashMap)}
+		if vt, isType = v.(dgo.Type); !isType {
+			vt = v.Type()
+		}
+		values[i] = vt
+	}
+	return &structType{additional: ellipsis, keys: array{slice: keys, frozen: true}, values: array{slice: values, frozen: true}, required: required}
 }
 
 func (p *parser) params() {
@@ -274,7 +278,7 @@ func (p *parser) arrayElement(t *token) {
 		p.nextToken()
 	}
 	if p.peekToken().i == ':' {
-		// Map entry
+		// Map mapEntry
 		p.nextToken()
 		key := p.popLast()
 		p.anyOf(p.nextToken())
@@ -282,7 +286,7 @@ func (p *parser) arrayElement(t *token) {
 		if optional {
 			val = &optionalValue{val}
 		}
-		p.d = append(p.d, &hashNode{key: key, value: val})
+		p.d = append(p.d, &mapEntry{key: key, value: val})
 	}
 }
 
@@ -434,6 +438,9 @@ func (p *parser) float(t *token) dgo.Value {
 	var tp dgo.Value
 	f := tokenFloat(t)
 	n := p.peekToken()
+	if n.i == dotdotdot {
+		panic(badSyntax(t, exFloatDotDotDot))
+	}
 	if n.i == dotdot {
 		p.nextToken()
 		n = p.peekToken()
@@ -454,17 +461,25 @@ func (p *parser) integer(t *token) dgo.Value {
 	var tp dgo.Value
 	i := tokenInt(t)
 	n := p.peekToken()
-	if n.i == dotdot {
+	if n.i == dotdot || n.i == dotdotdot {
 		p.nextToken()
-		n = p.peekToken()
-		switch n.i {
+		x := p.peekToken()
+		switch x.i {
 		case integer:
 			p.nextToken()
-			tp = IntegerRangeType(i, tokenInt(n))
+			u := tokenInt(x)
+			if n.i == dotdotdot {
+				u--
+			}
+			tp = IntegerRangeType(i, u)
 		case float:
+			if n.i == dotdotdot {
+				panic(badSyntax(x, exFloatDotDotDot))
+			}
 			p.nextToken()
-			tp = FloatRangeType(float64(i), tokenFloat(n))
+			tp = FloatRangeType(float64(i), tokenFloat(x))
 		default:
+			// .. or ... doesn't matter since there's no upper bound to apply the difference on.
 			tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
 		}
 	} else {
@@ -479,12 +494,23 @@ func (p *parser) dotRange(t *token) dgo.Value {
 	switch n.i {
 	case integer:
 		p.nextToken()
-		tp = IntegerRangeType(math.MinInt64, tokenInt(n))
+		u := tokenInt(n)
+		if t.i == dotdotdot {
+			u--
+		}
+		tp = IntegerRangeType(math.MinInt64, u)
 	case float:
+		if t.i == dotdotdot {
+			panic(badSyntax(n, exFloatDotDotDot))
+		}
 		p.nextToken()
 		tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n))
 	default:
-		panic(badSyntax(n, exIntOrFloat))
+		ex := exIntOrFloat
+		if t.i == dotdotdot {
+			ex = exInt
+		}
+		panic(badSyntax(n, ex))
 	}
 	return tp
 }
@@ -516,7 +542,7 @@ func (p *parser) typeExpression(t *token) {
 		tp = p.integer(t)
 	case float:
 		tp = p.float(t)
-	case dotdot: // Unbounded at lower end
+	case dotdot, dotdotdot: // Unbounded at lower end
 		tp = p.dotRange(t)
 	case identifier:
 		tp = p.identifier(t)

@@ -228,7 +228,7 @@ func TestArrayElementType_singleElement(t *testing.T) {
 	require.Instance(t, et, `hello`)
 	require.NotInstance(t, et, `world`)
 	require.Equal(t, et, vf.Strings(`hello`).Type().(dgo.ArrayType).ElementType())
-	require.Equal(t, et.(dgo.ExactType).Value(), vf.Strings(`hello`))
+	//	require.Equal(t, et.(dgo.ExactType).Value(), vf.Strings(`hello`))
 	require.NotEqual(t, et, vf.Strings(`hello`).Type().(dgo.ArrayType))
 
 	require.NotEqual(t, 0, et.HashCode())
@@ -249,12 +249,12 @@ func TestArrayElementType_multipleElements(t *testing.T) {
 	require.NotAssignable(t, vf.String(`world`).Type(), et)
 	require.Assignable(t, vf.Strings(`hello`, `world`).Type(), at)
 	require.Assignable(t, vf.Strings(`hello`, `world`).Type().(dgo.ArrayType).ElementType(), et)
-	require.NotAssignable(t, vf.Strings(`world`, `hello`).Type().(dgo.ArrayType).ElementType(), et)
+	require.Assignable(t, vf.Strings(`world`, `hello`).Type().(dgo.ArrayType).ElementType(), et)
 
 	require.Assignable(t, newtype.Array(2, 2), at)
 	require.Assignable(t, newtype.Array(et, 2, 2), at)
 
-	et.(dgo.Iterable).Each(func(v dgo.Value) {
+	et.(dgo.TernaryType).Operands().Each(func(v dgo.Value) {
 		t.Helper()
 		require.Instance(t, typ.String, v)
 	})

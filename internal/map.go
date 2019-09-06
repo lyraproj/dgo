@@ -25,25 +25,6 @@ type (
 	// exactMapType represents a map exactly
 	exactMapType hashMap
 
-	entryType struct {
-		key      dgo.Type
-		value    dgo.Type
-		required bool
-	}
-
-	// structType describes each entry of a map
-	structType struct {
-		additional bool
-		entries    *hashMap // Map of key <=> entryType
-		// TODO: Add entries where key is matched by Pattern or Ternary types
-	}
-
-	// exactMapKeysType represents the key type of a map as a function of the type of the keys
-	exactMapKeysType hashMap
-
-	// exactMapValuesType represents the value type of a map as a function of the type of the values
-	exactMapValuesType hashMap
-
 	// sizedMapType represents a map with constraints on key type, value type, and size
 	sizedMapType struct {
 		keyType   dgo.Type
@@ -52,15 +33,19 @@ type (
 		max       int
 	}
 
+	mapEntry struct {
+		key   dgo.Value
+		value dgo.Value
+	}
+
+	exactEntryType mapEntry
+
 	hashNode struct {
-		key      dgo.Value
-		value    dgo.Value
+		mapEntry
 		hashNext *hashNode
 		next     *hashNode
 		prev     *hashNode
 	}
-
-	exactEntryType hashNode
 
 	// hashMap is an unsorted Map that uses a hash table
 	hashMap struct {
@@ -73,244 +58,33 @@ type (
 	}
 )
 
-// Struct returns a new Struct type built from the given MapEntryTypes.
-func Struct(additional bool, entries []dgo.MapEntryType) dgo.StructType {
-	m := &hashMap{table: make([]*hashNode, tableSizeFor(len(entries)))}
-	for i := range entries {
-		e := entries[i]
-		switch k := e.KeyType().(type) {
-		case *exactStringType, exactIntegerType, exactFloatType, *exactArrayType, *exactMapType, booleanType:
-			m.Put(k.(dgo.ExactType).Value(), e)
-		default:
-			panic(`non exact key types is not yet supported`)
-		}
-	}
-	m.Freeze()
-	return &structType{additional: additional, entries: m}
-}
-
-func (t *structType) Additional() bool {
-	return t.additional
-}
-
-func (t *structType) Assignable(other dgo.Type) bool {
-	return Assignable(nil, t, other)
-}
-
-func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	switch ot := other.(type) {
-	case *structType:
-		mm := t.entries
-		om := ot.entries
-		oc := 0
-		for me := mm.first; me != nil; me = me.next {
-			et := me.value.(*entryType)
-			if oe, ok := om.Get(me.key); ok {
-				oc++
-				if !Assignable(guard, et, oe.(*entryType)) {
-					return false
-				}
-			} else if et.required || ot.additional { // additional included since key is allowed with unconstrained value
-				return false
-			}
-		}
-		return t.additional || oc == om.len
-	case *exactMapType:
-		ov := (*hashMap)(ot)
-		return Instance(guard, t, ov)
-	}
-	return CheckAssignableTo(guard, other, t)
-}
-
-func (t *structType) Entries() dgo.Array {
-	es := make([]dgo.Value, t.entries.len)
-	i := 0
-	for e := t.entries.first; e != nil; e = e.next {
-		es[i] = e.value
-		i++
-	}
-	return &array{slice: es, frozen: true}
-}
-
-func (t *structType) Equals(other interface{}) bool {
-	if ot, ok := other.(*structType); ok {
-		if t.additional == ot.additional {
-			return t.entries.Equals(ot.entries)
-		}
-	}
-	return false
-}
-
-func (t *structType) HashCode() int {
-	h := t.entries.HashCode()
-	if t.additional {
-		h *= 3
-	}
-	return h
-}
-
-func (t *structType) Instance(value interface{}) bool {
-	return Instance(nil, t, Value(value))
-}
-
-func (t *structType) DeepInstance(guard dgo.RecursionGuard, value dgo.Value) bool {
-	if om, ok := value.(*hashMap); ok {
-		mm := t.entries
-		oc := 0
-		for me := mm.first; me != nil; me = me.next {
-			et := me.value.(*entryType)
-			if ov, ok := om.Get(me.key); ok {
-				oc++
-				if !Instance(guard, et.value, ov) {
-					return false
-				}
-			} else if et.required {
-				return false
-			}
-		}
-		return t.additional || oc == om.len
-	}
-	return false
-}
-
-func (t *structType) Max() int {
-	if t.additional {
-		return math.MaxInt64
-	}
-	return t.entries.len
-}
-
-func (t *structType) Min() int {
-	min := 0
-	for e := t.entries.first; e != nil; e = e.next {
-		if e.value.(*entryType).required {
-			min++
-		}
-	}
-	return min
-}
-
-func (t *structType) String() string {
-	return TypeString(t)
-}
-
-func (t *structType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiStruct
-}
-
-func (t *structType) Unbounded() bool {
-	return t.additional && t.Min() == 0
-}
-
-// StructEntry returns a new MapEntryType initiated with the given parameters
-func StructEntry(key string, valueType dgo.Type, required bool) dgo.MapEntryType {
-	return &entryType{key: String(key).Type(), value: valueType, required: required}
-}
-
-// StructEntry2 returns a new MapEntryType initiated with the given parameters
-func StructEntry2(keyType, valueType dgo.Type, required bool) dgo.MapEntryType {
-	return &entryType{key: keyType, value: valueType, required: required}
-}
-
-func (t *entryType) Assignable(other dgo.Type) bool {
-	return Assignable(nil, t, other)
-}
-
-func (t *entryType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	if ot, ok := other.(*entryType); ok {
-		if t.required && !ot.required {
-			return false
-		}
-		return Assignable(guard, t.key, ot.key) && Assignable(guard, t.value, ot.value)
-	}
-	return CheckAssignableTo(guard, other, t)
-}
-
-func (t *entryType) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if ot, ok := other.(*entryType); ok {
-		return t.required == ot.required && equals(seen, t.key, ot.key) && equals(seen, t.value, ot.value)
-	}
-	return false
-}
-
-func (t *entryType) Equals(other interface{}) bool {
-	return equals(nil, t, Value(other))
-}
-
-func (t *entryType) HashCode() int {
-	return deepHashCode(nil, t)
-}
-
-func (t *entryType) deepHashCode(seen []dgo.Value) int {
-	return deepHashCode(seen, t.key) ^ deepHashCode(seen, t.value)
-}
-
-func (t *entryType) Instance(value interface{}) bool {
-	panic("implement me")
-}
-
-func (t *entryType) DeepInstance(guard dgo.RecursionGuard, value dgo.Value) bool {
-	if he, ok := value.(dgo.MapEntry); ok {
-		return Instance(guard, t.key, he.Key()) && Instance(guard, t.value, he.Value())
-	}
-	return false
-}
-
-func (t *entryType) KeyType() dgo.Type {
-	return t.key
-}
-
-func (t *entryType) Required() bool {
-	return t.required
-}
-
-func (t *entryType) String() string {
-	return TypeString(t)
-}
-
-func (t *entryType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *entryType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiMapEntry
-}
-
-func (t *entryType) ValueType() dgo.Type {
-	return t.value
-}
-
 func (t *exactEntryType) Assignable(other dgo.Type) bool {
 	if ot, ok := other.(*exactEntryType); ok {
-		return (*hashNode)(t).Equals((*hashNode)(ot))
+		return (*mapEntry)(t).Equals((*mapEntry)(ot))
 	}
 	return CheckAssignableTo(nil, other, t)
 }
 
 func (t *exactEntryType) Equals(other interface{}) bool {
 	if ot, ok := other.(*exactEntryType); ok {
-		return (*hashNode)(t).Equals((*hashNode)(ot))
+		return (*mapEntry)(t).Equals((*mapEntry)(ot))
 	}
 	return false
 }
 
 func (t *exactEntryType) HashCode() int {
-	return (*hashNode)(t).HashCode()
+	return (*mapEntry)(t).HashCode()
 }
 
 func (t *exactEntryType) Instance(value interface{}) bool {
 	if ot, ok := value.(*hashNode); ok {
-		return (*hashNode)(t).Equals(ot)
+		return (*mapEntry)(t).Equals(ot)
 	}
 	return false
 }
 
 func (t *exactEntryType) KeyType() dgo.Type {
-	return (*hashNode)(t).key.Type()
+	return (*mapEntry)(t).key.Type()
 }
 
 func (t *exactEntryType) Required() bool {
@@ -330,15 +104,15 @@ func (t *exactEntryType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *exactEntryType) Value() dgo.Value {
-	v := (*hashNode)(t)
+	v := (*mapEntry)(t)
 	return v
 }
 
 func (t *exactEntryType) ValueType() dgo.Type {
-	return (*hashNode)(t).value.Type()
+	return (*mapEntry)(t).value.Type()
 }
 
-func (v *hashNode) AppendTo(w *util.Indenter) {
+func (v *mapEntry) AppendTo(w *util.Indenter) {
 	w.AppendValue(v.key)
 	w.Append(`:`)
 	if w.Indenting() {
@@ -347,64 +121,73 @@ func (v *hashNode) AppendTo(w *util.Indenter) {
 	w.AppendValue(v.value)
 }
 
-func (v *hashNode) Equals(other interface{}) bool {
-	return equals(nil, v, Value(other))
+func (v *mapEntry) Equals(other interface{}) bool {
+	return equals(nil, v, other)
 }
 
-func (v *hashNode) deepEqual(seen []dgo.Value, other deepEqual) bool {
+func (v *mapEntry) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ov, ok := other.(*hashNode); ok {
 		return equals(seen, v.key, ov.key) && equals(seen, v.value, ov.value)
 	}
 	return false
 }
 
-func (v *hashNode) HashCode() int {
+func (v *mapEntry) HashCode() int {
 	return deepHashCode(nil, v)
 }
 
-func (v *hashNode) deepHashCode(seen []dgo.Value) int {
+func (v *mapEntry) deepHashCode(seen []dgo.Value) int {
 	return deepHashCode(seen, v.key) ^ deepHashCode(seen, v.value)
 }
 
-func (v *hashNode) Freeze() {
+func (v *mapEntry) Freeze() {
 	if f, ok := v.value.(dgo.Freezable); ok {
 		f.Freeze()
 	}
 }
 
-func (v *hashNode) Frozen() bool {
+func (v *mapEntry) Frozen() bool {
 	if f, ok := v.value.(dgo.Freezable); ok && !f.Frozen() {
 		return false
 	}
 	return true
 }
 
-func (v *hashNode) FrozenCopy() dgo.Value {
+func (v *mapEntry) FrozenCopy() dgo.Value {
 	if v.Frozen() {
 		return v
 	}
-	c := &hashNode{key: v.key, value: v.value}
+	c := &mapEntry{key: v.key, value: v.value}
 	c.copyFreeze()
 	return c
 }
 
-func (v *hashNode) Key() dgo.Value {
+func (v *hashNode) FrozenCopy() dgo.Value {
+	if v.Frozen() {
+		return v
+	}
+	c := &hashNode{mapEntry: mapEntry{key: v.key, value: v.value}}
+	c.copyFreeze()
+	return c
+}
+
+func (v *mapEntry) Key() dgo.Value {
 	return v.key
 }
 
-func (v *hashNode) String() string {
+func (v *mapEntry) String() string {
 	return util.ToString(v)
 }
 
-func (v *hashNode) Type() dgo.Type {
+func (v *mapEntry) Type() dgo.Type {
 	return (*exactEntryType)(v)
 }
 
-func (v *hashNode) Value() dgo.Value {
+func (v *mapEntry) Value() dgo.Value {
 	return v.value
 }
 
-func (v *hashNode) copyFreeze() {
+func (v *mapEntry) copyFreeze() {
 	if f, ok := v.value.(dgo.Freezable); ok {
 		v.value = f.FrozenCopy()
 	}
@@ -461,7 +244,7 @@ func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
 		e := se[i]
 		k := e[0]
 		hk := hl & hash(k.HashCode())
-		hn := &hashNode{key: k, value: e[1], hashNext: tbl[hk], prev: m.last}
+		hn := &hashNode{mapEntry: mapEntry{key: k, value: e[1]}, hashNext: tbl[hk], prev: m.last}
 		if m.last == nil {
 			m.first = hn
 		} else {
@@ -484,18 +267,22 @@ func MutableMap(capacity int, typ interface{}) dgo.Map {
 	if capacity <= 0 {
 		capacity = initialCapacity
 	}
+
+	parseMapType := func(s string) dgo.MapType {
+		if t, ok := Parse(s).(dgo.MapType); ok {
+			return t
+		}
+		panic(fmt.Errorf("expression '%s' does not evaluate to a MapType", s))
+	}
 	var mt dgo.MapType
 	if typ != nil {
 		switch typ := typ.(type) {
 		case dgo.MapType:
 			mt = typ
+		case string:
+			mt = parseMapType(typ)
 		case dgo.String:
-			s := typ.GoString()
-			if t, ok := Parse(s).(dgo.MapType); ok {
-				mt = t
-			} else {
-				panic(fmt.Errorf("expression '%s' does not evaluate to a MapType", s))
-			}
+			mt = parseMapType(typ.GoString())
 		default:
 			mt = TypeFromReflected(reflect.TypeOf(typ)).(dgo.MapType)
 		}
@@ -618,7 +405,7 @@ func (g *hashMap) Entries() dgo.Array {
 }
 
 func (g *hashMap) Equals(other interface{}) bool {
-	return equals(nil, g, Value(other))
+	return equals(nil, g, other)
 }
 
 func (g *hashMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -701,13 +488,17 @@ func (g *hashMap) deepHashCode(seen []dgo.Value) int {
 }
 
 func (g *hashMap) Keys() dgo.Array {
+	return &array{slice: g.keys(), frozen: g.frozen}
+}
+
+func (g *hashMap) keys() []dgo.Value {
 	ks := make([]dgo.Value, g.len)
 	p := 0
 	for e := g.first; e != nil; e = e.next {
 		ks[p] = e.key
 		p++
 	}
-	return &array{slice: ks, frozen: true}
+	return ks
 }
 
 func (g *hashMap) Len() int {
@@ -742,7 +533,7 @@ func (g *hashMap) UnmarshalJSON(b []byte) error {
 		var m *hashMap
 		m, err = jsonDecodeMap(dec)
 		if err == nil {
-			*g = *m
+			g.assignFrom(m)
 		}
 	}
 	return err
@@ -757,9 +548,19 @@ func (g *hashMap) UnmarshalYAML(n *yaml.Node) error {
 	}
 	m, err := yamlDecodeMap(n)
 	if err == nil {
-		*g = *m
+		g.assignFrom(m)
 	}
 	return err
+}
+
+func (g *hashMap) assignFrom(m *hashMap) {
+	if g.typ != nil {
+		*g = hashMap{typ: g.typ}
+		g.PutAll(m)
+		g.frozen = m.frozen
+	} else {
+		*g = *m
+	}
 }
 
 // MarshalYAML returns a *yaml.Node that represents this Map.
@@ -825,7 +626,7 @@ func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
 		hk = (len(tbl) - 1) & hs
 	}
 
-	nd := &hashNode{key: frozenCopy(k), value: v, hashNext: tbl[hk], prev: g.last}
+	nd := &hashNode{mapEntry: mapEntry{key: frozenCopy(k), value: v}, hashNext: tbl[hk], prev: g.last}
 	if g.first == nil {
 		g.first = nd
 	} else {
@@ -864,7 +665,7 @@ func (g *hashMap) PutAll(associations dgo.Map) {
 			}
 		}
 		g.assertType(key, val, 1)
-		nd := &hashNode{key: frozenCopy(key), value: val, hashNext: tbl[hk], prev: g.last}
+		nd := &hashNode{mapEntry: mapEntry{key: frozenCopy(key), value: val}, hashNext: tbl[hk], prev: g.last}
 		if g.first == nil {
 			g.first = nd
 		} else {
@@ -1057,7 +858,7 @@ func (g *hashMap) resize(c *hashMap, capInc int) {
 	var prev *hashNode
 	for oe := g.first; oe != nil; oe = oe.next {
 		hk := tl & hash(oe.key.HashCode())
-		ne := &hashNode{key: oe.key, value: oe.value, hashNext: nt[hk]}
+		ne := &hashNode{mapEntry: mapEntry{key: oe.key, value: oe.value}, hashNext: nt[hk]}
 		if prev == nil {
 			c.first = ne
 		} else {
@@ -1210,104 +1011,6 @@ func newMapType(kt, vt dgo.Type, min, max int) dgo.MapType {
 	return &sizedMapType{keyType: kt, valueType: vt, min: min, max: max}
 }
 
-func (t *exactMapValuesType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactMapValuesType); ok {
-		return sameMapValues((*hashMap)(t), (*hashMap)(ot))
-	}
-	if (*hashMap)(t).AllValues(func(k dgo.Value) bool { return k.Type().Assignable(other) }) {
-		return true
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactMapValuesType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool {
-	return (*hashMap)(t).AllValues(func(v dgo.Value) bool { return other.Instance(v) })
-}
-
-func (t *exactMapValuesType) Each(doer dgo.Doer) {
-	(*hashMap)(t).EachValue(doer)
-}
-
-func (t *exactMapValuesType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactMapValuesType); ok {
-		return sameMapValues((*hashMap)(t), (*hashMap)(ot))
-	}
-	return false
-}
-
-func (t *exactMapValuesType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapValuesExact)
-}
-
-func (t *exactMapValuesType) Instance(value interface{}) bool {
-	return (*hashMap)(t).AllValues(func(v dgo.Value) bool { return v.Equals(value) })
-}
-
-func (t *exactMapValuesType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactMapValuesType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *exactMapValuesType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiMapValuesExact
-}
-
-func (t *exactMapKeysType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactMapKeysType); ok {
-		hs := (*hashMap)(t)
-		ho := (*hashMap)(ot)
-		if hs.len == ho.len {
-			return hs.AllKeys(func(k dgo.Value) bool {
-				_, found := ho.Get(k)
-				return found
-			})
-		}
-		return false
-	}
-	if (*hashMap)(t).AllKeys(func(k dgo.Value) bool { return k.Type().Assignable(other) }) {
-		return true
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactMapKeysType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool {
-	return (*hashMap)(t).AllKeys(func(k dgo.Value) bool { return other.Instance(k) })
-}
-
-func (t *exactMapKeysType) Instance(value interface{}) bool {
-	return (*hashMap)(t).AllKeys(func(v dgo.Value) bool { return v.Equals(value) })
-}
-
-func (t *exactMapKeysType) Each(doer dgo.Doer) {
-	(*hashMap)(t).EachKey(doer)
-}
-
-func (t *exactMapKeysType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactMapKeysType); ok {
-		return sameMapKeys((*hashMap)(t), (*hashMap)(ot))
-	}
-	return false
-}
-
-func (t *exactMapKeysType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapKeysExact)
-}
-
-func (t *exactMapKeysType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactMapKeysType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *exactMapKeysType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiMapKeysExact
-}
-
 func (t *sizedMapType) Assignable(other dgo.Type) bool {
 	return Assignable(nil, t, other)
 }
@@ -1320,7 +1023,7 @@ func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) 
 }
 
 func (t *sizedMapType) Equals(other interface{}) bool {
-	return equals(nil, t, Value(other))
+	return equals(nil, t, other)
 }
 
 func (t *sizedMapType) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -1352,10 +1055,10 @@ func (t *sizedMapType) deepHashCode(seen []dgo.Value) int {
 }
 
 func (t *sizedMapType) Instance(value interface{}) bool {
-	return Instance(nil, t, Value(value))
+	return Instance(nil, t, value)
 }
 
-func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value dgo.Value) bool {
+func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
 	if ov, ok := value.(*hashMap); ok {
 		l := ov.len
 		if t.min <= l && l <= t.max {
@@ -1500,8 +1203,7 @@ func (t *exactMapType) Instance(value interface{}) bool {
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
-	kt := (*exactMapKeysType)(t)
-	return kt
+	return &allOfValueType{slice: (*hashMap)(t).keys(), frozen: true}
 }
 
 func (t *exactMapType) Max() int {
@@ -1530,8 +1232,7 @@ func (t *exactMapType) Value() dgo.Value {
 }
 
 func (t *exactMapType) ValueType() dgo.Type {
-	vt := (*exactMapValuesType)(t)
-	return vt
+	return &allOfValueType{slice: (*hashMap)(t).values(), frozen: true}
 }
 
 func frozenMap(f string) error {
@@ -1539,35 +1240,5 @@ func frozenMap(f string) error {
 }
 
 func (t *exactMapType) Unbounded() bool {
-	return false
-}
-
-// sameMapKeys returns true when the given maps a and b have the same set of keys
-func sameMapKeys(a, b *hashMap) bool {
-	return a.len == b.len && a.AllKeys(func(k dgo.Value) bool {
-		_, ok := b.Get(k)
-		return ok
-	})
-}
-
-// sameMapValues returns true when the given maps a and b have the same set of values
-func sameMapValues(a, b *hashMap) bool {
-	l := a.len
-	if l == b.len {
-		// Need predictable order of values in b
-		bs := b.values()
-		m := make([]bool, l)
-		return a.AllValues(func(av dgo.Value) bool {
-			for i := range bs {
-				if !m[i] {
-					if av.Equals(bs[i]) {
-						m[i] = true
-						return true
-					}
-				}
-			}
-			return false
-		})
-	}
 	return false
 }
