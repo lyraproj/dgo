@@ -22,10 +22,12 @@
 
 |Type expression|References|Corresponding Puppet type|
 |---------------|----------|-------------------------|
-|`3..28`|integers in the range 3 to 28 inclusively|`Integer[3,28]`
+|`3..28`|integer in the range 3 to 28 inclusively|`Integer[3,28]`
+|`3...28`|integer in the range 3 to 28 with exclusive endpoint|`Integer[3,27]`
 |`0..`|a positive integer|`Integer[0]`
 |`-1.2..3.8`|a float ranging from -1.2 to 3.8|`Float[-1.2, 3.8]` 
 
+The exclusive endpoint is not permitted for floats since the predecessor is impossible to compute.
 ### Arrays
 #### Syntax:
 `[]<element type>` or `{ <element type at position 0> [,<element type at position 1> ... ] }`
