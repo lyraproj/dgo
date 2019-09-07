@@ -49,7 +49,19 @@
 |`map[string](string\|nil)`|string keys and optional string values|`Hash[String,Optional[String]]`|
 |`map[string\|int]any`|string or integer keys and any type of values|`Hash[Variant[String,Integer],Any]`|
 |`map[/\A[A-Z]+\z/,1,10]string[1]`|upper case string keys, non empty string values, and between 1 to 10 entries|`Hash[Pattern[/\A[A-Z]+\z/],String[1],1,10]`|
-|`{"name":string,"co"?:string,"address":string,"zip":/\d{5,5}/,"city":string}`|map with named and typed entries where "co" is optional|`Struct[name=>String,Optional[co]=>String,address=>String,zip=>Pattern[/\d{5,5}/],city=>String]`
+
+A map with predefined keys, where all keys are strings, is very common. Such maps are described as lists of <key>:<value>
+associations. The <key> is a bit special in that it will allow identifiers that doesn't map to a type and treat them as
+literal strings. I.e, just using `name` instead `"name"` is allowed here. Quoting is of course still allowed but only
+needed when the key conflicts with a type, i.e. `"int"` must be used to get the literal string "int"
+since just `int` will result in the integer type.
+
+The allowed in a <key> identifier are $, _, 0-9, A-Z, and a-z
+
+|Sample type expression|Describes a map with|Corresponding Puppet type|
+|----------------------|--------------------|-------------------------|
+|`{name:string,co?:string,address:string,zip:/\d{5,5}/,city:string}`|map with named and typed entries where "co" is optional|`Struct[name=>String,Optional[co]=>String,address=>String,zip=>Pattern[/\d{5,5}/],city=>String]`
+|`{"name":string,"co"?:string,"address":string,"zip":/\d{5,5}/,"city":string}`|same as above|same as above
 
 ### Combinations
 #### allOf syntax:

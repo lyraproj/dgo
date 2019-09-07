@@ -445,7 +445,6 @@ func (t *tupleType) ElementType() dgo.Type {
 }
 
 func (t *tupleType) ElementTypes() dgo.Array {
-	// ElementType is restricted to a type that can be assigned from all element types
 	return (*array)(t)
 }
 

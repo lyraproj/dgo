@@ -26,6 +26,10 @@ const (
 	exEnd
 )
 
+type unknownIdentifier struct {
+	hstring
+}
+
 type optionalValue struct {
 	value dgo.Value
 }
@@ -272,7 +276,14 @@ func (p *parser) params() {
 }
 
 func (p *parser) arrayElement(t *token) {
-	p.anyOf(t)
+	var id dgo.Value
+	if t.i == identifier {
+		// Special handling of identifiers at this point
+		id = p.identifier(t, true)
+		p.d = append(p.d, id)
+	} else {
+		p.anyOf(t)
+	}
 	optional := p.peekToken().i == '?'
 	if optional {
 		p.nextToken()
@@ -281,12 +292,17 @@ func (p *parser) arrayElement(t *token) {
 		// Map mapEntry
 		p.nextToken()
 		key := p.popLast()
+		if unknown, ok := key.(*unknownIdentifier); ok {
+			key = String(unknown.s)
+		}
 		p.anyOf(p.nextToken())
 		val := p.popLast()
 		if optional {
 			val = &optionalValue{val}
 		}
 		p.d = append(p.d, &mapEntry{key: key, value: val})
+	} else if unknown, ok := id.(*unknownIdentifier); ok {
+		panic(fmt.Errorf(`unknown identifier '%s'`, unknown.s))
 	}
 }
 
@@ -401,7 +417,7 @@ func (p *parser) string() dgo.Value {
 	return DefaultStringType
 }
 
-func (p *parser) identifier(t *token) dgo.Value {
+func (p *parser) identifier(t *token, acceptUnknown bool) dgo.Value {
 	var tp dgo.Value
 	switch t.s {
 	case `map`:
@@ -429,7 +445,10 @@ func (p *parser) identifier(t *token) dgo.Value {
 	case `nil`:
 		tp = Nil
 	default:
-		panic(fmt.Errorf(`unknown identifier '%s'`, t.s))
+		if !acceptUnknown {
+			panic(fmt.Errorf(`unknown identifier '%s'`, t.s))
+		}
+		tp = &unknownIdentifier{hstring: hstring{s: t.s}}
 	}
 	return tp
 }
@@ -545,7 +564,7 @@ func (p *parser) typeExpression(t *token) {
 	case dotdot, dotdotdot: // Unbounded at lower end
 		tp = p.dotRange(t)
 	case identifier:
-		tp = p.identifier(t)
+		tp = p.identifier(t, false)
 	case stringLiteral:
 		tp = String(t.s)
 	case regexpLiteral:

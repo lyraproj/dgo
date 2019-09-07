@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/lyraproj/dgo/util"
 )
@@ -23,6 +22,38 @@ const (
 	dotdot
 	dotdotdot
 )
+
+const (
+	digit = 1 << iota
+	hexDigit
+	letter
+	idCharStart
+	idChar
+)
+
+var charTypes = [128]uint8{}
+
+func init() {
+	i := int('$')
+	charTypes[i] = idCharStart | idChar
+	i = int('_')
+	charTypes[i] = idCharStart | idChar
+	for i = '0'; i <= '9'; i++ {
+		charTypes[i] = digit | hexDigit | idChar
+	}
+	for i = 'A'; i <= 'F'; i++ {
+		charTypes[i] = hexDigit | letter | idCharStart | idChar
+	}
+	for i = 'G'; i <= 'Z'; i++ {
+		charTypes[i] = letter | idCharStart | idChar
+	}
+	for i = 'a'; i <= 'f'; i++ {
+		charTypes[i] = hexDigit | letter | idCharStart | idChar
+	}
+	for i = 'g'; i <= 'z'; i++ {
+		charTypes[i] = letter | idCharStart | idChar
+	}
+}
 
 type token struct {
 	s string
@@ -58,11 +89,9 @@ func badToken(r rune) error {
 func nextToken(sr *util.StringReader) (t *token) {
 	for {
 		r := sr.Next()
-		if r == 0 {
-			return &token{``, end}
-		}
-
 		switch r {
+		case 0:
+			return &token{``, end}
 		case ' ', '\t', '\n':
 			continue
 		case '`':
@@ -85,7 +114,7 @@ func nextToken(sr *util.StringReader) (t *token) {
 			}
 		case '-', '+':
 			n := sr.Next()
-			if n < '0' || n > '9' {
+			if !isDigit(n) {
 				panic(badToken(n))
 			}
 			buf := bytes.NewBufferString(``)
@@ -104,11 +133,11 @@ func nextToken(sr *util.StringReader) (t *token) {
 
 func buildToken(r rune, sr *util.StringReader) *token {
 	switch {
-	case r >= '0' && r <= '9':
+	case isDigit(r):
 		buf := bytes.NewBufferString(``)
 		tkn := consumeNumber(sr, r, buf, integer)
 		return &token{buf.String(), tkn}
-	case r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z':
+	case isIdentifierStart(r):
 		buf := bytes.NewBufferString(``)
 		consumeIdentifier(sr, r, buf)
 		return &token{buf.String(), identifier}
@@ -120,31 +149,36 @@ func buildToken(r rune, sr *util.StringReader) *token {
 func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 	for {
 		r := sr.Peek()
-		switch r {
-		case 0:
-			return
-		case '.':
+		switch {
+		case r == '.' || isLetter(r):
 			panic(badToken(r))
+		case isDigit(r):
+			sr.Next()
+			util.WriteRune(buf, r)
 		default:
-			if r >= '0' && r <= '9' {
-				sr.Next()
-				util.WriteRune(buf, r)
-				continue
-			}
-			if unicode.IsLetter(r) {
-				panic(badToken(r))
-			}
 			return
 		}
 	}
 }
 
 func isDigit(r rune) bool {
-	return r >= '0' && r <= '9'
+	return r < 128 && (charTypes[r]&digit) != 0
+}
+
+func isLetter(r rune) bool {
+	return r < 128 && (charTypes[r]&letter) != 0
 }
 
 func isHex(r rune) bool {
-	return r >= '0' && r <= '9' || r >= 'A' && r <= 'F' || r >= 'a' && r <= 'f'
+	return r < 128 && (charTypes[r]&hexDigit) != 0
+}
+
+func isIdentifier(r rune) bool {
+	return r < 128 && (charTypes[r]&idChar) != 0
+}
+
+func isIdentifierStart(r rune) bool {
+	return r < 128 && (charTypes[r]&idCharStart) != 0
 }
 
 func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
@@ -169,19 +203,8 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 }
 
 func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
-	for {
-		r := sr.Peek()
-		switch r {
-		case 0:
-			return
-		default:
-			if isHex(r) {
-				sr.Next()
-				util.WriteRune(buf, r)
-				continue
-			}
-			return
-		}
+	for isHex(sr.Peek()) {
+		util.WriteRune(buf, sr.Next())
 	}
 }
 
@@ -264,16 +287,13 @@ func consumeQuotedString(sr *util.StringReader) string {
 	buf := bytes.NewBufferString(``)
 	for {
 		r := sr.Next()
-		if r == '"' {
-			return buf.String()
-		}
 		switch r {
 		default:
 			util.WriteRune(buf, r)
-		case 0:
+		case 0, '\n':
 			panic(errors.New("unterminated string"))
-		case '\n':
-			panic(errors.New("unterminated string"))
+		case '"':
+			return buf.String()
 		case '\\':
 			r = sr.Next()
 			switch r {
@@ -311,18 +331,7 @@ func consumeRawString(sr *util.StringReader) string {
 
 func consumeIdentifier(sr *util.StringReader, start rune, buf *bytes.Buffer) {
 	util.WriteRune(buf, start)
-	for {
-		r := sr.Peek()
-		switch r {
-		case 0:
-			return
-		default:
-			if r == '_' || r >= '0' && r <= '9' || r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' {
-				sr.Next()
-				util.WriteRune(buf, r)
-				continue
-			}
-			return
-		}
+	for isIdentifier(sr.Peek()) {
+		util.WriteRune(buf, sr.Next())
 	}
 }

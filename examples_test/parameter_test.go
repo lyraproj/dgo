@@ -9,7 +9,7 @@ import (
 )
 
 // This is the type that describes how a parameters map is constituted
-const parametersType = `map[string]{"name": string[1], "$type": dgo, "required"?: bool}`
+const parametersType = `map[string]{name: string[1], $type: dgo, required?: bool}`
 
 // Sample parameter map
 const sampleParameters = `
