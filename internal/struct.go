@@ -190,6 +190,15 @@ func (t *structType) Min() int {
 	return min
 }
 
+func (t *structType) Resolve(ap dgo.AliasProvider) {
+	ks := t.keys.slice
+	vs := t.values.slice
+	for i := range ks {
+		ks[i] = ap.Replace(ks[i].(dgo.Type))
+		vs[i] = ap.Replace(vs[i].(dgo.Type))
+	}
+}
+
 func (t *structType) String() string {
 	return TypeString(t)
 }

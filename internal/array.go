@@ -235,6 +235,10 @@ func (t *sizedArrayType) Min() int {
 	return t.min
 }
 
+func (t *sizedArrayType) Resolve(ap dgo.AliasProvider) {
+	t.elementType = ap.Replace(t.elementType)
+}
+
 func (t *sizedArrayType) String() string {
 	return TypeString(t)
 }
@@ -493,6 +497,10 @@ func (t *tupleType) Min() int {
 	return len(t.slice)
 }
 
+func (t *tupleType) Resolve(ap dgo.AliasProvider) {
+	resolveSlice(t.slice, ap)
+}
+
 func (t *tupleType) String() string {
 	return TypeString(t)
 }
@@ -731,7 +739,7 @@ func (v *array) Any(predicate dgo.Predicate) bool {
 	return false
 }
 
-func (v *array) AppendTo(w *util.Indenter) {
+func (v *array) AppendTo(w util.Indenter) {
 	w.AppendRune('[')
 	ew := w.Indent()
 	a := v.slice
@@ -1019,7 +1027,7 @@ func (v *array) ContainsAll(other dgo.Array) bool {
 	// where such elements are set to nil. This avoids excessive calls
 	// to Equals
 	vs := sliceCopy(b)
-	for i := range a {
+	for i := range b {
 		ea := a[i]
 		f := false
 		for j := range vs {
@@ -1093,7 +1101,7 @@ func (v *array) Sort() dgo.Array {
 }
 
 func (v *array) String() string {
-	return util.ToString(v)
+	return util.ToStringERP(v)
 }
 
 func (v *array) ToMap() dgo.Map {
@@ -1204,7 +1212,7 @@ nextVal:
 }
 
 func (v *array) MarshalJSON() ([]byte, error) {
-	return []byte(util.ToString(v)), nil
+	return []byte(util.ToStringERP(v)), nil
 }
 
 func (v *array) MarshalYAML() (interface{}, error) {
@@ -1339,4 +1347,10 @@ func sliceCopy(s []dgo.Value) []dgo.Value {
 	c := make([]dgo.Value, len(s))
 	copy(c, s)
 	return c
+}
+
+func resolveSlice(ts []dgo.Value, ap dgo.AliasProvider) {
+	for i := range ts {
+		ts[i] = ap.Replace(ts[i].(dgo.Type))
+	}
 }

@@ -3,7 +3,7 @@ package internal
 import "github.com/lyraproj/dgo/dgo"
 
 type notType struct {
-	Negated dgo.Type
+	negated dgo.Type
 }
 
 // DefaultNotType is the unconstrained Not type
@@ -13,27 +13,27 @@ var DefaultNotType = &notType{DefaultAnyType}
 func NotType(t dgo.Type) dgo.Type {
 	// Avoid double negation
 	if nt, ok := t.(*notType); ok {
-		return nt.Negated
+		return nt.negated
 	}
-	return &notType{Negated: t}
+	return &notType{negated: t}
 }
 
 func (t *notType) Equals(other interface{}) bool {
 	if ot, ok := other.(*notType); ok {
-		return t.Negated.Equals(ot.Negated)
+		return t.negated.Equals(ot.negated)
 	}
 	return false
 }
 
 func (t *notType) HashCode() int {
-	return 1579 + t.Negated.HashCode()
+	return 1579 + t.negated.HashCode()
 }
 
 func (t *notType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case *notType:
 		// Reverse order of Negated test
-		return ot.Negated.Assignable(t.Negated)
+		return ot.negated.Assignable(t.negated)
 	case *anyOfType:
 		ts := ot.slice
 		for i := range ts {
@@ -63,20 +63,24 @@ func (t *notType) Assignable(other dgo.Type) bool {
 		}
 		return f
 	default:
-		return !t.Negated.Assignable(other)
+		return !t.negated.Assignable(other)
 	}
 }
 
 func (t *notType) Instance(value interface{}) bool {
-	return !t.Negated.Instance(value)
+	return !t.negated.Instance(value)
 }
 
 func (t *notType) Operand() dgo.Type {
-	return t.Negated
+	return t.negated
 }
 
 func (t *notType) Operator() dgo.TypeOp {
 	return dgo.OpNot
+}
+
+func (t *notType) Resolve(ap dgo.AliasProvider) {
+	t.negated = ap.Replace(t.negated)
 }
 
 func (t *notType) String() string {

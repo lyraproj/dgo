@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -14,60 +13,6 @@ import (
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
-
-func ExampleArray() {
-	tp := newtype.Array()
-	fmt.Println(tp.Equals(typ.Array))
-	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
-	fmt.Println(tp.Instance(42))
-	// Output:
-	// true
-	// true
-	// false
-}
-
-func ExampleArray_min() {
-	tp := newtype.Array(2)
-	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
-	fmt.Println(tp.Instance(vf.Values(`hello`)))
-	// Output:
-	// true
-	// false
-}
-
-func ExampleArray_type() {
-	tp := newtype.Array(typ.String)
-	fmt.Println(tp.Instance(vf.Values(`hello`)))
-	fmt.Println(tp.Instance(vf.Values(42)))
-	// Output:
-	// true
-	// false
-}
-
-func ExampleArray_min_max() {
-	tp := newtype.Array(1, 2)
-	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
-	fmt.Println(tp.Instance(vf.Values(`hello`, 42, `word`)))
-	// Output:
-	// true
-	// false
-}
-
-func ExampleArray_type_min() {
-	// Create a new array type with a minimum size of 2
-	tp := newtype.Array(typ.String, 2)
-	fmt.Println(tp.Instance(vf.Values(`hello`, `word`)))
-	fmt.Println(tp.Instance(vf.Values(`hello`)))
-	// Output:
-	// true
-	// false
-}
-
-func ExampleArray_type_min_max() {
-	tp := newtype.Array(typ.String, 2, 3)
-	fmt.Println(tp.Instance(vf.Values(`hello`, `word`)))
-	// Output: true
-}
 
 func TestArray_max_min(t *testing.T) {
 	tp := newtype.Array(2, 1)
@@ -187,13 +132,25 @@ func TestSizedArrayType(t *testing.T) {
 }
 
 func TestExactArrayType(t *testing.T) {
-	v := vf.Strings(`a`, `b`)
+	v := vf.Strings()
 	tp := v.Type().(dgo.TupleType)
+	require.Equal(t, typ.Any, tp.ElementType())
+
+	v = vf.Strings(`a`)
+	tp = v.Type().(dgo.TupleType)
+	et := vf.String(`a`).Type()
+	require.Equal(t, et, tp.ElementType())
+	require.Assignable(t, tp, newtype.Array(et, 1, 1))
+	require.NotAssignable(t, tp, newtype.Array(typ.String, 1, 1))
+
+	v = vf.Strings(`a`, `b`)
+	tp = v.Type().(dgo.TupleType)
 	require.Instance(t, tp, v)
 	require.Equal(t, tp, vf.Strings(`a`, `b`).Type())
 	require.NotInstance(t, tp, `a`)
 	require.Assignable(t, tp, tp)
 	require.NotAssignable(t, tp, typ.Array)
+	require.NotAssignable(t, tp, newtype.Array(et, 1, 1))
 
 	require.Assignable(t, tp, newtype.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type()))
 	require.NotAssignable(t, tp, newtype.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type(), vf.String(`c`).Type()))
@@ -274,6 +231,10 @@ func TestTupleType(t *testing.T) {
 	require.Equal(t, math.MaxInt64, tt.Max())
 	require.True(t, tt.Unbounded())
 
+	et := newtype.String(1, 100)
+	tt = newtype.Tuple(et)
+	require.Same(t, tt.ElementType(), et)
+
 	tt = newtype.Tuple(typ.String, typ.Integer, typ.Float)
 	require.Assignable(t, tt, tt)
 	require.Assignable(t, tt, newtype.Tuple(typ.String, typ.Integer, typ.Float))
@@ -334,6 +295,19 @@ func TestTupleType(t *testing.T) {
 
 	require.NotEqual(t, 0, tt.HashCode())
 	require.Equal(t, tt.HashCode(), tt.HashCode())
+}
+
+func TestTupleType_selfReference(t *testing.T) {
+	tp := newtype.Parse(`x={string,<x>}`).(dgo.ArrayType)
+	d := vf.MutableArray(nil, nil)
+	d.Add(`hello`)
+	d.Add(d)
+	require.Instance(t, tp, d)
+
+	t2 := newtype.Parse(`x={string,{string,<x>}}`)
+	require.Assignable(t, tp, t2)
+
+	require.Equal(t, `{string,<recursive self reference>}`, tp.String())
 }
 
 func TestMutableArray_withoutType(t *testing.T) {
@@ -407,6 +381,17 @@ func TestArray_SetType(t *testing.T) {
 
 	a.Freeze()
 	require.Panic(t, func() { a.SetType(at) }, `SetType .* frozen`)
+}
+
+func TestArray_selfReference(t *testing.T) {
+	tp := newtype.Parse(`x=[](string|<x>)`).(dgo.ArrayType)
+	d := vf.MutableArray(tp, nil)
+	d.Add(`hello`)
+	d.Add(d)
+	require.Instance(t, tp, d)
+
+	t2 := newtype.Parse(`x=[](string|[](string|<x>))`)
+	require.Assignable(t, tp, t2)
 }
 
 func TestArray_recursiveFreeze(t *testing.T) {
@@ -850,6 +835,12 @@ func TestArray_Reject(t *testing.T) {
 	require.Equal(t, vf.Values(1, 2, 4, 5), vf.Values(1, 2, vf.Nil, 4, 5).Reject(func(e dgo.Value) bool {
 		return e == vf.Nil
 	}))
+}
+
+func TestContainsAll(t *testing.T) {
+	require.True(t, vf.Values(1, 2, 3).ContainsAll(vf.Values(2, 1)))
+	require.False(t, vf.Values(1, 2).ContainsAll(vf.Values(3, 2, 1)))
+	require.False(t, vf.Values(1, 2).ContainsAll(vf.Values(1, 4)))
 }
 
 func TestArray_SameValues(t *testing.T) {

@@ -534,6 +534,17 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 	}), `map entries are not frozen after freeze`)
 }
 
+func TestMap_selfReference(t *testing.T) {
+	tp := newtype.Parse(`x=map[string](string|<x>)`)
+	d := vf.MutableMap(0, nil)
+	d.Put(`hello`, `world`)
+	d.Put(`deep`, d)
+	require.Instance(t, tp, d)
+
+	t2 := newtype.Parse(`x=map[string](string|map[string](string|<x>))`)
+	require.Assignable(t, tp, t2)
+}
+
 func TestMap_Map(t *testing.T) {
 	a := vf.Map(map[string]string{`a`: `value a`, `b`: `value b`, `c`: `value c`})
 	require.Equal(t, vf.Map(map[string]string{`a`: `the a`, `b`: `the b`, `c`: `the c`}), a.Map(func(e dgo.MapEntry) interface{} {

@@ -61,6 +61,10 @@ func (t *metaType) Operand() dgo.Type {
 	return t.tp
 }
 
+func (t *metaType) Resolve(ap dgo.AliasProvider) {
+	t.tp = ap.Replace(t.tp)
+}
+
 func (t *metaType) String() string {
 	return TypeString(t)
 }

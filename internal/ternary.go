@@ -104,6 +104,10 @@ func (t *allOfType) Operator() dgo.TypeOp {
 	return dgo.OpAnd
 }
 
+func (t *allOfType) Resolve(ap dgo.AliasProvider) {
+	resolveSlice(t.slice, ap)
+}
+
 func (t *allOfType) String() string {
 	return TypeString(t)
 }
@@ -274,6 +278,10 @@ func (t *anyOfType) Operator() dgo.TypeOp {
 	return dgo.OpOr
 }
 
+func (t *anyOfType) Resolve(ap dgo.AliasProvider) {
+	resolveSlice(t.slice, ap)
+}
+
 func (t *anyOfType) String() string {
 	return TypeString(t)
 }
@@ -376,6 +384,10 @@ func (t *oneOfType) Operands() dgo.Array {
 
 func (t *oneOfType) Operator() dgo.TypeOp {
 	return dgo.OpOne
+}
+
+func (t *oneOfType) Resolve(ap dgo.AliasProvider) {
+	resolveSlice(t.slice, ap)
 }
 
 func (t *oneOfType) String() string {

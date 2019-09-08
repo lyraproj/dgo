@@ -17,7 +17,7 @@ type (
 	nilValue int
 )
 
-func (nilValue) AppendTo(w *util.Indenter) {
+func (nilValue) AppendTo(w util.Indenter) {
 	w.Append(`null`)
 }
 

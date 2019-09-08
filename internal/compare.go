@@ -29,9 +29,6 @@ func (s *doubleSeen) Append(a, b dgo.Value) dgo.RecursionGuard {
 	if !s.seenInB {
 		s.seenInB = recursionHit(s.bSeen, b)
 	}
-	if s.seenInA && s.seenInB {
-		return s
-	}
 	c := *s
 	if !c.seenInA {
 		c.aSeen = append(c.aSeen, a)
@@ -148,9 +145,6 @@ func compare(seen []dgo.Value, a dgo.Value, b dgo.Value) (int, bool) {
 		return 0, true
 	}
 	if a == Nil {
-		if b == Nil {
-			return 0, true
-		}
 		return -1, true
 	}
 	if b == Nil {

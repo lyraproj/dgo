@@ -19,10 +19,12 @@ const (
 	exLeftBracket
 	exRightBracket
 	exRightParen
+	exRightAngle
 	exInt
 	exIntOrFloat
 	exFloatDotDotDot
 	exTypeExpression
+	exAliasRef
 	exEnd
 )
 
@@ -32,6 +34,27 @@ type unknownIdentifier struct {
 
 type optionalValue struct {
 	value dgo.Value
+}
+
+type alias struct {
+	exactStringType
+}
+
+type aliasProvider struct {
+	sc map[string]dgo.Type
+}
+
+func (p *aliasProvider) Replace(t dgo.Type) dgo.Type {
+	if a, ok := t.(*alias); ok {
+		if ra, ok := p.sc[a.s]; ok {
+			return ra
+		}
+		panic(fmt.Errorf(`reference to unresolved alias '%s'`, a.s))
+	}
+	if rt, ok := t.(dgo.AliasContainer); ok {
+		rt.Resolve(p)
+	}
+	return t
 }
 
 func (o *optionalValue) String() string {
@@ -67,6 +90,8 @@ func expect(state int) (s string) {
 		s = `'}'`
 	case exRightParen:
 		s = `')'`
+	case exRightAngle:
+		s = `'>'`
 	case exInt:
 		s = `an integer`
 	case exIntOrFloat:
@@ -75,6 +100,8 @@ func expect(state int) (s string) {
 		s = `float boundary on ... range`
 	case exTypeExpression:
 		s = `a type expression`
+	case exAliasRef:
+		s = `an identifier`
 	case exEnd:
 		s = `end of expression`
 	}
@@ -91,6 +118,7 @@ func badSyntax(t *token, state int) error {
 type parser struct {
 	d  []dgo.Value
 	sr *util.StringReader
+	sc map[string]dgo.Type
 	pe *token
 	lt *token
 }
@@ -131,7 +159,11 @@ func ParseFile(fileName, content string) dgo.Type {
 		}
 	}()
 	p.parse(p.nextToken())
-	return p.popLastType()
+	tp := p.popLastType()
+	if p.sc != nil {
+		tp = (&aliasProvider{p.sc}).Replace(tp)
+	}
+	return tp
 }
 
 func (p *parser) peekToken() *token {
@@ -277,7 +309,7 @@ func (p *parser) params() {
 
 func (p *parser) arrayElement(t *token) {
 	var id dgo.Value
-	if t.i == identifier {
+	if t.i == identifier && p.peekToken().i != '=' {
 		// Special handling of identifiers at this point
 		id = p.identifier(t, true)
 		p.d = append(p.d, id)
@@ -542,6 +574,39 @@ func (p *parser) array(t *token) dgo.Value {
 	return ArrayType(sliceToInterfaces(params)...)
 }
 
+func (p *parser) aliasReference(t *token) dgo.Value {
+	if t.i != identifier {
+		panic(badSyntax(t, exAliasRef))
+	}
+	if p.sc != nil {
+		if tp, ok := p.sc[t.s]; ok {
+			t = p.nextToken()
+			if t.i != '>' {
+				panic(badSyntax(t, exRightAngle))
+			}
+			return tp
+		}
+	}
+	panic(fmt.Errorf(`unknown alias '%s'`, t.s))
+}
+
+func (p *parser) aliasDeclaration(t *token) dgo.Value {
+	// Should result in an unknown identifier or name is reserved
+	tp := p.identifier(t, true)
+	if un, ok := tp.(*unknownIdentifier); ok {
+		p.nextToken() // skip '='
+		if p.sc == nil {
+			p.sc = make(map[string]dgo.Type)
+		}
+		p.sc[un.s] = &alias{exactStringType: exactStringType{s: un.s}}
+		p.parse(p.nextToken())
+		tp = p.popLastType()
+		p.sc[un.s] = tp.(dgo.Type)
+		return tp
+	}
+	panic(fmt.Errorf(`attempt redeclare identifier '%s'`, t.s))
+}
+
 func (p *parser) typeExpression(t *token) {
 	var tp dgo.Value
 	switch t.i {
@@ -557,6 +622,8 @@ func (p *parser) typeExpression(t *token) {
 		return
 	case '[':
 		tp = p.array(t)
+	case '<':
+		tp = p.aliasReference(p.nextToken())
 	case integer:
 		tp = p.integer(t)
 	case float:
@@ -564,7 +631,11 @@ func (p *parser) typeExpression(t *token) {
 	case dotdot, dotdotdot: // Unbounded at lower end
 		tp = p.dotRange(t)
 	case identifier:
-		tp = p.identifier(t, false)
+		if p.peekToken().i == '=' {
+			tp = p.aliasDeclaration(t)
+		} else {
+			tp = p.identifier(t, false)
+		}
 	case stringLiteral:
 		tp = String(t.s)
 	case regexpLiteral:

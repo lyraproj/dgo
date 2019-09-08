@@ -39,7 +39,7 @@ func NotAssignable(t *testing.T, a, b dgo.Type) {
 func Instance(t *testing.T, typ dgo.Type, val interface{}) {
 	t.Helper()
 	if !typ.Instance(val) {
-		t.Errorf(`%v is not an instance of %s`, val, typ)
+		t.Errorf(`%v is not an instance of %s`, internal.Value(val), typ)
 	}
 }
 
@@ -47,24 +47,26 @@ func Instance(t *testing.T, typ dgo.Type, val interface{}) {
 func NotInstance(t *testing.T, typ dgo.Type, val interface{}) {
 	t.Helper()
 	if typ.Instance(val) {
-		t.Errorf(`%v is an instance of %s`, val, typ)
+		t.Errorf(`%v is an instance of %s`, internal.Value(val), typ)
 	}
 }
 
 // Equal will fail unless a is equal to b
 func Equal(t *testing.T, a, b interface{}) {
 	t.Helper()
-	if internal.Value(a).Equals(b) {
+	va := internal.Value(a)
+	if va.Equals(b) {
 		return
 	}
-	t.Errorf(`%v is not equal to %v`, a, b)
+	t.Errorf(`%v is not equal to %v`, va, internal.Value(b))
 }
 
 // NotEqual will fail if a is equal to b
 func NotEqual(t *testing.T, a, b interface{}) {
 	t.Helper()
-	if internal.Value(a).Equals(b) {
-		t.Errorf(`%v is equal to %v`, a, b)
+	va := internal.Value(a)
+	if va.Equals(b) {
+		t.Errorf(`%v is equal to %v`, va, internal.Value(b))
 	}
 }
 
@@ -104,7 +106,7 @@ func True(t *testing.T, v bool, args ...interface{}) {
 func Nil(t *testing.T, v interface{}) {
 	t.Helper()
 	if v != internal.Nil && v != nil {
-		t.Errorf(`%v is not nil`, v)
+		t.Errorf(`%v is not nil`, internal.Value(v))
 	}
 }
 
@@ -112,7 +114,7 @@ func Nil(t *testing.T, v interface{}) {
 func NotNil(t *testing.T, v interface{}) {
 	t.Helper()
 	if v == nil {
-		t.Errorf(`%v is nil`, v)
+		t.Errorf(`%v is nil`, internal.Value(v))
 	}
 }
 

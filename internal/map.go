@@ -112,7 +112,7 @@ func (t *exactEntryType) ValueType() dgo.Type {
 	return (*mapEntry)(t).value.Type()
 }
 
-func (v *mapEntry) AppendTo(w *util.Indenter) {
+func (v *mapEntry) AppendTo(w util.Indenter) {
 	w.AppendValue(v.key)
 	w.Append(`:`)
 	if w.Indenting() {
@@ -176,7 +176,7 @@ func (v *mapEntry) Key() dgo.Value {
 }
 
 func (v *mapEntry) String() string {
-	return util.ToString(v)
+	return util.ToStringERP(v)
 }
 
 func (v *mapEntry) Type() dgo.Type {
@@ -344,7 +344,7 @@ func (g *hashMap) AnyValue(predicate dgo.Predicate) bool {
 	return false
 }
 
-func (g *hashMap) AppendTo(w *util.Indenter) {
+func (g *hashMap) AppendTo(w util.Indenter) {
 	w.AppendRune('{')
 	ew := w.Indent()
 	first := true
@@ -516,7 +516,7 @@ func (g *hashMap) Map(mapper dgo.EntryMapper) dgo.Map {
 
 func (g *hashMap) MarshalJSON() ([]byte, error) {
 	// JSON is the default Indentable string format, so this one is easy
-	return []byte(util.ToString(g)), nil
+	return []byte(util.ToStringERP(g)), nil
 }
 
 func (g *hashMap) UnmarshalJSON(b []byte) error {
@@ -762,7 +762,7 @@ func (g *hashMap) SetType(t dgo.MapType) {
 }
 
 func (g *hashMap) String() string {
-	return util.ToString(g)
+	return util.ToStringERP(g)
 }
 
 func (g *hashMap) With(ki, vi interface{}) dgo.Map {
@@ -1073,7 +1073,7 @@ func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value interface{})
 			if DefaultAnyType == vt {
 				return ov.AllKeys(func(k dgo.Value) bool { return kt.Instance(k) })
 			}
-			return ov.All(func(e dgo.MapEntry) bool { return kt.Instance(e.Key()) && vt.Instance(e.Value()) })
+			return ov.All(func(e dgo.MapEntry) bool { return Instance(guard, kt, e.Key()) && Instance(guard, vt, e.Value()) })
 		}
 	}
 	return false
@@ -1089,6 +1089,11 @@ func (t *sizedMapType) Max() int {
 
 func (t *sizedMapType) Min() int {
 	return t.min
+}
+
+func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
+	t.keyType = ap.Replace(t.keyType)
+	t.valueType = ap.Replace(t.valueType)
 }
 
 func (t *sizedMapType) String() string {

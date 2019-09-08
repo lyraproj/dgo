@@ -1,6 +1,20 @@
 package dgo
 
 type (
+	// AliasProvider replaces aliases with their concrete type.
+	//
+	// The parser uses this interface to perform in-place replacement of aliases
+	AliasProvider interface {
+		Replace(Type) Type
+	}
+
+	// AliasContainer is implemented by types that can contain other types.
+	//
+	// The parser uses this interface to perform in-place replacement of aliases
+	AliasContainer interface {
+		Resolve(AliasProvider)
+	}
+
 	// TypeIdentifier is a unique identifier for each type known to the system. The order of the TypeIdentifier
 	// determines the sort order for elements that are not comparable
 	TypeIdentifier int

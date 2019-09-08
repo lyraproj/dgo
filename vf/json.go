@@ -12,7 +12,7 @@ import (
 func MarshalJSON(v interface{}) ([]byte, error) {
 	// Default Indentable output is JSON
 	if i, ok := v.(util.Indentable); ok {
-		return []byte(util.ToString(i)), nil
+		return []byte(util.ToStringERP(i)), nil
 	}
 	return json.Marshal(v)
 }
