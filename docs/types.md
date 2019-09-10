@@ -1,4 +1,10 @@
-### Primitive types  
+# Dgo Type syntax
+The Dgo Type syntax is designed to be close to the syntax used by Go itself.
+
+The "Corresponding Puppet type" column present in the tables below is there for clarity only for those
+familiar with that syntax. Dgo has no dependency on Puppet. 
+
+#### Primitive types  
   
 |Type expression|Meaning|Corresponding Puppet type|
 |---------------|-------|-------------------------|
