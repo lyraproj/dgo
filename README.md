@@ -1,5 +1,8 @@
 # dgo (Dynamic Go)
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/lyraproj/dgo)](https://goreportcard.com/report/github.com/lyraproj/dgo)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/lyraproj/dgo/dgo)
+
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
 and Performance. It is designed to make working with dynamic values an effortless and type safe task.
 
@@ -91,7 +94,7 @@ Dgo defines a [type language of its own](docs/types.md) which is designed to be 
 and a stringifier are provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
 
 ### Type Assignability
-As with go reflect, types can be compared for and assignability. A type is assignable from another type if the other
+As with go reflect, types can be compared for assignability. A type is assignable from another type if the other
 type is equally or more restricitive, e.g. the type `int` is assignable from the range `0..10` (and all other
 integer ranges). The type `string` is assignable from the pattern `/abc/`, the type `"a"|"b"|"c"` or
 any other type that restricts a string. A length constrained `string[10,20]` is assignable from `string[12,17]`, etc.
@@ -109,9 +112,9 @@ instance of that other type.
 
 #### Collection types
 The default type for an Array or a Map can be overridden. This is particularly useful when working with
-mutable collections where the default type dynamically changes when the collection is modified. If an explicit type
-is given to the collection, it will instead ensure that any modifications made to it will be in conformance with
-that type. 
+mutable collections. If an explicit type is given to the collection, it will instead ensure that any modifications
+made to it will be in conformance with that type. The default type is backed by the collection and changes
+dynamically when the collection is modified.
 
 ## Immutability
 

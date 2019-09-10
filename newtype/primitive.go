@@ -1,4 +1,4 @@
-// Package newtype (Type Factory) contains all factory methods for creating types
+// Package newtype (Type Factory) contains the factory methods for creating dgo Types
 package newtype
 
 import (
