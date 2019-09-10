@@ -72,21 +72,46 @@ at [parameter.go](examples_test/parameter.go) and its associated tests.
 
 ## Type Constraints
 
+### What's wrong with Go's type system?
 Go is a typed language but the types are not very descriptive. It is for instance not possible to declare a type
 that corresponds only to a specific range of integers, a string that must confirm to a specific pattern, or a slice
 that can contain only integers or floats. The only generic type provided by Go is the empty interface `interface{}`
-which corresponds to every possible value in the system. A list containing ints and floats must be declared as
-`[]interface{}` but doing so creates a list that can also contain any other type of value. What if I want to declare
-a type like `[](int|float)` (slice of int and float values) or `map[string](string|int)` (string keyed map of string
-and int values), or `[]0..15` (slice of integers ranging from 0 - 15)?
+which corresponds to every possible value in the system. A slice containing ints and floats must be declared as
+`[]interface{}` but doing so creates a list that can also contain any other type of value. What's needed is a type
+such as `[](int|float)`. Other examples can be `map[string](string|int)` (string keyed map of string
+and int values), or `[]0..15` (slice of integers ranging from 0 - 15).
 
 In many situations it is desirable to declare more restrictive type constraints.
 [TypeScript](https://www.typescriptlang.org/docs/handbook/basic-types.html) has good model for such constraints.
 Others can be found in [Python Type Hints](https://www.python.org/dev/peps/pep-0484/) and
 [Puppet Types](/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md).
 
+### Language syntax
 Dgo defines a [type language of its own](docs/types.md) which is designed to be close to Go itself. A parser
 and a stringifier are provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
+
+### Type Assignability
+As with go reflect, types can be compared for and assignability. A type is assignable from another type if the other
+type is equally or more restricitive, e.g. the type `int` is assignable from the range `0..10` (and all other
+integer ranges). The type `string` is assignable from the pattern `/abc/`, the type `"a"|"b"|"c"` or
+any other type that restricts a string. A length constrained `string[10,20]` is assignable from `string[12,17]`, etc.
+
+### Type Instance check
+A type can be used to validate if a value is an instance of that type. The integer `3` is an instance of the
+range type `1..4`, the string `"abc"` is an instance of the pattern type `/b/`, etc.
+
+### The type of a value
+All values have a type that is backed by the value itself. The type will consider its value, and only that value,
+to be an instance of itself. E.g. string "hello" is represented by the type `"hello"`. That type in turn is assignable
+to `string`, `string[5]`, `string[0,10]`, `"hello"|"goodbye"`, but it is not assignable to `string[0,4]` or
+`"hi"|"bye"`. In other words, the value type is assignable to another type if the value that it represents is an
+instance of that other type.
+
+#### Collection types
+The default type for an Array or a Map can be overridden. This is particularly useful when working with
+mutable collections where the default type dynamically changes when the collection is modified. If an explicit type
+is given to the collection, it will instead ensure that any modifications made to it will be in conformance with
+that type. 
 
 ## Immutability
 
@@ -94,11 +119,9 @@ Non primitives in Go (array, slice, map, struct) are mutable and it's the progra
 access to such values are synchronized when they are accessed from multiple go routines.
 
 Dgo guarantees that all values can be 100% immutable by exposing all values through interfaces and hiding the
-implementation, thus enabling concurrency safe coding without the need of synchronization.
+implementation, thus enabling concurrency safe coding without the need to synchronized use of shared resources
+using mutexes.
 
-By default, an immutable value has a type that is backed by the value itself.
-
-#### Collections
 An`Array` or a `Map` can be created as a mutable collection but can be made immutable by calling the method `Freeze()`
 or `Copy(true)` (argument `true` requests a frozen copy). Both calls are recursive and ensures that the collection
 and all its contained values are frozen. `Freeze` performs an in-place recursive freeze of all values while `Copy`
