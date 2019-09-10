@@ -14,7 +14,7 @@ func convertTypeStringsToTypes(v dgo.Value) dgo.Value {
 	switch cv := v.(type) {
 	case dgo.Map:
 		v = cv.Map(func(e dgo.MapEntry) interface{} {
-			if e.Key().Equals(`$type`) {
+			if e.Key().Equals(`type`) {
 				return newtype.Parse(e.Value().String())
 			}
 			return convertTypeStringsToTypes(e.Value())
@@ -37,7 +37,7 @@ func validateParameterValues(description dgo.Map, parameters dgo.Value) (errs []
 	description.Each(func(e dgo.MapEntry) {
 		pd := e.Value().(dgo.Map)
 		if v := pm.Get(e.Key()); v != nil {
-			t := pd.Get(`$type`)
+			t := pd.Get(`type`)
 			if !t.(dgo.Type).Instance(v) {
 				errs = append(errs, fmt.Errorf(`parameter '%s' is not an instance of type %s`, e.Key(), t))
 			}

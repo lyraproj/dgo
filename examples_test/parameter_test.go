@@ -10,16 +10,16 @@ import (
 )
 
 // This is the type that describes how a parameters map is constituted
-const parametersType = `map[string]{name: string[1], $type: dgo, required?: bool}`
+const parametersType = `map[string]{name: string[1], type: dgo, required?: bool}`
 
 // Sample parameter map
 const sampleParameters = `
 host:
-  $type: string[1]
+  type: string[1]
   name: sample/service_host
   required: true
 port:
-  $type: 1..999
+  type: 1..999
   name: sample/service_port
 `
 

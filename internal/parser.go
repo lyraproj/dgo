@@ -286,27 +286,31 @@ func (p *parser) params() {
 }
 
 func (p *parser) arrayElement(t *token, expectEntry int) int {
-	var id dgo.Value
-	if t.i == identifier && p.peekToken().i != '=' {
-		// Special handling of identifiers at this point
-		id = p.identifier(t, true)
-		p.d = append(p.d, id)
+	var key dgo.Value
+	nt := p.peekToken()
+	if t.i == identifier && nt.i == ':' || nt.i == '?' {
+		if expectEntry == 0 {
+			panic(errors.New(`mix of elements and map entries`))
+		}
+		key = String(t.s)
 	} else {
 		p.anyOf(t)
+		nt = p.peekToken()
 	}
-	optional := p.peekToken().i == '?'
+
+	optional := nt.i == '?'
 	if optional {
 		p.nextToken()
 	}
+
 	if p.peekToken().i == ':' {
 		if expectEntry == 0 {
 			panic(errors.New(`mix of elements and map entries`))
 		}
 		// Map mapEntry
 		p.nextToken()
-		key := p.popLast()
-		if unknown, ok := key.(*unknownIdentifier); ok {
-			key = String(unknown.s)
+		if key == nil {
+			key = p.popLast()
 		}
 		p.anyOf(p.nextToken())
 		val := p.popLast()
@@ -318,10 +322,6 @@ func (p *parser) arrayElement(t *token, expectEntry int) int {
 	} else {
 		if expectEntry == 2 {
 			panic(errors.New(`mix of elements and map entries`))
-		}
-		if unknown, ok := id.(*unknownIdentifier); ok {
-			p.popLast()
-			p.d = append(p.d, p.aliasReference(&token{s: unknown.s, i: identifier}))
 		}
 		expectEntry = 0
 	}

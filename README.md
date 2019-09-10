@@ -3,6 +3,17 @@
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
 and Performance. It is designed to make working with dynamic values an effortless and type safe task.
 
+## Install
+Dgo is a go module and if the Go version is < 1.13, go modules must be enabled. This is done by setting the environment
+variable GO111MODULE=on before an attempt is made to install:
+```sh
+export GO111MODULE=on
+```
+To install the module under $GOPATH/src:
+```sh
+go get github.com/lyraproj/dgo
+```
+
 ## Example of usage:
 Let's assume some kind of typed parameters in YAML that the user enters like this:
 ```yaml
@@ -13,25 +24,25 @@ The task is to create a user friendly description of a parameter, also in YAML, 
 the above parameters. Something like this:
 ```yaml
 host:
-  $type: string[1]
+  type: string[1]
   name: sample/service_host
   required: true
 port:
-  $type: 1..999
+  type: 1..999
   name: sample/service_port
 ```
-In this example, the value of each `$type` is a [dgo type](docs/types.md). They limit the host
+In this example, the value of each `type` is a [dgo type](docs/types.md). They limit the host
 parameter to a non empty string and the port parameter to an integer in the range 1-999. A special
 `required` entry is used to denote whether or not a parameter value must be present.
 
 Next, the parameter descriptions must be validated. This is done adding a dgo type definition
 for them in Go:
 ```go
-const parametersType = `map[string]{name: string[1], $type: dgo, required?: bool}`
+const parametersType = `map[string]{name: string[1], type: dgo, required?: bool}`
 ```
 
 The type map with string keys and map values. Each value is described with a specific set of
-<key>:<value> associations. The `name` is a non empty string, the `$type` is of type `dgo` which
+<key>:<value> associations. The `name` is a non empty string, the `type` is of type `dgo` which
 is a string that can be parsed into a dgo type. The `required` is an optional association to
 a boolean value.
 
@@ -152,7 +163,7 @@ an [issue](../../issues), or file a [PR](../../pulls).
     ```go
     type Input struct {
       Variables map[string]interface{} `dgo:"map[string]dgo"`
-      Parameters map[string]interface{} `dgo:"map[string]{name: string[1], $type: dgo, required?: bool}"`
+      Parameters map[string]interface{} `dgo:"map[string]{name: string[1], type: dgo, required?: bool}"`
     }
     ```
 - Go [gob](https://golang.org/pkg/encoding/gob/) support to enable full binary exchange of values and types.

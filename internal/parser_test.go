@@ -184,7 +184,9 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[/\t/`) }, `expected one of ',' or ']', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`{"a":string,...`) }, `expected '}', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`{a:32, 4}`) }, `mix of elements and map entries`)
+	require.Panic(t, func() { newtype.Parse(`{"a":32, 4}`) }, `mix of elements and map entries`)
 	require.Panic(t, func() { newtype.Parse(`{4, a:32}`) }, `mix of elements and map entries`)
+	require.Panic(t, func() { newtype.Parse(`{4, "a":32}`) }, `mix of elements and map entries`)
 	require.Panic(t, func() { newtype.Parse(`{4, a}`) }, `reference to unresolved type 'a'`)
 }
 
