@@ -111,6 +111,9 @@ func equals(seen []dgo.Value, a dgo.Value, b interface{}) bool {
 	if a == b {
 		return true
 	}
+	if nil == a || nil == b {
+		return false
+	}
 	da, ok := a.(deepEqual)
 	if !ok {
 		return a.Equals(b)

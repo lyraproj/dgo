@@ -332,14 +332,10 @@ func TestMap_immutable(t *testing.T) {
 	}
 
 	m := vf.Map(gm)
-	v, ok := m.Get(`first`)
-	require.True(t, ok, `key "first" not found`)
-	require.Equal(t, v, 1)
+	require.Equal(t, 1, m.Get(`first`))
 
 	gm[`first`] = 3
-	v, ok = m.Get(`first`)
-	require.True(t, ok, `key "first" not found`)
-	require.Equal(t, v, 1)
+	require.Equal(t, 1, m.Get(`first`))
 
 	require.Same(t, m, m.Copy(true))
 }
@@ -397,12 +393,8 @@ func TestMapNilKey(t *testing.T) {
 	m := vf.Map(nil, 5)
 	require.Instance(t, typ.Map, m)
 
-	_, ok := m.Get(0)
-	require.False(t, ok, `key 0 found`)
-
-	v, ok := m.Get(nil)
-	require.True(t, ok, `key nil not found`)
-	require.Equal(t, v, 5)
+	require.Nil(t, m.Get(0))
+	require.Equal(t, 5, m.Get(nil))
 }
 
 func TestMap_Any(t *testing.T) {
@@ -562,7 +554,7 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 		return e.Frozen()
 	}), `map entries are not frozen in frozen copy`)
 
-	mcr, _ := mc.Get(k)
+	mcr := mc.Get(k)
 	require.True(t, mcr.(dgo.Map).Frozen(), `recursive copy freeze not applied`)
 	require.False(t, k.Frozen(), `recursive freeze affected key`)
 	require.False(t, mr.Frozen(), `recursive freeze affected original`)

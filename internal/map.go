@@ -418,10 +418,8 @@ func (g *hashMap) Equals(other interface{}) bool {
 
 func (g *hashMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if om, ok := other.(*hashMap); ok && g.len == om.len {
-		var ov dgo.Value
 		for e := g.first; e != nil; e = e.next {
-			ov, ok = om.Get(e.key)
-			if !(ok && equals(seen, e.value, ov)) {
+			if !equals(seen, e.value, om.Get(e.key)) {
 				return false
 			}
 		}
@@ -445,7 +443,7 @@ func (g *hashMap) FrozenCopy() dgo.Value {
 	return g.Copy(true)
 }
 
-func (g *hashMap) Get(key interface{}) (dgo.Value, bool) {
+func (g *hashMap) Get(key interface{}) dgo.Value {
 	tbl := g.table
 	tl := len(tbl) - 1
 	if tl >= 0 {
@@ -455,32 +453,32 @@ func (g *hashMap) Get(key interface{}) (dgo.Value, bool) {
 		case *hstring:
 			for e := tbl[tl&hash(k.HashCode())]; e != nil; e = e.hashNext {
 				if k.Equals(e.key) {
-					return e.value, true
+					return e.value
 				}
 			}
 		case intVal:
 			for e := tbl[tl&hash(k.HashCode())]; e != nil; e = e.hashNext {
 				if k == e.key {
-					return e.value, true
+					return e.value
 				}
 			}
 		case string:
 			gk := makeHString(k)
 			for e := tbl[tl&hash(gk.HashCode())]; e != nil; e = e.hashNext {
 				if gk.Equals(e.key) {
-					return e.value, true
+					return e.value
 				}
 			}
 		default:
 			gk := Value(k)
 			for e := tbl[tl&hash(gk.HashCode())]; e != nil; e = e.hashNext {
 				if gk.Equals(e.key) {
-					return e.value, true
+					return e.value
 				}
 			}
 		}
 	}
-	return nil, false
+	return nil
 }
 
 func (g *hashMap) HashCode() int {
@@ -798,7 +796,7 @@ func (g *hashMap) With(ki, vi interface{}) dgo.Map {
 	if g.table == nil {
 		c = &hashMap{table: make([]*hashNode, tableSizeFor(initialCapacity)), len: g.len, typ: g.typ}
 	} else {
-		if ov, ok := g.Get(key); ok && ov.Equals(val) {
+		if val.Equals(g.Get(key)) {
 			return g
 		}
 		c = &hashMap{len: g.len, typ: g.typ}
@@ -811,7 +809,7 @@ func (g *hashMap) With(ki, vi interface{}) dgo.Map {
 
 func (g *hashMap) Without(ki interface{}) dgo.Map {
 	key := Value(ki)
-	if _, ok := g.Get(key); !ok {
+	if g.Get(key) == nil {
 		return g
 	}
 	c := &hashMap{typ: g.typ, len: g.len}

@@ -162,10 +162,9 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 		vs := t.values.slice
 		rs := t.required
 		oc := 0
-		var ov dgo.Value
 		for i := range ks {
 			k := ks[i].(dgo.ExactType)
-			if ov, ok = om.Get(k.Value()); ok {
+			if ov := om.Get(k.Value()); ov != nil {
 				oc++
 				if !Instance(guard, vs[i].(dgo.Type), ov) {
 					return false

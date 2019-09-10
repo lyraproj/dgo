@@ -36,17 +36,17 @@ func validateParameterValues(description dgo.Map, parameters dgo.Value) (errs []
 	}
 	description.Each(func(e dgo.MapEntry) {
 		pd := e.Value().(dgo.Map)
-		if v, exists := pm.Get(e.Key()); exists {
-			t, _ := pd.Get(`$type`)
+		if v := pm.Get(e.Key()); v != nil {
+			t := pd.Get(`$type`)
 			if !t.(dgo.Type).Instance(v) {
 				errs = append(errs, fmt.Errorf(`parameter '%s' is not an instance of type %s`, e.Key(), t))
 			}
-		} else if rq, exists := pd.Get(`required`); exists && rq.(dgo.Boolean).GoBool() {
+		} else if rq := pd.Get(`required`); rq != nil && rq.(dgo.Boolean).GoBool() {
 			errs = append(errs, fmt.Errorf(`missing required parameter '%s'`, e.Key()))
 		}
 	})
 	pm.EachKey(func(k dgo.Value) {
-		if _, exists := description.Get(k); !exists {
+		if description.Get(k) == nil {
 			errs = append(errs, fmt.Errorf(`unknown parameter '%s'`, k))
 		}
 	})

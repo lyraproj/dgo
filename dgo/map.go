@@ -89,7 +89,7 @@ type (
 
 		// Get returns the value for the given key. The method will return nil when the key is not present
 		// in the map. Use NilValue to bind a key to nil
-		Get(key interface{}) (Value, bool)
+		Get(key interface{}) Value
 
 		// Keys returns frozen snapshot of all the keys of this map
 		Keys() Array

@@ -1,6 +1,7 @@
 package examples
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -82,10 +83,18 @@ port: 1022
 	expectError(t, `parameter 'port' is not an instance of type 1..999`, validateParameterValues(loadParamsDesc(t), params))
 }
 
+func loadDesc(paramsDescYaml []byte) (dgo.Map, error) {
+	paramsDesc := vf.MutableMap(parametersType)
+	if err := yaml.Unmarshal(paramsDescYaml, paramsDesc); err != nil {
+		return nil, err
+	}
+	return paramsDesc, nil
+}
+
 func loadParamsDesc(t *testing.T) dgo.Map {
 	t.Helper()
-	paramsDesc := vf.MutableMap(parametersType)
-	if err := yaml.Unmarshal([]byte(sampleParameters), paramsDesc); err != nil {
+	paramsDesc, err := loadDesc([]byte(sampleParameters))
+	if err != nil {
 		t.Fatal(err)
 	}
 	return convertTypeStringsToTypes(paramsDesc).(dgo.Map)
@@ -104,4 +113,14 @@ func expectNoErrors(t *testing.T, errors []error) {
 	for _, err := range errors {
 		t.Error(err)
 	}
+}
+
+func TestPrintNames(t *testing.T) {
+	printNames(loadParamsDesc(t))
+
+}
+func printNames(paramsDesc dgo.Map) {
+	paramsDesc.Each(func(e dgo.MapEntry) {
+		fmt.Println(e.Value().(dgo.Map).Get(`name`))
+	})
 }
