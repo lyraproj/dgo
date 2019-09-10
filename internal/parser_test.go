@@ -75,26 +75,26 @@ func TestParse_aliasBad(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`"f"=map[string]int`) }, `expected end of expression, got '='`)
 	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<"m">)`) }, `expected an identifier, got "m"`)
 	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<m)`) }, `expected '>', got '\)'`)
-	require.Panic(t, func() { newtype.Parse(`map[string](int|<n>)`) }, `reference to unresolved alias 'n'`)
-	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<n>)`) }, `reference to unresolved alias 'n'`)
-	require.Panic(t, func() { newtype.Parse(`int=map[string](int|<int>)`) }, `attempt redeclare identifier 'int'`)
+	require.Panic(t, func() { newtype.Parse(`map[string](int|n)`) }, `reference to unresolved type 'n'`)
+	require.Panic(t, func() { newtype.Parse(`m=map[string](int|n)`) }, `reference to unresolved type 'n'`)
+	require.Panic(t, func() { newtype.Parse(`int=map[string](int|int)`) }, `attempt redeclare identifier 'int'`)
 }
 
 func TestParse_aliasInUnary(t *testing.T) {
-	tp := newtype.Parse(`type[m=map[string](string|<m>)]`).(dgo.UnaryType)
+	tp := newtype.Parse(`type[m=map[string](string|m)]`).(dgo.UnaryType)
 	require.Equal(t, `type[map[string](string|<recursive self reference to map type>)]`, tp.String())
 
-	tp = newtype.Parse(`!m=map[string](string|<m>)`).(dgo.UnaryType)
+	tp = newtype.Parse(`!m=map[string](string|m)`).(dgo.UnaryType)
 	require.Equal(t, `!map[string](string|<recursive self reference to map type>)`, tp.String())
 }
 
 func TestParse_aliasInAllOf(t *testing.T) {
-	tp := newtype.Parse(`m=[](0..5&3..8&<m>)`)
+	tp := newtype.Parse(`m=[](0..5&3..8&m)`)
 	require.Equal(t, `[](0..5&3..8&<recursive self reference to slice type>)`, tp.String())
 }
 
 func TestParse_aliasInOneOf(t *testing.T) {
-	tp := newtype.Parse(`m=[](0..5^3..8^<m>)`)
+	tp := newtype.Parse(`m=[](0..5^3..8^m)`)
 	require.Equal(t, `[](0..5^3..8^<recursive self reference to slice type>)`, tp.String())
 }
 
@@ -167,7 +167,7 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[}int`) }, `expected a type expression, got '\}'`)
 	require.Panic(t, func() { newtype.Parse(`[]string[1][2]`) }, `expected end of expression, got '\['`)
 	require.Panic(t, func() { newtype.Parse(`[]string[1`) }, `expected one of ',' or '\]', got EOT`)
-	require.Panic(t, func() { newtype.Parse(`apple`) }, `unknown identifier 'apple'`)
+	require.Panic(t, func() { newtype.Parse(`apple`) }, `reference to unresolved type 'apple'`)
 	require.Panic(t, func() { newtype.Parse(`-two`) }, `unexpected character 't'`)
 	require.Panic(t, func() { newtype.Parse(`[3e,0]`) }, `unexpected character ','`)
 	require.Panic(t, func() { newtype.Parse(`[3e1.0]`) }, `unexpected character '.'`)
@@ -185,7 +185,7 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`{"a":string,...`) }, `expected '}', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`{a:32, 4}`) }, `mix of elements and map entries`)
 	require.Panic(t, func() { newtype.Parse(`{4, a:32}`) }, `mix of elements and map entries`)
-	require.Panic(t, func() { newtype.Parse(`{4, a}`) }, `unknown identifier 'a'`)
+	require.Panic(t, func() { newtype.Parse(`{4, a}`) }, `reference to unresolved type 'a'`)
 }
 
 func TestParseFile_errors(t *testing.T) {

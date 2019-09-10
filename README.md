@@ -157,3 +157,4 @@ an [issue](../../issues), or file a [PR](../../pulls).
     ```
 - Go [gob](https://golang.org/pkg/encoding/gob/) support to enable full binary exchange of values and types.
 - Distributed type aliases (aliases using URI reference)
+- Type extension, i.e. how a type such as a map with explicit associations can be extended by another type.

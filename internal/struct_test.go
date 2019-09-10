@@ -68,7 +68,7 @@ func TestStructType_Get(t *testing.T) {
 }
 
 func TestStructType_alias(t *testing.T) {
-	tp := newtype.Parse(`person={name:string,mom:<person>,dad:<person>}`).(dgo.StructType)
+	tp := newtype.Parse(`person={name:string,mom:person,dad:person}`).(dgo.StructType)
 	mom, ok := tp.Get(`mom`)
 	require.True(t, ok)
 	require.Same(t, tp, mom.Value())

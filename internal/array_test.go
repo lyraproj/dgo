@@ -299,13 +299,13 @@ func TestTupleType(t *testing.T) {
 }
 
 func TestTupleType_selfReference(t *testing.T) {
-	tp := newtype.Parse(`x={string,<x>}`).(dgo.ArrayType)
+	tp := newtype.Parse(`x={string,x}`).(dgo.ArrayType)
 	d := vf.MutableArray(nil, nil)
 	d.Add(`hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
-	t2 := newtype.Parse(`x={string,{string,<x>}}`)
+	t2 := newtype.Parse(`x={string,{string,x}}`)
 	require.Assignable(t, tp, t2)
 
 	require.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
@@ -395,13 +395,13 @@ func TestArray_SetType(t *testing.T) {
 }
 
 func TestArray_selfReference(t *testing.T) {
-	tp := newtype.Parse(`x=[](string|<x>)`).(dgo.ArrayType)
+	tp := newtype.Parse(`x=[](string|x)`).(dgo.ArrayType)
 	d := vf.MutableArray(tp, nil)
 	d.Add(`hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
-	t2 := newtype.Parse(`x=[](string|[](string|<x>))`)
+	t2 := newtype.Parse(`x=[](string|[](string|x))`)
 	require.Assignable(t, tp, t2)
 }
 

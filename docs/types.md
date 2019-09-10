@@ -88,7 +88,11 @@ A negation matches all values that doesn't match the given type.
 `!<type>` (not applicable in Puppet)
 
 ### Type Alias
-TBD.
+New type names can be created using the assignment operator '='. Here's an example of a self
+referencing type that describes a dictionary of strings which is nested to aribtrary depth:
+```
+dir=map[string](string|dir)
+```
 
-### Inheritance
-TBD.
+### Type Extension
+TBD, how one type can be made to extend another type, a.k.a. type inheritance.

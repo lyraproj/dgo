@@ -566,14 +566,14 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 }
 
 func TestMap_selfReference(t *testing.T) {
-	tp := newtype.Parse(`x=map[string](string|<x>)`)
+	tp := newtype.Parse(`x=map[string](string|x)`)
 	d := vf.MutableMap(nil)
 	d.Put(`hello`, `world`)
 	d.Put(`deep`, d)
 	require.Instance(t, tp, d)
 	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map>}`, d.String())
 
-	t2 := newtype.Parse(`x=map[string](string|map[string](string|<x>))`)
+	t2 := newtype.Parse(`x=map[string](string|map[string](string|x))`)
 	require.Assignable(t, tp, t2)
 }
 

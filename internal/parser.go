@@ -49,7 +49,7 @@ func (p *aliasProvider) Replace(t dgo.Type) dgo.Type {
 		if ra, ok := p.sc[a.s]; ok {
 			return ra
 		}
-		panic(fmt.Errorf(`reference to unresolved alias '%s'`, a.s))
+		panic(fmt.Errorf(`reference to unresolved type '%s'`, a.s))
 	}
 	if rt, ok := t.(dgo.AliasContainer); ok {
 		rt.Resolve(p)
@@ -320,7 +320,8 @@ func (p *parser) arrayElement(t *token, expectEntry int) int {
 			panic(errors.New(`mix of elements and map entries`))
 		}
 		if unknown, ok := id.(*unknownIdentifier); ok {
-			panic(fmt.Errorf(`unknown identifier '%s'`, unknown.s))
+			p.popLast()
+			p.d = append(p.d, p.aliasReference(&token{s: unknown.s, i: identifier}))
 		}
 		expectEntry = 0
 	}
@@ -439,7 +440,7 @@ func (p *parser) string() dgo.Value {
 	return DefaultStringType
 }
 
-func (p *parser) identifier(t *token, acceptUnknown bool) dgo.Value {
+func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
 	var tp dgo.Value
 	switch t.s {
 	case `map`:
@@ -467,10 +468,11 @@ func (p *parser) identifier(t *token, acceptUnknown bool) dgo.Value {
 	case `nil`:
 		tp = Nil
 	default:
-		if !acceptUnknown {
-			panic(fmt.Errorf(`unknown identifier '%s'`, t.s))
+		if returnUnknown {
+			tp = &unknownIdentifier{hstring: hstring{s: t.s}}
+		} else {
+			tp = p.aliasReference(t)
 		}
-		tp = &unknownIdentifier{hstring: hstring{s: t.s}}
 	}
 	return tp
 }
@@ -568,10 +570,6 @@ func (p *parser) aliasReference(t *token) dgo.Value {
 	if t.i != identifier {
 		panic(badSyntax(t, exAliasRef))
 	}
-	n := p.nextToken()
-	if n.i != '>' {
-		panic(badSyntax(n, exRightAngle))
-	}
 	if p.sc != nil {
 		if tp, ok := p.sc[t.s]; ok {
 			return tp
@@ -587,15 +585,18 @@ func (p *parser) aliasDeclaration(t *token) dgo.Value {
 	// Should result in an unknown identifier or name is reserved
 	tp := p.identifier(t, true)
 	if un, ok := tp.(*unknownIdentifier); ok {
-		p.nextToken() // skip '='
 		if p.sc == nil {
 			p.sc = make(map[string]dgo.Type)
 		}
-		p.sc[un.s] = &alias{exactStringType: exactStringType{s: un.s}}
-		p.anyOf(p.nextToken())
-		tp = p.popLastType()
-		p.sc[un.s] = tp.(dgo.Type)
-		return tp
+		n := un.s
+		if _, ok := p.sc[n]; !ok {
+			p.nextToken() // skip '='
+			p.sc[n] = &alias{exactStringType: exactStringType{s: n}}
+			p.anyOf(p.nextToken())
+			tp = p.popLastType()
+			p.sc[n] = tp.(dgo.Type)
+			return tp
+		}
 	}
 	panic(fmt.Errorf(`attempt redeclare identifier '%s'`, t.s))
 }
@@ -617,6 +618,10 @@ func (p *parser) typeExpression(t *token) {
 		tp = p.array(t)
 	case '<':
 		tp = p.aliasReference(p.nextToken())
+		n := p.nextToken()
+		if n.i != '>' {
+			panic(badSyntax(n, exRightAngle))
+		}
 	case integer:
 		tp = p.integer(t)
 	case float:
