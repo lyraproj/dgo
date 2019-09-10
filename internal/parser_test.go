@@ -158,6 +158,18 @@ func TestParse_string(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse("`x") }, `unterminated string`)
 }
 
+func TestParse_multiAliases(t *testing.T) {
+	tp := newtype.Parse(`
+{
+  types: {
+    ascii=1..127,
+    slug=/^[a-z0-9-]+$/
+  },
+  x: map[slug]{token:ascii,value:string}
+}`).(dgo.StructType)
+	require.Equal(t, `map[/^[a-z0-9-]+$/]{"token":1..127,"value":string}`, tp.Get(`x`).Value().String())
+}
+
 func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[1 23]`) }, `expected one of ',' or '\]', got 23: \(column: 4\)`)
 	require.Panic(t, func() { newtype.Parse(`map{}`) }, `expected '\[', got '\{': \(column: 4\)`)

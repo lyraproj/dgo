@@ -161,6 +161,6 @@ type (
 		Entries() Array
 
 		// Get returns the MapEntry that is identified with the given key
-		Get(key interface{}) (MapEntry, bool)
+		Get(key interface{}) MapEntry
 	}
 )

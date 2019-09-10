@@ -178,16 +178,16 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 	return false
 }
 
-func (t *structType) Get(key interface{}) (dgo.MapEntry, bool) {
+func (t *structType) Get(key interface{}) dgo.MapEntry {
 	kv := Value(key)
 	if _, ok := kv.(dgo.Type); !ok {
 		kv = kv.Type()
 	}
 	i := t.keys.IndexOf(kv)
 	if i >= 0 {
-		return StructEntry(kv, t.values.slice[i], t.required[i] != 0), true
+		return StructEntry(kv, t.values.slice[i], t.required[i] != 0)
 	}
-	return nil, false
+	return nil
 }
 
 func (t *structType) KeyType() dgo.Type {

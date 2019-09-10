@@ -94,10 +94,22 @@ A negation matches all values that doesn't match the given type.
 `!<type>` (not applicable in Puppet)
 
 ### Type Alias
-New type names can be created using the assignment operator '='. Here's an example of a self
-referencing type that describes a dictionary of strings which is nested to aribtrary depth:
+New type names can be created using the assignment operator '=' which allow users to define their own
+types.
 ```
-dir=map[string](string|dir)
+{
+  types: {
+    ascii=1..127,
+    slug=/^[a-z0-9-]+$/
+  },
+  x: map[slug]{token:ascii,value:string}
+}
+```
+Another usage for aliases is when a type references itself. This might sound esoteric but it is in fact not that
+uncommon. One obvious example is a type that describes a file system tree. Let's assume a type where each name in
+a directory maps to either the mode flags of a file, or a new directory:
+```
+files=map[string](int|files)
 ```
 
 ### Type Extension

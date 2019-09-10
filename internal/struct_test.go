@@ -59,19 +59,13 @@ func ExampleMap_Put_structTypeIllegalValue() {
 
 func TestStructType_Get(t *testing.T) {
 	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
-	a, ok := tp.Get(`a`)
-	require.True(t, ok)
-	require.Equal(t, a.Value(), typ.Integer)
-
-	_, ok = tp.Get(`c`)
-	require.False(t, ok)
+	require.Equal(t, tp.Get(`a`).Value(), typ.Integer)
+	require.Nil(t, tp.Get(`c`))
 }
 
 func TestStructType_alias(t *testing.T) {
 	tp := newtype.Parse(`person={name:string,mom:person,dad:person}`).(dgo.StructType)
-	mom, ok := tp.Get(`mom`)
-	require.True(t, ok)
-	require.Same(t, tp, mom.Value())
+	require.Same(t, tp, tp.Get(`mom`).Value())
 }
 
 func TestStructType(t *testing.T) {
