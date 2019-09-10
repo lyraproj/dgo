@@ -163,8 +163,9 @@ type (
 		// The method panics if the receiver is frozen
 		Set(pos int, val interface{}) Value
 
-		// SetType sets the type for this Array to the given ArrayType. The Array must be mutable and an instance of the given type
-		SetType(t ArrayType)
+		// SetType sets the type for this Array to the given argument which must be an ArrayType or a string that evaluates
+		// to an ArrayType. The Array must be mutable and an instance of the given type
+		SetType(t interface{})
 
 		// Sort returns a new Array with all elements sorted using their natural order. The method
 		// will panic unless all elements implement the Comparable interface

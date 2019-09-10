@@ -57,6 +57,8 @@ func TestError(t *testing.T) {
 
 	require.Equal(t, `some error`, ve.Error())
 
+	require.Equal(t, ve.Error(), v.String())
+
 	type uvt interface {
 		Unwrap() error
 	}

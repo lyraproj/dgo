@@ -84,7 +84,7 @@ port: 1022
 
 func loadParamsDesc(t *testing.T) dgo.Map {
 	t.Helper()
-	paramsDesc := vf.MutableMap(0, parametersType)
+	paramsDesc := vf.MutableMap(parametersType)
 	if err := yaml.Unmarshal([]byte(sampleParameters), paramsDesc); err != nil {
 		t.Fatal(err)
 	}

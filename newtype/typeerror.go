@@ -14,3 +14,8 @@ func IllegalAssignment(expected dgo.Type, actual dgo.Value) dgo.Value {
 func IllegalSize(expected dgo.Type, size int) dgo.Value {
 	return internal.IllegalSize(expected, size)
 }
+
+// IllegalMapKey returns the error that represents an assignment map key constraint mismatch
+func IllegalMapKey(t dgo.StructType, v dgo.Value) dgo.Value {
+	return internal.IllegalMapKey(t, v)
+}

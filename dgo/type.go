@@ -15,10 +15,6 @@ type (
 		Resolve(AliasProvider)
 	}
 
-	// TypeIdentifier is a unique identifier for each type known to the system. The order of the TypeIdentifier
-	// determines the sort order for elements that are not comparable
-	TypeIdentifier int
-
 	// ExactType is implemented by types that match exactly one value
 	ExactType interface {
 		Type
@@ -67,88 +63,4 @@ type (
 		// by a DeepAssignable caller.
 		AssignableTo(guard RecursionGuard, other Type) bool
 	}
-)
-
-const (
-	// TiNil is the type identifier for the Nil type
-	TiNil = TypeIdentifier(iota)
-	// TiAny is the type identifier for the Any type
-	TiAny
-	// TiMeta is the type identifier for the Meta type
-	TiMeta
-	// TiBoolean is the type identifier for the Boolean type
-	TiBoolean
-	// TiFalse is the type identifier for the False type
-	TiFalse
-	// TiTrue is the type identifier for the True type
-	TiTrue
-	// TiInteger is the type identifier for the Integer type
-	TiInteger
-	// TiIntegerExact is the type identifier for the exact Integer type
-	TiIntegerExact
-	// TiIntegerRange is the type identifier for the Integer range type
-	TiIntegerRange
-	// TiFloat is the type identifier for the Float type
-	TiFloat
-	// TiFloatExact is the type identifier for the exact Float type
-	TiFloatExact
-	// TiFloatRange is the type identifier for the Float range type
-	TiFloatRange
-	// TiBinary is the type identifier for the Binary type
-	TiBinary
-	// TiString is the type identifier for the String type
-	TiString
-	// TiStringExact is the type identifier for the exact String type
-	TiStringExact
-	// TiStringPattern is the type identifier for the String pattern type
-	TiStringPattern
-	// TiStringSized is the type identifier for the size constrained String type
-	TiStringSized
-
-	// TiRegexp is the type identifier for the Regexp type
-	TiRegexp
-	// TiRegexpExact is the type identifier for the exact Regexp type
-	TiRegexpExact
-	// TiNative is the type identifier for the Native type
-	TiNative
-
-	// TiArray is the type identifier for the Array type
-	TiArray
-	// TiArrayExact is the type identifier for the exact Array type
-	TiArrayExact
-	// TiArrayElementSized is the type identifier for the element and size constrained Array type
-	TiArrayElementSized
-
-	// TiTuple is the type identifier for the Tuple type
-	TiTuple
-
-	// TiMap is the type identifier for the Map type
-	TiMap
-	// TiMapExact is the type identifier for exact Map type
-	TiMapExact
-	// TiMapSized is the type identifier for the key, value, and size constrained Map type
-	TiMapSized
-	// TiMapEntry is the type identifier for the map entry type of a Struct type
-	TiMapEntry
-	// TiMapEntryExact is the type identifier the map entry type of the exact Map type
-	TiMapEntryExact
-	// TiStruct is the type identifier for the Struct type
-	TiStruct
-
-	// TiNot is the type identifier for the Not type
-	TiNot
-	// TiAllOf is the type identifier for the AllOf type
-	TiAllOf
-	// TiAllOfValue is the type identifier for the AllOf type that uses the type of its contained values
-	TiAllOfValue
-	// TiAnyOf is the type identifier for the AnyOf type
-	TiAnyOf
-	// TiOneOf is the type identifier for the OneOf type
-	TiOneOf
-
-	// TiError is the type identifier for for the Error type
-	TiError
-
-	// TiDgoString is the type identifier for for the DgoString type
-	TiDgoString
 )

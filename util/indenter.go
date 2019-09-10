@@ -69,11 +69,6 @@ type indenter struct {
 	s string
 }
 
-type erpIndenter struct {
-	indenter
-	seen []Indentable
-}
-
 // An Indentable can create build a string representation of itself using an indenter
 type Indentable interface {
 	// AppendTo appends a string representation of the Node to the indenter
@@ -87,14 +82,6 @@ func ToString(ia Indentable) string {
 	return i.String()
 }
 
-// ToStringERP will produce an unindented string from an Indentable using an indenter returned
-// by NewERPIndenter
-func ToStringERP(ia Indentable) string {
-	i := NewERPIndenter(``)
-	ia.AppendTo(i)
-	return i.String()
-}
-
 // ToIndentedString will produce a string from an Indentable using an indenter initialized
 // with a two space indentation.
 func ToIndentedString(ia Indentable) string {
@@ -103,25 +90,10 @@ func ToIndentedString(ia Indentable) string {
 	return i.String()
 }
 
-// ToIndentedStringERP will produce a string from an Indentable using an indenter returned
-// by NewERPIndenter that has been initialized with a two space indentation.
-func ToIndentedStringERP(ia Indentable) string {
-	i := NewERPIndenter(` `)
-	ia.AppendTo(i)
-	return i.String()
-}
-
 // NewIndenter creates a new indenter for indent level zero using the given string to perform
 // one level of indentation. An empty string will yield unindented output
 func NewIndenter(indent string) Indenter {
 	return &indenter{b: &bytes.Buffer{}, i: 0, s: indent}
-}
-
-// NewERPIndenter creates an endless recursion protected indenter capable of indenting self referencing
-// values. When an endless recursion is encountered, the string <recursive self reference> is emitted
-// rather than the value itself.
-func NewERPIndenter(indent string) Indenter {
-	return &erpIndenter{indenter: indenter{b: &bytes.Buffer{}, i: 0, s: indent}}
 }
 
 func (i *indenter) Len() int {
@@ -183,7 +155,7 @@ func (i *indenter) AppendValue(v interface{}) {
 	} else if vs, ok := v.(fmt.Stringer); ok {
 		WriteString(i.b, vs.String())
 	} else {
-		Fprintf(i.b, "%v", v)
+		Fprintf(i.b, "%#v", v)
 	}
 }
 
@@ -238,30 +210,5 @@ func (i *indenter) NewLine() {
 		for n := 0; n < i.i; n++ {
 			WriteString(i.b, i.s)
 		}
-	}
-}
-
-func (i *erpIndenter) Indent() Indenter {
-	c := *i
-	c.i++
-	return &c
-}
-
-func (i *erpIndenter) AppendValue(v interface{}) {
-	if vi, ok := v.(Indentable); ok {
-		s := i.seen
-		for n := range s {
-			if s[n] == v {
-				WriteString(i.b, `<recursive self reference>`)
-				return
-			}
-		}
-		i.seen = append(i.seen, vi)
-		vi.AppendTo(i)
-		i.seen = s
-	} else if vs, ok := v.(fmt.Stringer); ok {
-		WriteString(i.b, vs.String())
-	} else {
-		Fprintf(i.b, "%v", v)
 	}
 }

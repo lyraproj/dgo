@@ -83,6 +83,7 @@ func TestSizedArrayType(t *testing.T) {
 	require.Assignable(t, tp, newtype.AnyOf(newtype.Array(newtype.String(5, 5)), newtype.Array(newtype.String(8, 8))))
 	require.Equal(t, tp, tp)
 	require.NotEqual(t, tp, typ.Array)
+	require.NotEqual(t, tp, newtype.Map(typ.String, typ.String))
 
 	require.Instance(t, tp.Type(), tp)
 	require.Equal(t, `[]string`, tp.String())
@@ -307,7 +308,7 @@ func TestTupleType_selfReference(t *testing.T) {
 	t2 := newtype.Parse(`x={string,{string,<x>}}`)
 	require.Assignable(t, tp, t2)
 
-	require.Equal(t, `{string,<recursive self reference>}`, tp.String())
+	require.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
 }
 
 func TestMutableArray_withoutType(t *testing.T) {
@@ -371,13 +372,23 @@ func TestArray_Set(t *testing.T) {
 
 func TestArray_SetType(t *testing.T) {
 	a := vf.MutableValues(nil, 1, 2.0, `three`)
+	adt := a.Type()
 
 	at := newtype.Array(newtype.AnyOf(typ.Integer, typ.Float, typ.String))
 	a.SetType(at)
 	require.Same(t, at, a.Type())
 
-	require.Panic(t, func() { a.SetType(newtype.Array(newtype.AnyOf(typ.Float, typ.String))) },
+	require.Panic(t, func() { a.SetType(`[](float|string)`) },
 		`cannot be assigned`)
+
+	require.Panic(t, func() { a.SetType(vf.String(`[](float|string)`)) },
+		`cannot be assigned`)
+
+	require.Panic(t, func() { a.SetType(`(float|string)`) },
+		`argument does not evaluate to an ArrayType`)
+
+	a.SetType(nil)
+	require.Equal(t, adt, a.Type())
 
 	a.Freeze()
 	require.Panic(t, func() { a.SetType(at) }, `SetType .* frozen`)
@@ -583,7 +594,7 @@ func TestArray_CompareTo(t *testing.T) {
 	require.Equal(t, 1, c)
 
 	a = vf.Values(`a`, 1, 2)
-	m := vf.Map(map[string]int{`a`: 1})
+	m := vf.Map(`a`, 1)
 	_, ok = a.CompareTo(m)
 	require.False(t, ok)
 
@@ -650,7 +661,7 @@ func TestArray_Equal(t *testing.T) {
 	b = vf.MutableValues(nil, `2`)
 	b.Add(b)
 
-	m := vf.MutableMap(3, nil)
+	m := vf.MutableMap(nil)
 	m.Put(`me`, m)
 	a.Add(m)
 	b.Add(m)
@@ -895,12 +906,12 @@ func TestArray_ToMapFromEntries(t *testing.T) {
 	a := vf.Values(vf.Strings(`a`, `b`), vf.Strings(`c`, `d`))
 	b, ok := a.ToMapFromEntries()
 	require.True(t, ok)
-	require.Equal(t, b, vf.Map(map[string]string{`a`: `b`, `c`: `d`}))
+	require.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))
 
 	a = b.Entries()
 	b, ok = a.ToMapFromEntries()
 	require.True(t, ok)
-	require.Equal(t, b, vf.Map(map[string]string{`a`: `b`, `c`: `d`}))
+	require.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))
 
 	a = vf.Values(vf.Strings(`a`, `b`), `c`)
 	_, ok = a.ToMapFromEntries()

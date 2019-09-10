@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/dgo"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/newtype"
 	"github.com/lyraproj/dgo/typ"
@@ -69,6 +71,33 @@ func TestParse_nestedSized(t *testing.T) {
 		newtype.Parse(`map[map[string]int,2,5]string[1,10]`))
 }
 
+func TestParse_aliasBad(t *testing.T) {
+	require.Panic(t, func() { newtype.Parse(`"f"=map[string]int`) }, `expected end of expression, got '='`)
+	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<"m">)`) }, `expected an identifier, got "m"`)
+	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<m)`) }, `expected '>', got '\)'`)
+	require.Panic(t, func() { newtype.Parse(`map[string](int|<n>)`) }, `reference to unresolved alias 'n'`)
+	require.Panic(t, func() { newtype.Parse(`m=map[string](int|<n>)`) }, `reference to unresolved alias 'n'`)
+	require.Panic(t, func() { newtype.Parse(`int=map[string](int|<int>)`) }, `attempt redeclare identifier 'int'`)
+}
+
+func TestParse_aliasInUnary(t *testing.T) {
+	tp := newtype.Parse(`type[m=map[string](string|<m>)]`).(dgo.UnaryType)
+	require.Equal(t, `type[map[string](string|<recursive self reference to map type>)]`, tp.String())
+
+	tp = newtype.Parse(`!m=map[string](string|<m>)`).(dgo.UnaryType)
+	require.Equal(t, `!map[string](string|<recursive self reference to map type>)`, tp.String())
+}
+
+func TestParse_aliasInAllOf(t *testing.T) {
+	tp := newtype.Parse(`m=[](0..5&3..8&<m>)`)
+	require.Equal(t, `[](0..5&3..8&<recursive self reference to slice type>)`, tp.String())
+}
+
+func TestParse_aliasInOneOf(t *testing.T) {
+	tp := newtype.Parse(`m=[](0..5^3..8^<m>)`)
+	require.Equal(t, `[](0..5^3..8^<recursive self reference to slice type>)`, tp.String())
+}
+
 func TestParse_range(t *testing.T) {
 	require.Equal(t, newtype.IntegerRange(1, 10), newtype.Parse(`1..10`))
 	require.Equal(t, newtype.IntegerRange(1, 9), newtype.Parse(`1...10`))
@@ -94,6 +123,9 @@ func TestParse_range(t *testing.T) {
 
 func TestParse_unary(t *testing.T) {
 	require.Equal(t, newtype.Not(typ.String), newtype.Parse(`!string`))
+	require.Equal(t, typ.String.Type(), newtype.Parse(`type[string]`))
+	require.Equal(t, typ.Any.Type(), newtype.Parse(`type`))
+	require.Panic(t, func() { newtype.Parse(`type[string`) }, `expected ']', got EOT`)
 }
 
 func TestParse_ternary(t *testing.T) {
@@ -151,6 +183,9 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`[/\//`) }, `expected one of ',' or ']', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`[/\t/`) }, `expected one of ',' or ']', got EOT`)
 	require.Panic(t, func() { newtype.Parse(`{"a":string,...`) }, `expected '}', got EOT`)
+	require.Panic(t, func() { newtype.Parse(`{a:32, 4}`) }, `mix of elements and map entries`)
+	require.Panic(t, func() { newtype.Parse(`{4, a:32}`) }, `mix of elements and map entries`)
+	require.Panic(t, func() { newtype.Parse(`{4, a}`) }, `unknown identifier 'a'`)
 }
 
 func TestParseFile_errors(t *testing.T) {

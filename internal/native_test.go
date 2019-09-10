@@ -26,15 +26,20 @@ func TestNative_String(t *testing.T) {
 
 type testStruct struct {
 	A string
-	B int
+}
+
+type testStructNoStringer struct {
+	A string
+}
+
+func (t *testStruct) String() string {
+	return t.A
 }
 
 func TestNative(t *testing.T) {
 	c, ok := vf.Value(make(chan bool)).(dgo.Native)
 	require.True(t, ok)
 	f, ok := vf.Value(reflect.ValueOf).(dgo.Native)
-	require.True(t, ok)
-	s, ok := vf.Value(testStruct{`a`, 2}).(dgo.Native)
 	require.True(t, ok)
 	require.Equal(t, reflect.ValueOf, f)
 	require.NotEqual(t, c, f)
@@ -56,8 +61,18 @@ func TestNative(t *testing.T) {
 	require.NotEqual(t, 0, c.HashCode())
 	require.Equal(t, c.HashCode(), c.HashCode())
 
+	s, ok := vf.Value(&testStruct{`a`}).(dgo.Native)
+	require.True(t, ok)
 	require.NotEqual(t, 0, s.HashCode())
 	require.Equal(t, s.HashCode(), s.HashCode())
+	require.Equal(t, `a`, s.String())
+
+	// Pointer to struct not equal to struct
+	require.NotEqual(t, s.HashCode(), vf.Value(testStruct{`a`}).HashCode())
+
+	s, ok = vf.Value(&testStructNoStringer{`a`}).(dgo.Native)
+	require.True(t, ok)
+	require.Equal(t, `<*internal_test.testStructNoStringer Value>`, s.String())
 
 	nt := f.Type()
 	ct := c.Type()
@@ -81,6 +96,8 @@ func TestNative(t *testing.T) {
 
 	// Force native of something that will never be native, just to
 	// force a kind that is unknown to native
-	require.Equal(t, 1234, internal.Native(reflect.ValueOf(1)).HashCode())
-	require.Equal(t, 1, internal.Native(reflect.ValueOf(1)).GoValue())
+	n := 1
+	require.NotEqual(t, 1234, internal.Native(reflect.ValueOf(&n)).HashCode())
+	require.Equal(t, 1234, internal.Native(reflect.ValueOf(n)).HashCode())
+	require.Equal(t, 1, internal.Native(reflect.ValueOf(n)).GoValue())
 }

@@ -195,13 +195,21 @@ func (t *sizedArrayType) ElementType() dgo.Type {
 }
 
 func (t *sizedArrayType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *sizedArrayType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*sizedArrayType); ok {
-		return t.min == ot.min && t.max == ot.max && t.elementType.Equals(ot.elementType)
+		return t.min == ot.min && t.max == ot.max && equals(seen, t.elementType, ot.elementType)
 	}
 	return false
 }
 
 func (t *sizedArrayType) HashCode() int {
+	return deepHashCode(nil, t)
+}
+
+func (t *sizedArrayType) deepHashCode(seen []dgo.Value) int {
 	h := int(dgo.TiArray)
 	if t.min > 0 {
 		h = h*31 + t.min
@@ -210,7 +218,7 @@ func (t *sizedArrayType) HashCode() int {
 		h = h*31 + t.max
 	}
 	if DefaultAnyType != t.elementType {
-		h = h*31 + t.elementType.HashCode()
+		h = h*31 + deepHashCode(seen, t.elementType)
 	}
 	return h
 }
@@ -248,7 +256,7 @@ func (t *sizedArrayType) Type() dgo.Type {
 }
 
 func (t *sizedArrayType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiArrayElementSized
+	return dgo.TiArray
 }
 
 func (t *sizedArrayType) Unbounded() bool {
@@ -1069,15 +1077,33 @@ func (v *array) Set(pos int, vi interface{}) dgo.Value {
 	return old
 }
 
-func (v *array) SetType(t dgo.ArrayType) {
+func (v *array) SetType(ti interface{}) {
 	if v.frozen {
 		panic(frozenArray(`SetType`))
 	}
-	if t.Instance(v) {
-		v.typ = t
+
+	var mt dgo.ArrayType
+	ok := false
+	switch ti := ti.(type) {
+	case dgo.Type:
+		mt, ok = ti.(dgo.ArrayType)
+	case dgo.String:
+		mt, ok = Parse(ti.String()).(dgo.ArrayType)
+	case string:
+		mt, ok = Parse(ti).(dgo.ArrayType)
+	case nil:
+		ok = true
+	}
+
+	if !ok {
+		panic(errors.New(`Array.SetType: argument does not evaluate to an ArrayType`))
+	}
+
+	if mt == nil || mt.Instance(v) {
+		v.typ = mt
 		return
 	}
-	panic(IllegalAssignment(t, v))
+	panic(IllegalAssignment(mt, v))
 }
 
 func (v *array) Sort() dgo.Array {
@@ -1101,7 +1127,7 @@ func (v *array) Sort() dgo.Array {
 }
 
 func (v *array) String() string {
-	return util.ToStringERP(v)
+	return ToStringERP(v)
 }
 
 func (v *array) ToMap() dgo.Map {
@@ -1212,7 +1238,7 @@ nextVal:
 }
 
 func (v *array) MarshalJSON() ([]byte, error) {
-	return []byte(util.ToStringERP(v)), nil
+	return []byte(ToStringERP(v)), nil
 }
 
 func (v *array) MarshalYAML() (interface{}, error) {

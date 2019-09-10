@@ -173,6 +173,10 @@ func TestStringType(t *testing.T) {
 }
 
 func TestDgoStringType(t *testing.T) {
+	require.Assignable(t, typ.DgoString, typ.DgoString)
+	require.NotAssignable(t, typ.DgoString, newtype.OneOf(typ.DgoString, typ.String))
+	require.Instance(t, typ.DgoString.Type(), typ.DgoString)
+
 	s := `dgo`
 	require.Assignable(t, typ.DgoString, vf.String(s).Type())
 	require.Instance(t, typ.DgoString, s)
@@ -182,11 +186,17 @@ func TestDgoStringType(t *testing.T) {
 	require.Instance(t, typ.DgoString, s)
 	require.Instance(t, typ.DgoString, vf.String(s))
 	require.Assignable(t, typ.DgoString, vf.String(s).Type())
+	require.False(t, typ.DgoString.Unbounded())
+	require.Equal(t, 1, typ.DgoString.Min())
+	require.Equal(t, math.MaxInt64, typ.DgoString.Max())
+	require.Equal(t, `dgo`, typ.DgoString.String())
 
 	s = `hello`
 	require.NotInstance(t, typ.DgoString, s)
 	require.NotInstance(t, typ.DgoString, vf.String(s))
 	require.NotAssignable(t, typ.DgoString, vf.String(s).Type())
+
+	require.NotEqual(t, 0, typ.DgoString.HashCode())
 }
 
 func TestString(t *testing.T) {

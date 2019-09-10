@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -499,18 +498,4 @@ func (v *hstring) String() string {
 
 func (v *hstring) Type() dgo.Type {
 	return (*exactStringType)(v)
-}
-
-func (v *hstring) UnmarshalJSON(b []byte) error {
-	v.h = 0
-	return json.Unmarshal(b, &v.s)
-}
-
-func (v *hstring) UnmarshalYAML(n *yaml.Node) error {
-	if n.Kind == yaml.ScalarNode && n.Tag == `!!str` {
-		v.h = 0
-		v.s = n.Value
-		return nil
-	}
-	return errors.New(`"expecting data to be a string"`)
 }

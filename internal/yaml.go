@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+
 	"github.com/lyraproj/dgo/dgo"
 	"gopkg.in/yaml.v3"
 )
@@ -16,6 +18,7 @@ func UnmarshalYAML(b []byte) (dgo.Value, error) {
 }
 
 func yamlEncodeValue(v dgo.Value) (*yaml.Node, error) {
+	var iv interface{} = v
 	switch v := v.(type) {
 	case yaml.Marshaler:
 		yv, err := v.MarshalYAML()
@@ -38,10 +41,9 @@ func yamlEncodeValue(v dgo.Value) (*yaml.Node, error) {
 			}
 			return yamlEncodeValue(Value(yv))
 		}
+		iv = v.GoValue()
 	}
-	n := &yaml.Node{}
-	n.SetString(v.String())
-	return n, nil
+	return nil, fmt.Errorf(`unable to marshal into value of type %T`, iv)
 }
 
 func yamlDecodeScalar(n *yaml.Node) (dgo.Value, error) {
@@ -51,21 +53,15 @@ func yamlDecodeScalar(n *yaml.Node) (dgo.Value, error) {
 		v = Nil
 	case `!!bool`:
 		var x bool
-		if err := n.Decode(&x); err != nil {
-			return nil, err
-		}
+		_ = n.Decode(&x)
 		v = boolean(x)
 	case `!!int`:
 		var x int64
-		if err := n.Decode(&x); err != nil {
-			return nil, err
-		}
+		_ = n.Decode(&x)
 		v = intVal(x)
 	case `!!float`:
 		var x float64
-		if err := n.Decode(&x); err != nil {
-			return nil, err
-		}
+		_ = n.Decode(&x)
 		v = floatVal(x)
 	case `!!str`:
 		v = makeHString(n.Value)
@@ -79,6 +75,8 @@ func yamlDecodeScalar(n *yaml.Node) (dgo.Value, error) {
 	*/
 	case `!!binary`:
 		v = BinaryFromString(n.Value)
+	case `!puppet.com,2019:dgo/type`:
+		v = Parse(n.Value)
 	default:
 		var x interface{}
 		if err := n.Decode(&x); err != nil {

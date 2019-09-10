@@ -11,8 +11,8 @@ func Map(args ...interface{}) dgo.MapType {
 }
 
 // StructEntry returns a new StructEntry initiated with the given parameters
-func StructEntry(key string, valueType dgo.Type, required bool) dgo.StructEntry {
-	return internal.StructEntry(key, valueType, required)
+func StructEntry(key interface{}, value interface{}, required bool) dgo.StructEntry {
+	return internal.StructEntry(key, value, required)
 }
 
 // Struct returns a new Struct type built from the given MapEntryTypes. If

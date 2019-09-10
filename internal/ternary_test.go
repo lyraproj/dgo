@@ -36,6 +36,7 @@ func TestAllOfType(t *testing.T) {
 
 	require.Equal(t, tp.(dgo.TernaryType).Operands(), vf.Values(newtype.Enum(`a`, `b`, `c`), newtype.Enum(`b`, `c`, `d`)))
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpAnd)
+	require.Equal(t, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType().(dgo.TernaryType).Operator(), dgo.OpAnd)
 
 	require.Equal(t, `("a"|"b"|"c")&("b"|"c"|"d")`, tp.String())
 
@@ -47,6 +48,11 @@ func TestAllOfType(t *testing.T) {
 	require.NotAssignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), newtype.Pattern(regexp.MustCompile(`b`))))
 	require.Assignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type()))
 	require.NotAssignable(t, tp, newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type(), typ.String))
+
+	require.Assignable(t, tp, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType())
+	require.NotAssignable(t, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType(), tp)
+	require.Assignable(t, tp, newtype.Parse(`"abc"^/a/&/b/&/c/`))
+	require.Assignable(t, newtype.Parse(`/a/|/b/|/c/`), tp)
 }
 
 func TestAnyOfType(t *testing.T) {

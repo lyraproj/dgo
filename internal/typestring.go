@@ -99,22 +99,6 @@ func writeTernary(seen []dgo.Value, typ dgo.Type, tc func(dgo.Value) dgo.Type, p
 	}
 }
 
-var simpleTypes = map[dgo.TypeIdentifier]string{
-	dgo.TiAny:       `any`,
-	dgo.TiArray:     `[]any`,
-	dgo.TiBoolean:   `bool`,
-	dgo.TiDgoString: `dgo`,
-	dgo.TiError:     `error`,
-	dgo.TiFalse:     `false`,
-	dgo.TiFloat:     `float`,
-	dgo.TiInteger:   `int`,
-	dgo.TiMap:       `map[any]any`,
-	dgo.TiNil:       `nil`,
-	dgo.TiRegexp:    `regexp`,
-	dgo.TiString:    `string`,
-	dgo.TiTrue:      `true`,
-}
-
 type typeToString func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder)
 
 var complexTypes map[dgo.TypeIdentifier]typeToString
@@ -138,6 +122,17 @@ func init() {
 			joinValueTypes(seen, typ.(dgo.ExactType).Value().(dgo.Iterable), `,`, commaPrio, sb)
 			util.WriteByte(sb, '}')
 		},
+		dgo.TiArray: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			at := typ.(dgo.ArrayType)
+			if at.Unbounded() {
+				util.WriteString(sb, `[]`)
+			} else {
+				util.WriteByte(sb, '[')
+				writeSizeBoundaries(int64(at.Min()), int64(at.Max()), sb)
+				util.WriteByte(sb, ']')
+			}
+			buildTypeString(seen, at.ElementType(), typePrio, sb)
+		},
 		dgo.TiBinary: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.BinaryType)
 			util.WriteString(sb, `binary`)
@@ -152,16 +147,16 @@ func init() {
 			joinTypes(seen, typ.(dgo.TupleType).ElementTypes(), `,`, commaPrio, sb)
 			util.WriteByte(sb, '}')
 		},
-		dgo.TiArrayElementSized: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			at := typ.(dgo.ArrayType)
-			if at.Unbounded() {
-				util.WriteString(sb, `[]`)
-			} else {
-				util.WriteByte(sb, '[')
+		dgo.TiMap: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			at := typ.(dgo.MapType)
+			util.WriteString(sb, `map[`)
+			buildTypeString(seen, at.KeyType(), commaPrio, sb)
+			if !at.Unbounded() {
+				util.WriteByte(sb, ',')
 				writeSizeBoundaries(int64(at.Min()), int64(at.Max()), sb)
-				util.WriteByte(sb, ']')
 			}
-			buildTypeString(seen, at.ElementType(), typePrio, sb)
+			util.WriteByte(sb, ']')
+			buildTypeString(seen, at.ValueType(), typePrio, sb)
 		},
 		dgo.TiMapExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
@@ -181,31 +176,11 @@ func init() {
 			}
 			util.WriteByte(sb, '}')
 		},
-		dgo.TiMapEntry: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			me := typ.(dgo.StructEntry)
-			buildTypeString(seen, me.Key().(dgo.Type), commaPrio, sb)
-			if !me.Required() {
-				util.WriteByte(sb, '?')
-			}
-			util.WriteByte(sb, ':')
-			buildTypeString(seen, me.Value().(dgo.Type), commaPrio, sb)
-		},
 		dgo.TiMapEntryExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			me := typ.(dgo.ExactType).Value().(dgo.MapEntry)
 			buildTypeString(seen, me.Key().Type(), commaPrio, sb)
 			util.WriteByte(sb, ':')
 			buildTypeString(seen, me.Value().Type(), commaPrio, sb)
-		},
-		dgo.TiMapSized: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			at := typ.(dgo.MapType)
-			util.WriteString(sb, `map[`)
-			buildTypeString(seen, at.KeyType(), commaPrio, sb)
-			if !at.Unbounded() {
-				util.WriteByte(sb, ',')
-				writeSizeBoundaries(int64(at.Min()), int64(at.Max()), sb)
-			}
-			util.WriteByte(sb, ']')
-			buildTypeString(seen, at.ValueType(), typePrio, sb)
 		},
 		dgo.TiFloatExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteString(sb, util.Ftoa(typ.(dgo.ExactType).Value().(floatVal).GoFloat()))
@@ -267,18 +242,15 @@ func init() {
 
 func buildTypeString(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 	ti := typ.TypeIdentifier()
-	if s, ok := simpleTypes[ti]; ok {
-		util.WriteString(sb, s)
-		return
-	}
-
 	if f, ok := complexTypes[ti]; ok {
 		if recursionHit(seen, typ) {
-			util.WriteString(sb, `<recursive self reference>`)
+			util.WriteString(sb, `<recursive self reference to `)
+			util.WriteString(sb, ti.String())
+			util.WriteString(sb, ` type>`)
 			return
 		}
 		f(append(seen, typ), typ, prio, sb)
 	} else {
-		panic(fmt.Errorf(`type identifier %d is not handled`, ti))
+		util.WriteString(sb, ti.String())
 	}
 }

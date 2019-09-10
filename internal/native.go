@@ -108,18 +108,29 @@ func (v native) FrozenCopy() dgo.Value {
 func (v native) HashCode() int {
 	rv := reflect.Value(v)
 	switch rv.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Ptr, reflect.Uintptr:
+	case reflect.Ptr:
+		ev := rv.Elem()
+		if ev.Kind() == reflect.Struct {
+			return structHash(&ev)
+		}
+		p := rv.Pointer()
+		return int(p ^ (p >> 32))
+	case reflect.Chan, reflect.Func, reflect.Uintptr:
 		p := rv.Pointer()
 		return int(p ^ (p >> 32))
 	case reflect.Struct:
-		n := rv.NumField()
-		h := 1
-		for i := 0; i < n; i++ {
-			h = h*31 + ValueFromReflected(rv.Field(i)).HashCode()
-		}
-		return h
+		return structHash(&rv) * 3
 	}
 	return 1234
+}
+
+func structHash(rv *reflect.Value) int {
+	n := rv.NumField()
+	h := 1
+	for i := 0; i < n; i++ {
+		h = h*31 + ValueFromReflected(rv.Field(i)).HashCode()
+	}
+	return h
 }
 
 func (v native) String() string {

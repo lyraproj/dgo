@@ -87,3 +87,9 @@ func TestType_String_priorities(t *testing.T) {
 	tp = newtype.Array(vf.Values(`a`, `b`).Type().(dgo.ArrayType).ElementType(), 2, 2)
 	require.Equal(t, `[2,2]("a"&"b")`, tp.String())
 }
+
+func TestTypeIdentifier_String(t *testing.T) {
+	require.Equal(t, `pattern`, dgo.TiStringPattern.String())
+
+	require.Panic(t, func() { _ = dgo.TypeIdentifier(0x1000).String() }, `unhandled TypeIdentifier 4096`)
+}

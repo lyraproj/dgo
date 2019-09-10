@@ -53,6 +53,24 @@ func (t *structType) Additional() bool {
 	return t.additional
 }
 
+func (t *structType) CheckEntry(k, v dgo.Value) dgo.Value {
+	ks := t.keys.slice
+	for i := range ks {
+		kt := ks[i].(dgo.Type)
+		if kt.Instance(k) {
+			vt := t.values.slice[i].(dgo.Type)
+			if vt.Instance(v) {
+				return nil
+			}
+			return IllegalAssignment(vt, v)
+		}
+	}
+	if t.additional {
+		return nil
+	}
+	return IllegalMapKey(t, k)
+}
+
 func (t *structType) Assignable(other dgo.Type) bool {
 	return Assignable(nil, t, other)
 }
@@ -161,6 +179,18 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 	return false
 }
 
+func (t *structType) Get(key interface{}) (dgo.MapEntry, bool) {
+	kv := Value(key)
+	if _, ok := kv.(dgo.Type); !ok {
+		kv = kv.Type()
+	}
+	i := t.keys.IndexOf(kv)
+	if i >= 0 {
+		return StructEntry(kv, t.values.slice[i], t.required[i] != 0), true
+	}
+	return nil, false
+}
+
 func (t *structType) KeyType() dgo.Type {
 	switch t.keys.Len() {
 	case 0:
@@ -173,10 +203,11 @@ func (t *structType) KeyType() dgo.Type {
 }
 
 func (t *structType) Max() int {
-	if t.additional {
+	m := len(t.required)
+	if m == 0 || t.additional {
 		return math.MaxInt64
 	}
-	return len(t.required)
+	return m
 }
 
 func (t *structType) Min() int {
@@ -212,7 +243,7 @@ func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *structType) Unbounded() bool {
-	return t.additional && t.Min() == 0
+	return len(t.required) == 0 || t.additional && t.Min() == 0
 }
 
 func (t *structType) ValueType() dgo.Type {
@@ -227,13 +258,16 @@ func (t *structType) ValueType() dgo.Type {
 }
 
 // StructEntry returns a new StructEntry initiated with the given parameters
-func StructEntry(key string, valueType dgo.Type, required bool) dgo.StructEntry {
-	return &structEntry{mapEntry: mapEntry{key: String(key).Type(), value: valueType}, required: required}
-}
-
-// StructEntry2 returns a new StructEntry initiated with the given parameters
-func StructEntry2(keyType, valueType dgo.Type, required bool) dgo.StructEntry {
-	return &structEntry{mapEntry: mapEntry{key: keyType, value: valueType}, required: required}
+func StructEntry(key interface{}, value interface{}, required bool) dgo.StructEntry {
+	kv := Value(key)
+	if _, ok := kv.(dgo.Type); !ok {
+		kv = kv.Type()
+	}
+	vv := Value(value)
+	if _, ok := vv.(dgo.Type); !ok {
+		vv = vv.Type()
+	}
+	return &structEntry{mapEntry: mapEntry{key: kv, value: vv}, required: required}
 }
 
 func (t *structEntry) Equals(other interface{}) bool {

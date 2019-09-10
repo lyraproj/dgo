@@ -1,6 +1,11 @@
 package vf
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+
+	require "github.com/lyraproj/dgo/dgo_test"
+)
 
 func ExampleUnmarshalYAML() {
 	v, err := UnmarshalYAML([]byte(`
@@ -11,7 +16,12 @@ func ExampleUnmarshalYAML() {
 - null
 - a: 1`))
 	if err == nil {
-		fmt.Println(v.Equals(Values(`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1})))
+		fmt.Println(v)
 	}
-	// Output: true
+	// Output: ["hello",true,1,3.14,null,{"a":1}]
+}
+
+func TestUnmarshalYAML_fail(t *testing.T) {
+	_, err := UnmarshalYAML([]byte(`: yaml`))
+	require.NotNil(t, err)
 }

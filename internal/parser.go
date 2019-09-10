@@ -33,7 +33,7 @@ type unknownIdentifier struct {
 }
 
 type optionalValue struct {
-	value dgo.Value
+	dgo.Value
 }
 
 type alias struct {
@@ -55,25 +55,6 @@ func (p *aliasProvider) Replace(t dgo.Type) dgo.Type {
 		rt.Resolve(p)
 	}
 	return t
-}
-
-func (o *optionalValue) String() string {
-	return o.value.String() + `?`
-}
-
-func (o *optionalValue) Type() dgo.Type {
-	return o.value.Type()
-}
-
-func (o *optionalValue) Equals(other interface{}) bool {
-	if ov, ok := other.(*optionalValue); ok {
-		return o.value.Equals(ov.value)
-	}
-	return false
-}
-
-func (o *optionalValue) HashCode() int {
-	return o.value.HashCode() * 3
 }
 
 func expect(state int) (s string) {
@@ -196,6 +177,7 @@ func (p *parser) parse(t *token) {
 func (p *parser) list() {
 	szp := len(p.d)
 	ellipsis := false
+	expectEntry := 1
 	for {
 		t := p.nextToken()
 		if t.i == dotdotdot {
@@ -211,7 +193,7 @@ func (p *parser) list() {
 			// Right bracket instead of element indicates an empty array or an extraneous comma. Both are OK
 			break
 		}
-		p.arrayElement(t)
+		expectEntry = p.arrayElement(t, expectEntry)
 		t = p.nextToken()
 		if t.i == '}' {
 			break
@@ -224,12 +206,11 @@ func (p *parser) list() {
 	as := p.d[szp:]
 	var tv dgo.Value
 	if len(as) > 0 {
-		ar := &array{slice: as}
-		if _, ok := as[0].(dgo.MapEntry); ok {
+		if expectEntry == 2 {
 			tv = makeStructType(as, ellipsis)
 		}
 		if tv == nil {
-			tv = makeTupleType(ar)
+			tv = makeTupleType(&array{slice: as})
 		}
 	} else {
 		tv = makeStructType(nil, ellipsis)
@@ -255,10 +236,7 @@ func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructType {
 	values := make([]dgo.Value, l)
 	required := make([]byte, l)
 	for i := range as {
-		hn, ok := as[i].(dgo.MapEntry)
-		if !ok {
-			return nil
-		}
+		hn := as[i].(dgo.MapEntry)
 		k := hn.Key()
 		v := hn.Value()
 		var kt, vt dgo.Value
@@ -268,7 +246,7 @@ func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructType {
 		}
 		keys[i] = kt
 		if ov, optional := v.(*optionalValue); optional {
-			v = ov.value
+			v = ov.Value
 		} else {
 			required[i] = 1
 		}
@@ -288,7 +266,7 @@ func (p *parser) params() {
 			// Right bracket instead of element indicates an empty array or an extraneous comma. Both are OK
 			break
 		}
-		p.arrayElement(t)
+		p.arrayElement(t, 0)
 		t = p.nextToken()
 		if t.i == ']' {
 			break
@@ -307,7 +285,7 @@ func (p *parser) params() {
 	p.d = append(p.d[:szp], tv)
 }
 
-func (p *parser) arrayElement(t *token) {
+func (p *parser) arrayElement(t *token, expectEntry int) int {
 	var id dgo.Value
 	if t.i == identifier && p.peekToken().i != '=' {
 		// Special handling of identifiers at this point
@@ -321,6 +299,9 @@ func (p *parser) arrayElement(t *token) {
 		p.nextToken()
 	}
 	if p.peekToken().i == ':' {
+		if expectEntry == 0 {
+			panic(errors.New(`mix of elements and map entries`))
+		}
 		// Map mapEntry
 		p.nextToken()
 		key := p.popLast()
@@ -333,9 +314,17 @@ func (p *parser) arrayElement(t *token) {
 			val = &optionalValue{val}
 		}
 		p.d = append(p.d, &mapEntry{key: key, value: val})
-	} else if unknown, ok := id.(*unknownIdentifier); ok {
-		panic(fmt.Errorf(`unknown identifier '%s'`, unknown.s))
+		expectEntry = 2
+	} else {
+		if expectEntry == 2 {
+			panic(errors.New(`mix of elements and map entries`))
+		}
+		if unknown, ok := id.(*unknownIdentifier); ok {
+			panic(fmt.Errorf(`unknown identifier '%s'`, unknown.s))
+		}
+		expectEntry = 0
 	}
+	return expectEntry
 }
 
 func (p *parser) anyOf(t *token) {
@@ -424,16 +413,17 @@ func (p *parser) mapExpression() dgo.Value {
 }
 
 func (p *parser) meta() dgo.Value {
-	n := p.nextToken()
-	if n.i != '[' {
-		panic(badSyntax(n, exLeftBracket))
+	if p.peekToken().i != '[' {
+		return &metaType{DefaultAnyType}
 	}
+	p.nextToken()
 
 	// Deal with key type and size constraint
 	p.anyOf(p.nextToken())
 	typ := p.popLastType()
-	if p.nextToken().i != ']' {
-		panic(badSyntax(n, exRightBracket))
+	t := p.nextToken()
+	if t.i != ']' {
+		panic(badSyntax(t, exRightBracket))
 	}
 	return &metaType{typ}
 }
@@ -578,16 +568,19 @@ func (p *parser) aliasReference(t *token) dgo.Value {
 	if t.i != identifier {
 		panic(badSyntax(t, exAliasRef))
 	}
+	n := p.nextToken()
+	if n.i != '>' {
+		panic(badSyntax(n, exRightAngle))
+	}
 	if p.sc != nil {
 		if tp, ok := p.sc[t.s]; ok {
-			t = p.nextToken()
-			if t.i != '>' {
-				panic(badSyntax(t, exRightAngle))
-			}
 			return tp
 		}
+	} else {
+		// Ensure that a resolution attempt is made
+		p.sc = make(map[string]dgo.Type)
 	}
-	panic(fmt.Errorf(`unknown alias '%s'`, t.s))
+	return &alias{exactStringType{t.s, 0}}
 }
 
 func (p *parser) aliasDeclaration(t *token) dgo.Value {
@@ -599,7 +592,7 @@ func (p *parser) aliasDeclaration(t *token) dgo.Value {
 			p.sc = make(map[string]dgo.Type)
 		}
 		p.sc[un.s] = &alias{exactStringType: exactStringType{s: un.s}}
-		p.parse(p.nextToken())
+		p.anyOf(p.nextToken())
 		tp = p.popLastType()
 		p.sc[un.s] = tp.(dgo.Type)
 		return tp

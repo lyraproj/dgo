@@ -121,8 +121,9 @@ type (
 		// panic if the map is immutable.
 		RemoveAll(keys Array)
 
-		// SetType sets the type for this Map to the given MapType. The Map must be mutable and an instance of the given type
-		SetType(t MapType)
+		// SetType sets the type for this Map to the given argument which must be a MapType or a string that evaluates
+		// to a MapType. The Map must be mutable and an instance of the given type
+		SetType(t interface{})
 
 		// Values returns snapshot of all the values of this map.
 		Values() Array
@@ -158,5 +159,8 @@ type (
 
 		// Entries returns the MapEntryTypes that constitutes this Struct
 		Entries() Array
+
+		// Get returns the MapEntry that is identified with the given key
+		Get(key interface{}) (MapEntry, bool)
 	}
 )
