@@ -53,19 +53,23 @@ func Struct(additional bool, entries []dgo.StructEntry) dgo.StructType {
 		required:   required}
 }
 
-var structEntryMapType dgo.MapType
+var sfmType dgo.MapType
+
+// StructFromMapType returns the map type used when validating the map sent to
+// StructFromMap
+func StructFromMapType() dgo.MapType {
+	if sfmType == nil {
+		sfmType = Parse(`map[string](dgo|type|{type:dgo|type,required?:bool,...})`).(dgo.MapType)
+	}
+	return sfmType
+}
 
 // StructFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
-func StructFromMap(additional bool, entries dgo.Value) dgo.StructType {
-	if structEntryMapType == nil {
-		structEntryMapType = Parse(`map[string](dgo|type|{type:dgo|type,required?:bool,...})`).(dgo.MapType)
+func StructFromMap(additional bool, entries dgo.Map) dgo.StructType {
+	if !StructFromMapType().Instance(entries) {
+		panic(IllegalAssignment(sfmType, entries))
 	}
-	if !structEntryMapType.Instance(entries) {
-		panic(IllegalAssignment(structEntryMapType, entries))
-	}
-	em := entries.(dgo.Map)
-
-	l := em.Len()
+	l := entries.Len()
 	keys := make([]dgo.Value, l)
 	values := make([]dgo.Value, l)
 	required := make([]byte, l)
@@ -79,7 +83,7 @@ func StructFromMap(additional bool, entries dgo.Value) dgo.StructType {
 		return Parse(v.String())
 	}
 
-	em.Each(func(e dgo.MapEntry) {
+	entries.Each(func(e dgo.MapEntry) {
 		keys[i] = e.Key().Type()
 		if vm, ok := e.Value().(dgo.Map); ok {
 			values[i] = asType(vm.Get(`type`))

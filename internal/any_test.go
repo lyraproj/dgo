@@ -21,7 +21,7 @@ func TestAny(t *testing.T) {
 	require.Assignable(t, typ.Any, newtype.Enum(`f`, `foo`, `foobar`))
 	require.Assignable(t, typ.Any.Type(), typ.Any.Type())
 	require.Instance(t, typ.Any.Type(), typ.Any)
-	require.NotInstance(t, typ.Any.Type(), typ.Boolean)
+	require.Instance(t, typ.Any.Type(), typ.Boolean)
 	require.Equal(t, typ.Any.HashCode(), typ.Any.HashCode())
 	require.NotEqual(t, 0, typ.Any.HashCode())
 

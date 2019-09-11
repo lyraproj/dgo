@@ -131,6 +131,24 @@ func True(t *testing.T, v bool, args ...interface{}) {
 	}
 }
 
+// Ok will fail unless error is nil
+func Ok(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf(`Expected no error, got '%s'`, err.Error())
+	}
+}
+
+// NotOk will fail unless error matches the given pattern
+func NotOk(t *testing.T, msg interface{}, err error) {
+	t.Helper()
+	if err == nil {
+		t.Errorf(`Expected error matching '%s' did not occur`, internal.Value(msg))
+	} else if !isMatch(msg, err.Error()) {
+		t.Errorf(`Expected error matching '%s', got '%s'`, internal.Value(msg), err.Error())
+	}
+}
+
 // Nil will fail unless v is nil
 func Nil(t *testing.T, v interface{}) {
 	t.Helper()

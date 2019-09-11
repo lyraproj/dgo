@@ -11,7 +11,7 @@ import (
 func TestMeta(t *testing.T) {
 	tp := typ.Any.Type()
 	require.Instance(t, tp, typ.Any)
-	require.NotInstance(t, tp, typ.Boolean)
+	require.Instance(t, tp, typ.Boolean)
 	require.NotInstance(t, tp, 3)
 
 	require.Equal(t, typ.Any.Type(), tp)

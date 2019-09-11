@@ -30,10 +30,10 @@ type Command interface {
 }
 
 type command struct {
-	name  string
-	out   io.Writer
-	err   io.Writer
-	debug bool
+	name    string
+	out     io.Writer
+	err     io.Writer
+	verbose bool
 }
 
 func (h *command) RunWithCatch(runner func() int) int {
@@ -60,9 +60,9 @@ func (h *command) MissingOptionArgument(opt string) int {
 
 func (h *command) UnknownOption(opt string) int {
 	if strings.HasPrefix(opt, `-`) {
-		util.Fprintf(h.err, "Error: UnknownOption flag: %s\nUse '%s --help' for more help\n", opt, h.name)
+		util.Fprintf(h.err, "Error: Unknown flag: %s\nUse '%s --help' for more help\n", opt, h.name)
 	} else {
-		util.Fprintf(h.err, "Error: UnknownOption argument: %s\nUse '%s --help' for more help\n", opt, h.name)
+		util.Fprintf(h.err, "Error: Unknown option: %s\nUse '%s --help' for more help\n", opt, h.name)
 	}
 	return 1
 }

@@ -136,7 +136,7 @@ func ParseFile(fileName, content string) dgo.Type {
 			if fileName != `` || p.sr.Line() > 1 {
 				ln = fmt.Sprintf(`line: %d, `, p.sr.Line())
 			}
-			panic(fmt.Sprintf("%s: (%s%scolumn: %d)", es, fn, ln, p.sr.Column()-tl))
+			panic(fmt.Errorf("%s: (%s%scolumn: %d)", es, fn, ln, p.sr.Column()-tl))
 		}
 	}()
 	p.parse(p.nextToken())

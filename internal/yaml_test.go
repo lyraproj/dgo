@@ -62,7 +62,7 @@ func TestMap_MarshalYaml_fail(t *testing.T) {
 
 func TestMap_UnmarshalYAML_Map(t *testing.T) {
 	m := vf.MutableMap(nil)
-	err := yaml.Unmarshal([]byte(`
+	require.Ok(t, yaml.Unmarshal([]byte(`
 a: 1
 b: two
 c: 
@@ -73,10 +73,23 @@ c:
   - !!binary AQQD
   - !puppet.com,2019:dgo/type string
   - null
-`), m)
-	require.Nil(t, err)
+`), m))
 	require.Equal(t, vf.Map("a", 1, "b", "two", "c", vf.Values(
 		`hello`, true, 1, 3.14, vf.BinaryFromString(`AQQD`), typ.String, nil)), m)
+}
+
+func TestMap_UnmarshalYAML_TypedMap(t *testing.T) {
+	m := vf.MutableMap(`map[string](int|float)`)
+	require.Ok(t, yaml.Unmarshal([]byte(`
+int: 23
+float: 3.14`), m))
+
+	require.Panic(t, func() {
+		m := vf.MutableMap(`map[string](int|float)`)
+		_ = yaml.Unmarshal([]byte(`
+int: 23
+string: hello`), m)
+	}, `the string "hello" cannot be assigned to a variable of type int|float`)
 }
 
 type testNoMarshaler struct {
@@ -110,14 +123,14 @@ func (m *marshalTestFail) MarshalYAML() (interface{}, error) {
 func TestNative_MarshalYAML(t *testing.T) {
 	m := vf.MutableValues(nil, vf.Value(&testMarshaler{A: `hello`}))
 	bs, err := yaml.Marshal(m)
-	require.Nil(t, err)
+	require.Ok(t, err)
 	require.Equal(t, "- A: hello\n", string(bs))
 }
 
 func TestNative_MarshalYAML_node(t *testing.T) {
 	m := vf.MutableValues(nil, vf.Value(&marshalTestNode{testMarshaler{A: `hello`}}))
 	bs, err := yaml.Marshal(m)
-	require.Nil(t, err)
+	require.Ok(t, err)
 	require.Equal(t, "- A: hello\n", string(bs))
 }
 
@@ -152,7 +165,7 @@ func TestMap_UnmarshalYAML_Map_frozen(t *testing.T) {
 func TestMap_UnmarshalYAML_Array(t *testing.T) {
 	a := vf.MutableValues(nil)
 	err := yaml.Unmarshal([]byte(`["hello",true,1,3.14,null]`), a)
-	require.Nil(t, err)
+	require.Ok(t, err)
 	require.Equal(t, vf.Values(`hello`, true, 1, 3.14, nil), a)
 }
 

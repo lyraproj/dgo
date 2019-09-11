@@ -63,6 +63,20 @@ func TestStructType_Get(t *testing.T) {
 	require.Nil(t, tp.Get(`c`))
 }
 
+func TestStructType_Validate(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	es := tp.Validate(nil, vf.Values(1, 2))
+	require.Equal(t, 1, len(es))
+	require.NotOk(t, `value is not a Map`, es[0])
+}
+
+func TestStructType_ValidateVerbose(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	out := util.NewIndenter(``)
+	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
+	require.Equal(t, `value is not a Map`, out.String())
+}
+
 func TestStructType_alias(t *testing.T) {
 	tp := newtype.Parse(`person={name:string,mom:person,dad:person}`).(dgo.StructType)
 	require.Same(t, tp, tp.Get(`mom`).Value())
@@ -177,4 +191,20 @@ func TestStructEntry(t *testing.T) {
 	require.NotEqual(t, tp, newtype.StructEntry(`a`, typ.String, false))
 	require.NotEqual(t, tp, vf.Values(`a`, typ.String))
 	require.Equal(t, `"a":string`, tp.String())
+}
+
+func TestStructFromMap(t *testing.T) {
+	require.Panic(t, func() { newtype.StructFromMap(false, vf.Map(`nope`, `dope`)) }, `cannot be assigned to a variable of type map`)
+
+	tp := newtype.StructFromMap(false, vf.Map(`first`, typ.String))
+	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, false)))
+
+	tp = newtype.StructFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String)))
+	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, false)))
+
+	tp = newtype.StructFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String, `required`, true)))
+	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, true)))
+
+	tp = newtype.StructFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String, `required`, false)))
+	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, false)))
 }

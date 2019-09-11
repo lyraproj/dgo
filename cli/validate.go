@@ -66,7 +66,7 @@ func (h *validateCommand) run(input, spec string) int {
 			panic(err)
 		}
 		iMap = m
-		if h.debug {
+		if h.verbose {
 			bld := util.NewIndenter(`  `)
 			bld.Append(`Got input yaml with:`)
 			b2 := bld.Indent()
@@ -94,11 +94,11 @@ func (h *validateCommand) run(input, spec string) int {
 			panic(fmt.Errorf(`file '%s' does not contain a struct definition`, spec))
 		}
 	default:
-		panic(fmt.Errorf(`invalid file name '%s', expected file name to end with .yaml or .json`, input))
+		panic(fmt.Errorf(`invalid file name '%s', expected file name to end with .yaml, .json, or .dgo`, input))
 	}
 
 	ok := true
-	if h.debug {
+	if h.verbose {
 		bld := util.NewIndenter(`  `)
 		ok = sType.ValidateVerbose(iMap, bld)
 		util.WriteString(h.out, bld.String())
@@ -145,7 +145,7 @@ func (h *validateCommand) Do(args []string) int {
 			spec = args[0]
 			args = args[1:]
 		case `-v`, `--verbose`:
-			h.debug = true
+			h.verbose = true
 		default:
 			return h.UnknownOption(opt)
 		}

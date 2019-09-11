@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"errors"
+	"regexp"
 	"testing"
 
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -36,6 +37,24 @@ func TestTheTester(t *testing.T) {
 	})
 	ensureFailed(t, func(ft *testing.T) {
 		require.NotEqual(ft, `a`, `a`)
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.Match(ft, regexp.MustCompile(`foo`), `bar`)
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.Match(ft, 23, `bar`)
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.NoMatch(ft, `bar`, `bar`)
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.Ok(ft, errors.New(`nope`))
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.NotOk(ft, `yep`, nil)
+	})
+	ensureFailed(t, func(ft *testing.T) {
+		require.NotOk(ft, `yep`, errors.New(`nope`))
 	})
 	ensureFailed(t, func(ft *testing.T) {
 		require.Same(ft, `a`, `b`)

@@ -174,6 +174,8 @@ func TestStringType(t *testing.T) {
 
 func TestDgoStringType(t *testing.T) {
 	require.Assignable(t, typ.DgoString, typ.DgoString)
+	require.Equal(t, typ.DgoString, typ.DgoString)
+	require.NotEqual(t, typ.DgoString, typ.String)
 	require.NotAssignable(t, typ.DgoString, newtype.OneOf(typ.DgoString, typ.String))
 	require.Instance(t, typ.DgoString.Type(), typ.DgoString)
 

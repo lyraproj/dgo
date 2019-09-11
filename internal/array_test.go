@@ -670,6 +670,16 @@ func TestArray_Equal(t *testing.T) {
 	require.Equal(t, a.HashCode(), b.HashCode())
 }
 
+func TestArray_EachWithIndex(t *testing.T) {
+	ni := 0
+	vf.Values(1, 2, 3).EachWithIndex(func(v dgo.Value, i int) {
+		require.Equal(t, ni, i)
+		require.Equal(t, v, i+1)
+		ni++
+	})
+	require.Equal(t, 3, ni)
+}
+
 func TestArray_Freeze(t *testing.T) {
 	a := vf.MutableValues(nil, `a`, `b`, vf.MutableArray(nil, []dgo.Value{vf.String(`c`)}))
 	require.False(t, a.Frozen())

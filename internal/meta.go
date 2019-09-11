@@ -48,7 +48,7 @@ func (t *metaType) Instance(v interface{}) bool {
 			_, ok = ot.(*metaType)
 			return ok
 		}
-		return t.tp.Equals(ot)
+		return t.tp.Assignable(ot)
 	}
 	return false
 }

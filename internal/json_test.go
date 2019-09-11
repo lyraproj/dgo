@@ -11,6 +11,12 @@ import (
 	"github.com/lyraproj/dgo/vf"
 )
 
+func TestUnmarshalJSON(t *testing.T) {
+	v, err := vf.UnmarshalJSON([]byte(`["hello",true,1,3.14,null,{"a":1}]`))
+	require.Ok(t, err)
+	require.Equal(t, vf.Values(`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1}), v)
+}
+
 func TestArray_MarshalJSON(t *testing.T) {
 	a := vf.Values(
 		`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1, "b": "two", "c": 2.17})
