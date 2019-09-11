@@ -2,6 +2,8 @@ package internal
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"math"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -42,6 +44,51 @@ func Struct(additional bool, entries []dgo.StructEntry) dgo.StructType {
 			panic(`non exact key types is not yet supported`)
 		}
 	}
+	return &structType{
+		additional: additional,
+		keys:       array{slice: keys, frozen: true},
+		values:     array{slice: values, frozen: true},
+		required:   required}
+}
+
+var structEntryMapType dgo.MapType
+
+// StructFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
+func StructFromMap(additional bool, entries dgo.Value) dgo.StructType {
+	if structEntryMapType == nil {
+		structEntryMapType = Parse(`map[string](dgo|type|{type:dgo|type,required?:bool,...})`).(dgo.MapType)
+	}
+	if !structEntryMapType.Instance(entries) {
+		panic(IllegalAssignment(structEntryMapType, entries))
+	}
+	em := entries.(dgo.Map)
+
+	l := em.Len()
+	keys := make([]dgo.Value, l)
+	values := make([]dgo.Value, l)
+	required := make([]byte, l)
+	i := 0
+
+	// turn dgo|type into type
+	asType := func(v dgo.Value) dgo.Type {
+		if tp, ok := v.(dgo.Type); ok {
+			return tp
+		}
+		return Parse(v.String())
+	}
+
+	em.Each(func(e dgo.MapEntry) {
+		keys[i] = e.Key().Type()
+		if vm, ok := e.Value().(dgo.Map); ok {
+			values[i] = asType(vm.Get(`type`))
+			if rq := vm.Get(`required`); rq != nil && rq.(dgo.Boolean).GoBool() {
+				required[i] = 1
+			}
+		} else {
+			values[i] = asType(e.Value())
+		}
+		i++
+	})
 	return &structType{
 		additional: additional,
 		keys:       array{slice: keys, frozen: true},
@@ -115,15 +162,13 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 	return CheckAssignableTo(guard, other, t)
 }
 
-func (t *structType) Entries() dgo.Array {
+func (t *structType) Each(doer func(dgo.StructEntry)) {
 	ks := t.keys.slice
 	vs := t.values.slice
 	rs := t.required
-	es := make([]dgo.Value, len(ks))
 	for i := range ks {
-		es[i] = &structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0}
+		doer(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0})
 	}
-	return &array{slice: es, frozen: true}
 }
 
 func (t *structType) Equals(other interface{}) bool {
@@ -201,6 +246,10 @@ func (t *structType) KeyType() dgo.Type {
 	}
 }
 
+func (t *structType) Len() int {
+	return len(t.required)
+}
+
 func (t *structType) Max() int {
 	m := len(t.required)
 	if m == 0 || t.additional {
@@ -243,6 +292,39 @@ func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *structType) Unbounded() bool {
 	return len(t.required) == 0 || t.additional && t.Min() == 0
+}
+
+func parameterLabel(key dgo.Value) string {
+	return fmt.Sprintf(`parameter '%s'`, key)
+}
+
+func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
+	var errs []error
+	pm, ok := Value(value).(dgo.Map)
+	if !ok {
+		return []error{errors.New(`value is not a Map`)}
+	}
+
+	if keyLabel == nil {
+		keyLabel = parameterLabel
+	}
+	t.Each(func(e dgo.StructEntry) {
+		k := e.Key().(dgo.ExactType).Value()
+		if v := pm.Get(k); v != nil {
+			t := e.Value().(dgo.Type)
+			if !t.Instance(v) {
+				errs = append(errs, fmt.Errorf(`%s is not an instance of type %s`, keyLabel(k), t))
+			}
+		} else if e.Required() {
+			errs = append(errs, fmt.Errorf(`missing required %s`, keyLabel(k)))
+		}
+	})
+	pm.EachKey(func(k dgo.Value) {
+		if t.Get(k) == nil {
+			errs = append(errs, fmt.Errorf(`unknown %s`, keyLabel(k)))
+		}
+	})
+	return errs
 }
 
 func (t *structType) ValueType() dgo.Type {

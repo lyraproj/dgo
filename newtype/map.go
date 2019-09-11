@@ -20,3 +20,8 @@ func StructEntry(key interface{}, value interface{}, required bool) dgo.StructEn
 func Struct(additional bool, entries ...dgo.StructEntry) dgo.StructType {
 	return internal.Struct(additional, entries)
 }
+
+// StructFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
+func StructFromMap(additional bool, entries dgo.Map) dgo.StructType {
+	return internal.StructFromMap(additional, entries)
+}

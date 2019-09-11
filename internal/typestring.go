@@ -46,12 +46,14 @@ func joinX(seen []dgo.Value, v dgo.Iterable, tc func(dgo.Value) dgo.Type, s stri
 	})
 }
 
-func joinStructEntries(seen []dgo.Value, v dgo.Array, sb *strings.Builder) {
-	v.EachWithIndex(func(v dgo.Value, i int) {
-		if i > 0 {
+func joinStructEntries(seen []dgo.Value, v dgo.StructType, sb *strings.Builder) {
+	first := true
+	v.Each(func(e dgo.StructEntry) {
+		if first {
+			first = false
+		} else {
 			util.WriteByte(sb, ',')
 		}
-		e := v.(dgo.StructEntry)
 		buildTypeString(seen, e.Key().(dgo.Type), commaPrio, sb)
 		if !e.Required() {
 			util.WriteByte(sb, '?')
@@ -166,10 +168,9 @@ func init() {
 		dgo.TiStruct: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
 			st := typ.(dgo.StructType)
-			ea := st.Entries()
-			joinStructEntries(seen, ea, sb)
+			joinStructEntries(seen, st, sb)
 			if st.Additional() {
-				if ea.Len() > 0 {
+				if st.Len() > 0 {
 					util.WriteByte(sb, ',')
 				}
 				util.WriteString(sb, `...`)

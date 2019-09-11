@@ -157,10 +157,24 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// Entries returns the MapEntryTypes that constitutes this Struct
-		Entries() Array
+		// Each iterates over each entry of the StructType
+		Each(doer func(StructEntry))
 
 		// Get returns the MapEntry that is identified with the given key
 		Get(key interface{}) MapEntry
+
+		// Len returns the number of StructEntrys in this StructType
+		Len() int
+
+		// Validate checks that the given value represents a Map which is an instance of this struct and returns a
+		// possibly empty slice of errors explaining why that's not the case. Errors are generated if a required key
+		// is missing, not recognized, or if it is of incorrect type.
+		//
+		// The keyLabel argument is an optional function that produces a suitable label for a key. If it is nil,
+		// then a default function that produces the string "parameter '<key>'" will be used. The function
+		// is called when errors are produced.
+		//
+		// An empty slice indicates a successful validation
+		Validate(keyLabel func(key Value) string, value interface{}) []error
 	}
 )

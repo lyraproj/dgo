@@ -1,16 +1,14 @@
 package examples
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/lyraproj/dgo/newtype"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/vf"
 	"gopkg.in/yaml.v3"
 )
-
-// This is the type that describes how a parameters map is constituted
-const parametersType = `map[string]{name: string[1], type: dgo, required?: bool}`
 
 // Sample parameter map
 const sampleParameters = `
@@ -32,7 +30,7 @@ port: 22
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectNoErrors(t, validateParameterValues(loadParamsDesc(t), params))
+	expectNoErrors(t, validate(t, params))
 }
 
 func TestValidateParameterValues_failRequired(t *testing.T) {
@@ -43,7 +41,7 @@ port: 22
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectError(t, `missing required parameter 'host'`, validateParameterValues(loadParamsDesc(t), params))
+	expectError(t, `missing required parameter 'host'`, validate(t, params))
 }
 
 func TestValidateParameterValues_failNotRecognized(t *testing.T) {
@@ -56,7 +54,7 @@ login: foo:bar
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectError(t, `unknown parameter 'login'`, validateParameterValues(loadParamsDesc(t), params))
+	expectError(t, `unknown parameter 'login'`, validate(t, params))
 }
 
 func TestValidateParameterValues_failInvalidHostType(t *testing.T) {
@@ -68,7 +66,7 @@ port: 22
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectError(t, `parameter 'host' is not an instance of type string[1]`, validateParameterValues(loadParamsDesc(t), params))
+	expectError(t, `parameter 'host' is not an instance of type string[1]`, validate(t, params))
 }
 
 func TestValidateParameterValues_failInvalidPortType(t *testing.T) {
@@ -80,24 +78,24 @@ port: 1022
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectError(t, `parameter 'port' is not an instance of type 1..999`, validateParameterValues(loadParamsDesc(t), params))
+	expectError(t, `parameter 'port' is not an instance of type 1..999`, validate(t, params))
 }
 
-func loadDesc(paramsDescYaml []byte) (dgo.Map, error) {
-	paramsDesc := vf.MutableMap(parametersType)
-	if err := yaml.Unmarshal(paramsDescYaml, paramsDesc); err != nil {
-		return nil, err
-	}
-	return paramsDesc, nil
-}
-
-func loadParamsDesc(t *testing.T) dgo.Map {
+func validate(t *testing.T, params dgo.Value) []error {
 	t.Helper()
-	paramsDesc, err := loadDesc([]byte(sampleParameters))
+	pt, err := loadDesc([]byte(sampleParameters))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return convertTypeStringsToTypes(paramsDesc).(dgo.Map)
+	return pt.Validate(nil, params)
+}
+
+func loadDesc(yamlData []byte) (dgo.StructType, error) {
+	data := vf.MutableMap(nil)
+	if err := yaml.Unmarshal(yamlData, data); err != nil {
+		return nil, err
+	}
+	return newtype.StructFromMap(false, data), nil
 }
 
 func expectError(t *testing.T, error string, errors []error) {
@@ -113,14 +111,4 @@ func expectNoErrors(t *testing.T, errors []error) {
 	for _, err := range errors {
 		t.Error(err)
 	}
-}
-
-func TestPrintNames(t *testing.T) {
-	printNames(loadParamsDesc(t))
-
-}
-func printNames(paramsDesc dgo.Map) {
-	paramsDesc.Each(func(e dgo.MapEntry) {
-		fmt.Println(e.Value().(dgo.Map).Get(`name`))
-	})
 }

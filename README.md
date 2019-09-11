@@ -34,44 +34,50 @@ port:
   type: 1..999
   name: sample/service_port
 ```
-In this example, the value of each `type` is a [dgo type](docs/types.md). They limit the host
-parameter to a non empty string and the port parameter to an integer in the range 1-999. A special
-`required` entry is used to denote whether or not a parameter value must be present.
+The value of each `type` is a [dgo type](docs/types.md). They limit the host parameter to a non empty string
+and the port parameter to an integer in the range 1-999. A special `required` entry is used to denote whether
+or not a parameter value must be present.
 
-Next, the parameter descriptions must be validated. This is done adding a dgo type definition
-for them in Go:
-```go
-const parametersType = `map[string]{name: string[1], type: dgo, required?: bool}`
-```
-
-The type map with string keys and map values. Each value is described with a specific set of
-<key>:<value> associations. The `name` is a non empty string, the `type` is of type `dgo` which
-is a string that can be parsed into a dgo type. The `required` is an optional association to
-a boolean value.
+Next, the parameter descriptions must converted into a `StructType`. This type is a special variant of the
+`MapType` that will constrain its values to a specified set of associations. The conversion is made using
+the function `newtype.StructFromMap()`. This function requires an argument that is an instance of the type
+`map[string](dgo|type|{type:dgo|type,required?:bool,...})` and it just so happens that the above friendly
+parameter description fits that bill. 
 
 A Go function that reads the description can look like this:
 ```go
-func loadParamsDesc(paramsDescYaml []byte) (dgo.Map, error) {
-  paramsDesc := vf.MutableMap(parametersType)
-  if err := yaml.Unmarshal(paramsDescYaml, paramsDesc); err != nil {
+func loadDesc(yamlData []byte) (dgo.StructType, error) {
+  data := vf.MutableMap(nil)
+  if err := yaml.Unmarshal(yamlData, data); err != nil {
     return nil, err
   }
-  return paramsDesc, nil
+  return newtype.StructFromMap(false, data), nil
 }
 ```
 
-The returned map is guaranteed to have a contents that conforms to the `parametersType` and there is
-no need to do checked type casts when accessing its contents. This code for instance, will not fail
-since each entry in the map is guaranteed to be a map with a "name" entry:
+The `StructType` returned from the `loadDesc()` function can now be used to validate the parameters.
+ 
+Here is a sample function loads the type, the parameters, and then uses the type to validate the parameters. All
+errors are simply printed on stdout:
 ```go
-func printNames(paramsDesc dgo.Map) {
-  paramsDesc.Each(func(e dgo.MapEntry) {
-    fmt.Println(e.Value().(dgo.Map).Get(`name`))
-  })
+func validate(yamlDesc, yamlParams []byte) {
+  pt, err := loadDesc(yamlDesc)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+  params := vf.MutableMap(nil)
+  if err = yaml.Unmarshal(yamlParams, params); err != nil {
+    fmt.Println(err)
+    return
+  }
+  for _, err := range pt.Validate(nil, params) {
+    fmt.Println(err)
+  }
 }
 ```
-For an example of how to use the above parameter description to actually validate parameters, please take a look
-at [parameter.go](examples_test/parameter.go) and its associated tests.
+For more examples of how to use the above validation, please take a look at
+[parameter_test.go](examples_test/parameter_test.go).
 
 ## Type Constraints
 
