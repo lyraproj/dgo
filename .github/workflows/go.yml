@@ -22,7 +22,12 @@ jobs:
     - name: Test
       env:
         GO111MODULE: on
-      run: go test -v ./...
+      run: go test -v -covermode=atomic -coverpkg=./... -coverprofile coverage.tmp ./...
+
+    - name: Test Coverage Check
+      run: |
+        COV=$(go tool cover -func=coverage.tmp | grep -e '^total:\s*(statements)' | awk '{ print $3 }')
+        test $COV = '100.0%' || (echo "Expected 100% test coverage, got $COV" && exit 1)
 
     - name: Lint
       env:
