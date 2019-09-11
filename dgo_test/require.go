@@ -86,6 +86,35 @@ func NotSame(t *testing.T, a, b interface{}) {
 	}
 }
 
+func isMatch(a, b interface{}) bool {
+	sb := internal.Value(b).String()
+	if r, ok := a.(*regexp.Regexp); ok {
+		return r.MatchString(sb)
+	}
+	if rs, ok := a.(string); ok {
+		return regexp.MustCompile(rs).MatchString(sb)
+	}
+	return false
+}
+
+// Match will fail unless b matches the regexp a
+func Match(t *testing.T, a, b interface{}) {
+	t.Helper()
+	if isMatch(a, b) {
+		return
+	}
+	t.Errorf(`'%s' does not match '%s'`, internal.Value(b), internal.Value(a))
+}
+
+// NoMatch will fail if b matches the regexp a
+func NoMatch(t *testing.T, a, b interface{}) {
+	t.Helper()
+	if !isMatch(a, b) {
+		return
+	}
+	t.Errorf(`'%s' matches '%s'`, internal.Value(b), internal.Value(a))
+}
+
 // False will fail unless v is false
 func False(t *testing.T, v bool, args ...interface{}) {
 	t.Helper()

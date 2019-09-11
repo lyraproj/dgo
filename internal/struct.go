@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/lyraproj/dgo/util"
+
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -309,14 +311,14 @@ func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interfa
 		keyLabel = parameterLabel
 	}
 	t.Each(func(e dgo.StructEntry) {
-		k := e.Key().(dgo.ExactType).Value()
-		if v := pm.Get(k); v != nil {
-			t := e.Value().(dgo.Type)
-			if !t.Instance(v) {
-				errs = append(errs, fmt.Errorf(`%s is not an instance of type %s`, keyLabel(k), t))
+		ek := e.Key().(dgo.ExactType).Value()
+		if v := pm.Get(ek); v != nil {
+			ev := e.Value().(dgo.Type)
+			if !ev.Instance(v) {
+				errs = append(errs, fmt.Errorf(`%s is not an instance of type %s`, keyLabel(ek), ev))
 			}
 		} else if e.Required() {
-			errs = append(errs, fmt.Errorf(`missing required %s`, keyLabel(k)))
+			errs = append(errs, fmt.Errorf(`missing required %s`, keyLabel(ek)))
 		}
 	})
 	pm.EachKey(func(k dgo.Value) {
@@ -325,6 +327,51 @@ func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interfa
 		}
 	})
 	return errs
+}
+
+func (t *structType) ValidateVerbose(value interface{}, out util.Indenter) bool {
+	pm, ok := Value(value).(dgo.Map)
+	if !ok {
+		out.Append(`value is not a Map`)
+		return false
+	}
+
+	inner := out.Indent()
+	t.Each(func(e dgo.StructEntry) {
+		ek := e.Key().(dgo.ExactType).Value()
+		ev := e.Value().(dgo.Type)
+		out.Printf(`Validating '%s' against definition %s`, ek, ev)
+		inner.NewLine()
+		inner.Printf(`'%s' `, ek)
+		if v := pm.Get(ek); v != nil {
+			if ev.Instance(v) {
+				inner.Append(`OK!`)
+			} else {
+				ok = false
+				inner.Append(`FAILED!`)
+				inner.NewLine()
+				inner.Printf(`Reason: expected a value of type %s, got %s`, ev, v.Type())
+			}
+		} else if e.Required() {
+			ok = false
+			inner.Append(`FAILED!`)
+			inner.NewLine()
+			inner.Append(`Reason: required key not found in input`)
+		}
+		out.NewLine()
+	})
+	pm.EachKey(func(k dgo.Value) {
+		if t.Get(k) == nil {
+			ok = false
+			out.Printf(`Validating '%s'`, k)
+			inner.NewLine()
+			inner.Printf(`'%s' FAILED!`, k)
+			inner.NewLine()
+			inner.Append(`Reason: key is not found in definition`)
+			out.NewLine()
+		}
+	})
+	return ok
 }
 
 func (t *structType) ValueType() dgo.Type {

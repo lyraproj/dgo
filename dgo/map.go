@@ -176,5 +176,10 @@ type (
 		//
 		// An empty slice indicates a successful validation
 		Validate(keyLabel func(key Value) string, value interface{}) []error
+
+		// ValidateVerbose checks that the given value represents a Map which is an instance of this struct and returns
+		// a boolean result. During validation, both successful and failing errors are verbosely explained on the given
+		// Indenter.
+		ValidateVerbose(value interface{}, out util.Indenter) bool
 	}
 )
