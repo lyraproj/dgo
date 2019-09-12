@@ -32,7 +32,7 @@ func TestType_String_arrayBoundedElementInt(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedElementRange(t *testing.T) {
-	require.Equal(t, `[0,4]3..8`, newtype.Array(newtype.IntegerRange(3, 8), 0, 4).String())
+	require.Equal(t, `[0,4]3..8`, newtype.Array(newtype.IntegerRange(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedElementEnum(t *testing.T) {
@@ -48,7 +48,7 @@ func TestType_String_arrayBoundedEntryStringInt(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedEntryStringRange(t *testing.T) {
-	require.Equal(t, `map[string,0,4]3..8`, newtype.Map(typ.String, newtype.IntegerRange(3, 8), 0, 4).String())
+	require.Equal(t, `map[string,0,4]3..8`, newtype.Map(typ.String, newtype.IntegerRange(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedEntryStringEnum(t *testing.T) {
@@ -56,7 +56,7 @@ func TestType_String_arrayBoundedEntryStringEnum(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedEntryIntRangeEnum(t *testing.T) {
-	require.Equal(t, `map[3..8,0,4]("a"|"b")`, newtype.Map(newtype.IntegerRange(3, 8), newtype.Enum(`a`, `b`), 0, 4).String())
+	require.Equal(t, `map[3..8,0,4]("a"|"b")`, newtype.Map(newtype.IntegerRange(3, 8, true), newtype.Enum(`a`, `b`), 0, 4).String())
 }
 
 func TestType_String_priorities(t *testing.T) {

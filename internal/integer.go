@@ -18,9 +18,10 @@ type (
 
 	exactIntegerType int64
 
-	integerRangeType struct {
-		min int64
-		max int64
+	integerRange struct {
+		min       int64
+		max       int64
+		inclusive bool
 	}
 )
 
@@ -28,8 +29,12 @@ type (
 const DefaultIntegerType = integerType(0)
 
 // IntegerRangeType returns a dgo.IntegerRangeType that is limited to the inclusive range given by min and max
-func IntegerRangeType(min, max int64) dgo.IntegerRangeType {
+// If inclusive is true, then the range has an inclusive end.
+func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerRangeType {
 	if min == max {
+		if !inclusive {
+			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+		}
 		return exactIntegerType(min)
 	}
 	if max < min {
@@ -40,27 +45,38 @@ func IntegerRangeType(min, max int64) dgo.IntegerRangeType {
 	if min == math.MinInt64 && max == math.MaxInt64 {
 		return DefaultIntegerType
 	}
-	return &integerRangeType{min: min, max: max}
+	return &integerRange{min: min, max: max, inclusive: inclusive}
 }
 
-func (t *integerRangeType) Assignable(other dgo.Type) bool {
+func (t *integerRange) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case exactIntegerType:
 		return t.IsInstance(int64(ot))
-	case *integerRangeType:
-		return t.min <= ot.min && ot.max <= t.max
+	case *integerRange:
+		if t.min > ot.min {
+			return false
+		}
+		mm := t.max
+		if !t.inclusive {
+			mm--
+		}
+		om := ot.max
+		if !ot.inclusive {
+			om--
+		}
+		return mm >= om
 	}
 	return CheckAssignableTo(nil, other, t)
 }
 
-func (t *integerRangeType) Equals(other interface{}) bool {
-	if ot, ok := other.(*integerRangeType); ok {
+func (t *integerRange) Equals(other interface{}) bool {
+	if ot, ok := other.(*integerRange); ok {
 		return *t == *ot
 	}
 	return false
 }
 
-func (t *integerRangeType) HashCode() int {
+func (t *integerRange) HashCode() int {
 	h := int(dgo.TiIntegerRange)
 	if t.min > 0 {
 		h = h*31 + int(t.min)
@@ -68,37 +84,50 @@ func (t *integerRangeType) HashCode() int {
 	if t.max < math.MaxInt64 {
 		h = h*31 + int(t.max)
 	}
+	if t.inclusive {
+		h *= 3
+	}
 	return h
 }
 
-func (t *integerRangeType) Instance(value interface{}) bool {
+func (t *integerRange) Instance(value interface{}) bool {
 	if ov, ok := ToInt(value); ok {
 		return t.IsInstance(ov)
 	}
 	return false
 }
 
-func (t *integerRangeType) IsInstance(value int64) bool {
-	return t.min <= value && value <= t.max
+func (t *integerRange) IsInstance(value int64) bool {
+	if t.min <= value {
+		if t.inclusive {
+			return value <= t.max
+		}
+		return value < t.max
+	}
+	return false
 }
 
-func (t *integerRangeType) Max() int64 {
+func (t *integerRange) Inclusive() bool {
+	return t.inclusive
+}
+
+func (t *integerRange) Max() int64 {
 	return t.max
 }
 
-func (t *integerRangeType) Min() int64 {
+func (t *integerRange) Min() int64 {
 	return t.min
 }
 
-func (t *integerRangeType) String() string {
+func (t *integerRange) String() string {
 	return TypeString(t)
 }
 
-func (t *integerRangeType) Type() dgo.Type {
+func (t *integerRange) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t *integerRangeType) TypeIdentifier() dgo.TypeIdentifier {
+func (t *integerRange) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerRange
 }
 
@@ -115,6 +144,10 @@ func (t exactIntegerType) Equals(other interface{}) bool {
 
 func (t exactIntegerType) HashCode() int {
 	return intVal(t).HashCode() * 5
+}
+
+func (t exactIntegerType) Inclusive() bool {
+	return true
 }
 
 func (t exactIntegerType) Instance(value interface{}) bool {
@@ -153,7 +186,7 @@ func (t exactIntegerType) Value() dgo.Value {
 
 func (t integerType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case integerType, exactIntegerType, *integerRangeType:
+	case integerType, exactIntegerType, *integerRange:
 		return true
 	}
 	return false
@@ -174,6 +207,10 @@ func (t integerType) Instance(value interface{}) bool {
 		return true
 	}
 	return false
+}
+
+func (t integerType) Inclusive() bool {
+	return true
 }
 
 func (t integerType) IsInstance(value int64) bool {

@@ -29,11 +29,13 @@ func Enum(strings ...string) dgo.Type {
 }
 
 // IntegerRange returns a dgo.Type that is limited to the inclusive range given by min and max
-func IntegerRange(min, max int64) dgo.IntegerRangeType {
-	return internal.IntegerRangeType(min, max)
+// If inclusive is true, then the range has an inclusive end.
+func IntegerRange(min, max int64, inclusive bool) dgo.IntegerRangeType {
+	return internal.IntegerRangeType(min, max, inclusive)
 }
 
 // FloatRange returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
-func FloatRange(min, max float64) dgo.FloatRangeType {
-	return internal.FloatRangeType(min, max)
+// If inclusive is true, then the range has an inclusive end.
+func FloatRange(min, max float64, inclusive bool) dgo.FloatRangeType {
+	return internal.FloatRangeType(min, max, inclusive)
 }

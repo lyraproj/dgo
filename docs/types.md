@@ -29,8 +29,8 @@ The Dgo Type syntax is designed to be close to the syntax used by Go itself.
 |`3...28`|integer in the range 3 to 28 with exclusive endpoint|
 |`0..`|a positive integer|
 |`-1.2..3.8`|a float ranging from -1.2 to 3.8|
+|`-1.2...3.8`|a float ranging from -1.2 to 3.8 with exclusive endpoint|
 
-The exclusive endpoint is not permitted for floats since the predecessor is impossible to compute.
 ### Arrays
 #### Syntax:
 `[]<element type>` or `{ <element type at position 0> [,<element type at position 1> ... ] }`

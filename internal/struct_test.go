@@ -136,7 +136,7 @@ func TestStructType(t *testing.T) {
 	require.Instance(t, tp.Type(), tp)
 
 	tps := newtype.Struct(false,
-		newtype.StructEntry(`a`, newtype.IntegerRange(0, 10), true),
+		newtype.StructEntry(`a`, newtype.IntegerRange(0, 10, true), true),
 		newtype.StructEntry(`b`, newtype.String(20), false))
 	require.Equal(t, tps, newtype.Parse(`{a:0..10,b?:string[20]}`))
 	require.Assignable(t, tp, tps)

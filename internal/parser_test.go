@@ -35,12 +35,12 @@ func TestParse_exact(t *testing.T) {
 
 	st := newtype.Parse(`{"a":1..5,"b"?:2}`)
 	require.Equal(t, newtype.Struct(false,
-		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5), true),
+		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5, true), true),
 		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	st = newtype.Parse(`{"a":1..5,"b"?:2,...}`)
 	require.Equal(t, newtype.Struct(true,
-		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5), true),
+		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5, true), true),
 		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	require.Equal(t, `{"a":1..5,"b"?:2,...}`, st.String())
@@ -99,26 +99,27 @@ func TestParse_aliasInOneOf(t *testing.T) {
 }
 
 func TestParse_range(t *testing.T) {
-	require.Equal(t, newtype.IntegerRange(1, 10), newtype.Parse(`1..10`))
-	require.Equal(t, newtype.IntegerRange(1, 9), newtype.Parse(`1...10`))
-	require.Equal(t, newtype.IntegerRange(1, math.MaxInt64), newtype.Parse(`1..`))
-	require.Equal(t, newtype.IntegerRange(math.MinInt64, 0), newtype.Parse(`..0`))
-	require.Equal(t, newtype.IntegerRange(math.MinInt64, -1), newtype.Parse(`...0`))
-	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1.0..10`))
-	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1..10.0`))
-	require.Equal(t, newtype.FloatRange(1, 10), newtype.Parse(`1.0..10.0`))
-	require.Equal(t, newtype.FloatRange(1, math.MaxFloat64), newtype.Parse(`1.0..`))
-	require.Equal(t, newtype.FloatRange(-math.MaxFloat64, 0), newtype.Parse(`..0.0`))
+	require.Equal(t, newtype.IntegerRange(1, 10, true), newtype.Parse(`1..10`))
+	require.Equal(t, newtype.IntegerRange(1, 10, false), newtype.Parse(`1...10`))
+	require.Equal(t, newtype.IntegerRange(1, math.MaxInt64, true), newtype.Parse(`1..`))
+	require.Equal(t, newtype.IntegerRange(1, math.MaxInt64, false), newtype.Parse(`1...`))
+	require.Equal(t, newtype.IntegerRange(math.MinInt64, 0, true), newtype.Parse(`..0`))
+	require.Equal(t, newtype.IntegerRange(math.MinInt64, 0, false), newtype.Parse(`...0`))
+	require.Equal(t, newtype.FloatRange(1, 10, true), newtype.Parse(`1.0..10`))
+	require.Equal(t, newtype.FloatRange(1, 10, true), newtype.Parse(`1..10.0`))
+	require.Equal(t, newtype.FloatRange(1, 10, true), newtype.Parse(`1.0..10.0`))
+	require.Equal(t, newtype.FloatRange(1, 10, false), newtype.Parse(`1.0...10`))
+	require.Equal(t, newtype.FloatRange(1, 10, false), newtype.Parse(`1...10.0`))
+	require.Equal(t, newtype.FloatRange(1, 10, false), newtype.Parse(`1.0...10.0`))
+	require.Equal(t, newtype.FloatRange(1, math.MaxFloat64, true), newtype.Parse(`1.0..`))
+	require.Equal(t, newtype.FloatRange(1, math.MaxFloat64, false), newtype.Parse(`1.0...`))
+	require.Equal(t, newtype.FloatRange(-math.MaxFloat64, 0, true), newtype.Parse(`..0.0`))
+	require.Equal(t, newtype.FloatRange(-math.MaxFloat64, 0, false), newtype.Parse(`...0.0`))
 
-	require.Panic(t, func() { newtype.Parse(`1.0...10`) }, `float boundary on ... range: \(column: 4\)`)
-	require.Panic(t, func() { newtype.Parse(`1...10.0`) }, `float boundary on ... range: \(column: 5\)`)
-	require.Panic(t, func() { newtype.Parse(`1.0...10.0`) }, `float boundary on ... range: \(column: 4\)`)
-	require.Panic(t, func() { newtype.Parse(`1.0...`) }, `float boundary on ... range: \(column: 4\)`)
-	require.Panic(t, func() { newtype.Parse(`...0.0`) }, `float boundary on ... range: \(column: 4\)`)
 	require.Panic(t, func() { newtype.Parse(`.."b"`) }, `expected an integer or a float, got "b"`)
 	require.Panic(t, func() { newtype.Parse(`../a*/`) }, `expected an integer or a float, got /a\*/`)
-	require.Panic(t, func() { newtype.Parse(`..."b"`) }, `expected an integer, got "b"`)
-	require.Panic(t, func() { newtype.Parse(`.../a*/`) }, `expected an integer, got /a\*/`)
+	require.Panic(t, func() { newtype.Parse(`..."b"`) }, `expected an integer or a float, got "b"`)
+	require.Panic(t, func() { newtype.Parse(`.../a*/`) }, `expected an integer or a float, got /a\*/`)
 }
 
 func TestParse_unary(t *testing.T) {

@@ -125,7 +125,7 @@ func TestSizedArrayType(t *testing.T) {
 	require.NotEqual(t, tp.HashCode(), newtype.Array(typ.Integer).HashCode())
 	require.Equal(t, `[2,3]int`, tp.String())
 
-	tp = newtype.Array(newtype.IntegerRange(0, 15), 2, 3)
+	tp = newtype.Array(newtype.IntegerRange(0, 15, true), 2, 3)
 	require.Equal(t, `[2,3]0..15`, tp.String())
 
 	tp = newtype.Array(newtype.Array(2, 2), 0, 10)

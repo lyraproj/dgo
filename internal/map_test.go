@@ -16,7 +16,7 @@ import (
 
 func TestTyped(t *testing.T) {
 	// value type for the map
-	mt := newtype.Map(typ.String, newtype.AnyOf(typ.String, newtype.IntegerRange(0, 15)), 0, 2)
+	mt := newtype.Map(typ.String, newtype.AnyOf(typ.String, newtype.IntegerRange(0, 15, true)), 0, 2)
 
 	m := vf.MutableMap(mt)
 	m.PutAll(vf.Map(map[string]interface{}{
@@ -44,8 +44,8 @@ func TestMap_ValueType(t *testing.T) {
 		`four`, 3).Type().(dgo.MapType).ValueType()
 	require.Assignable(t, m1, m2)
 	require.NotAssignable(t, m1, m3)
-	require.Assignable(t, newtype.IntegerRange(1, 2), m1)
-	require.NotAssignable(t, newtype.IntegerRange(2, 3), m1)
+	require.Assignable(t, newtype.IntegerRange(1, 2, true), m1)
+	require.NotAssignable(t, newtype.IntegerRange(2, 3, true), m1)
 
 	require.NotAssignable(t, m2, vf.Integer(2).Type())
 	require.Assignable(t, m4, vf.Integer(3).Type())

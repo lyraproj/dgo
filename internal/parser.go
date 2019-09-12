@@ -20,9 +20,7 @@ const (
 	exRightBracket
 	exRightParen
 	exRightAngle
-	exInt
 	exIntOrFloat
-	exFloatDotDotDot
 	exTypeExpression
 	exAliasRef
 	exEnd
@@ -73,12 +71,8 @@ func expect(state int) (s string) {
 		s = `')'`
 	case exRightAngle:
 		s = `'>'`
-	case exInt:
-		s = `an integer`
 	case exIntOrFloat:
 		s = `an integer or a float`
-	case exFloatDotDotDot:
-		s = `float boundary on ... range`
 	case exTypeExpression:
 		s = `a type expression`
 	case exAliasRef:
@@ -90,9 +84,6 @@ func expect(state int) (s string) {
 }
 
 func badSyntax(t *token, state int) error {
-	if state == exFloatDotDotDot {
-		return errors.New(expect(state))
-	}
 	return fmt.Errorf(`expected %s, got %s`, expect(state), t)
 }
 
@@ -481,18 +472,16 @@ func (p *parser) float(t *token) dgo.Value {
 	var tp dgo.Value
 	f := tokenFloat(t)
 	n := p.peekToken()
-	if n.i == dotdotdot {
-		panic(badSyntax(t, exFloatDotDotDot))
-	}
-	if n.i == dotdot {
+	if n.i == dotdot || n.i == dotdotdot {
+		inclusive := n.i == dotdot
 		p.nextToken()
 		n = p.peekToken()
 		if n.i == integer || n.i == float {
 			p.nextToken()
-			tp = FloatRangeType(f, tokenFloat(n))
+			tp = FloatRangeType(f, tokenFloat(n), inclusive)
 		} else {
 			p.nextToken()
-			tp = FloatRangeType(f, math.MaxFloat64) // Unbounded at upper end
+			tp = FloatRangeType(f, math.MaxFloat64, inclusive) // Unbounded at upper end
 		}
 	} else {
 		tp = floatVal(f)
@@ -505,25 +494,18 @@ func (p *parser) integer(t *token) dgo.Value {
 	i := tokenInt(t)
 	n := p.peekToken()
 	if n.i == dotdot || n.i == dotdotdot {
+		inclusive := n.i == dotdot
 		p.nextToken()
 		x := p.peekToken()
 		switch x.i {
 		case integer:
 			p.nextToken()
-			u := tokenInt(x)
-			if n.i == dotdotdot {
-				u--
-			}
-			tp = IntegerRangeType(i, u)
+			tp = IntegerRangeType(i, tokenInt(x), inclusive)
 		case float:
-			if n.i == dotdotdot {
-				panic(badSyntax(x, exFloatDotDotDot))
-			}
 			p.nextToken()
-			tp = FloatRangeType(float64(i), tokenFloat(x))
+			tp = FloatRangeType(float64(i), tokenFloat(x), inclusive)
 		default:
-			// .. or ... doesn't matter since there's no upper bound to apply the difference on.
-			tp = IntegerRangeType(i, math.MaxInt64) // Unbounded at upper end
+			tp = IntegerRangeType(i, math.MaxInt64, inclusive) // Unbounded at upper end
 		}
 	} else {
 		tp = intVal(i)
@@ -534,26 +516,16 @@ func (p *parser) integer(t *token) dgo.Value {
 func (p *parser) dotRange(t *token) dgo.Value {
 	var tp dgo.Value
 	n := p.peekToken()
+	inclusive := t.i == dotdot
 	switch n.i {
 	case integer:
 		p.nextToken()
-		u := tokenInt(n)
-		if t.i == dotdotdot {
-			u--
-		}
-		tp = IntegerRangeType(math.MinInt64, u)
+		tp = IntegerRangeType(math.MinInt64, tokenInt(n), inclusive)
 	case float:
-		if t.i == dotdotdot {
-			panic(badSyntax(n, exFloatDotDotDot))
-		}
 		p.nextToken()
-		tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n))
+		tp = FloatRangeType(-math.MaxFloat64, tokenFloat(n), inclusive)
 	default:
-		ex := exIntOrFloat
-		if t.i == dotdotdot {
-			ex = exInt
-		}
-		panic(badSyntax(n, ex))
+		panic(badSyntax(n, exIntOrFloat))
 	}
 	return tp
 }

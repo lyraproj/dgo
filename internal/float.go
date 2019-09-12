@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"math"
 
 	"gopkg.in/yaml.v3"
@@ -19,8 +20,9 @@ type (
 	exactFloatType float64
 
 	floatRangeType struct {
-		min float64
-		max float64
+		min       float64
+		max       float64
+		inclusive bool
 	}
 )
 
@@ -28,8 +30,12 @@ type (
 const DefaultFloatType = floatType(0)
 
 // FloatRangeType returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
-func FloatRangeType(min, max float64) dgo.FloatRangeType {
+// If inclusive is true, then the range has an inclusive end.
+func FloatRangeType(min, max float64, inclusive bool) dgo.FloatRangeType {
 	if min == max {
+		if !inclusive {
+			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+		}
 		return exactFloatType(min)
 	}
 	if max < min {
@@ -40,7 +46,7 @@ func FloatRangeType(min, max float64) dgo.FloatRangeType {
 	if min == -math.MaxFloat64 && max == math.MaxFloat64 {
 		return DefaultFloatType
 	}
-	return &floatRangeType{min: min, max: max}
+	return &floatRangeType{min: min, max: max, inclusive: inclusive}
 }
 
 func (t *floatRangeType) Assignable(other dgo.Type) bool {
@@ -48,7 +54,13 @@ func (t *floatRangeType) Assignable(other dgo.Type) bool {
 	case exactFloatType:
 		return t.IsInstance(float64(ot))
 	case *floatRangeType:
-		return t.min <= ot.min && ot.max <= t.max
+		if t.min > ot.min {
+			return false
+		}
+		if t.inclusive || t.inclusive == ot.inclusive {
+			return t.max >= ot.max
+		}
+		return t.max > ot.max
 	}
 	return CheckAssignableTo(nil, other, t)
 }
@@ -68,6 +80,9 @@ func (t *floatRangeType) HashCode() int {
 	if t.max < math.MaxInt64 {
 		h = h*31 + int(t.max)
 	}
+	if t.inclusive {
+		h *= 3
+	}
 	return h
 }
 
@@ -77,11 +92,21 @@ func (t *floatRangeType) Instance(value interface{}) bool {
 }
 
 func (t *floatRangeType) IsInstance(value float64) bool {
-	return t.min <= value && value <= t.max
+	if t.min <= value {
+		if t.inclusive {
+			return value <= t.max
+		}
+		return value < t.max
+	}
+	return false
 }
 
 func (t *floatRangeType) Max() float64 {
 	return t.max
+}
+
+func (t *floatRangeType) Inclusive() bool {
+	return t.inclusive
 }
 
 func (t *floatRangeType) Min() float64 {
@@ -113,6 +138,10 @@ func (t exactFloatType) Equals(other interface{}) bool {
 
 func (t exactFloatType) HashCode() int {
 	return floatVal(t).HashCode() * 3
+}
+
+func (t exactFloatType) Inclusive() bool {
+	return true
 }
 
 func (t exactFloatType) Instance(value interface{}) bool {
@@ -164,6 +193,10 @@ func (t floatType) Equals(other interface{}) bool {
 
 func (t floatType) HashCode() int {
 	return int(dgo.TiFloat)
+}
+
+func (t floatType) Inclusive() bool {
+	return true
 }
 
 func (t floatType) Instance(value interface{}) bool {

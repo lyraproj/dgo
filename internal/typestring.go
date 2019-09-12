@@ -71,21 +71,29 @@ func writeSizeBoundaries(min, max int64, sb *strings.Builder) {
 	}
 }
 
-func writeIntRange(min, max int64, sb *strings.Builder) {
+func writeIntRange(min, max int64, inclusive bool, sb *strings.Builder) {
 	if min != math.MinInt64 {
 		util.WriteString(sb, strconv.FormatInt(min, 10))
 	}
-	util.WriteString(sb, `..`)
+	op := `...`
+	if inclusive {
+		op = `..`
+	}
+	util.WriteString(sb, op)
 	if max != math.MaxInt64 {
 		util.WriteString(sb, strconv.FormatInt(max, 10))
 	}
 }
 
-func writeFloatRange(min, max float64, sb *strings.Builder) {
+func writeFloatRange(min, max float64, inclusive bool, sb *strings.Builder) {
 	if min != -math.MaxFloat64 {
 		util.WriteString(sb, util.Ftoa(min))
 	}
-	util.WriteString(sb, `..`)
+	op := `...`
+	if inclusive {
+		op = `..`
+	}
+	util.WriteString(sb, op)
 	if max != math.MaxFloat64 {
 		util.WriteString(sb, util.Ftoa(max))
 	}
@@ -188,14 +196,14 @@ func init() {
 		},
 		dgo.TiFloatRange: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.FloatRangeType)
-			writeFloatRange(st.Min(), st.Max(), sb)
+			writeFloatRange(st.Min(), st.Max(), st.Inclusive(), sb)
 		},
 		dgo.TiIntegerExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteString(sb, typ.(dgo.ExactType).Value().(fmt.Stringer).String())
 		},
 		dgo.TiIntegerRange: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			st := typ.(dgo.IntegerRangeType)
-			writeIntRange(st.Min(), st.Max(), sb)
+			writeIntRange(st.Min(), st.Max(), st.Inclusive(), sb)
 		},
 		dgo.TiRegexpExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteString(sb, `regexp[`)

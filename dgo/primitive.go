@@ -73,9 +73,12 @@ type (
 		GoInt() int64
 	}
 
-	// IntegerRangeType describes integers that are within an inclusive range
+	// IntegerRangeType describes integers that are within an inclusive or exclusive range
 	IntegerRangeType interface {
 		Type
+
+		// Inclusive returns true if this range has an inclusive end
+		Inclusive() bool
 
 		// IsInstance returns true if the given int64 is an instance of this type
 		IsInstance(int64) bool
@@ -97,9 +100,12 @@ type (
 		GoFloat() float64
 	}
 
-	// FloatRangeType describes floating point numbers that are within an inclusive range
+	// FloatRangeType describes floating point numbers that are within an inclusive or exclusive range
 	FloatRangeType interface {
 		Type
+
+		// Inclusive returns true if this range has an inclusive end
+		Inclusive() bool
 
 		// IsInstance returns true if the given float64 is an instance of this type
 		IsInstance(float64) bool
