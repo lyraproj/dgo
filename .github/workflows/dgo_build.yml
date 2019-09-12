@@ -1,4 +1,4 @@
-name: Go
+name: Dgo Build
 on: [push, pull_request]
 jobs:
 
