@@ -1,7 +1,7 @@
 # dgo (Dynamic Go)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/lyraproj/dgo)](https://goreportcard.com/report/github.com/lyraproj/dgo)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/lyraproj/dgo/dgo)
+![](https://goreportcard.com/badge/github.com/lyraproj/dgo)
+![](https://img.shields.io/badge/godoc-reference-blue.svg)
 ![](https://github.com/lyraproj/dgo/workflows/Dgo%20Build/badge.svg)
 
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
