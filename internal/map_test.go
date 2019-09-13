@@ -337,7 +337,7 @@ type testMapFromStruct struct {
 func TestMap_fromStruct(t *testing.T) {
 	c := `Charlie`
 	d := 42
-	s := testMapFromStruct{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}}
+	s := testMapFromStruct{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}, f: `private`}
 
 	// Pass pointer to struct
 	m := vf.Map(&s)
