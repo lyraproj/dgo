@@ -208,7 +208,7 @@ func (t *structType) Instance(value interface{}) bool {
 }
 
 func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
-	if om, ok := value.(*hashMap); ok {
+	if om, ok := value.(dgo.Map); ok {
 		ks := t.keys.slice
 		vs := t.values.slice
 		rs := t.required
@@ -224,7 +224,7 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 				return false
 			}
 		}
-		return t.additional || oc == om.len
+		return t.additional || oc == om.Len()
 	}
 	return false
 }

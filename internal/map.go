@@ -200,10 +200,18 @@ func Map(args []interface{}) dgo.Map {
 			return ar.ToMap()
 		}
 		rm := reflect.ValueOf(a0)
-		if rm.Kind() != reflect.Map {
-			panic(fmt.Errorf(`illegal argument: %t is not a map or an array with even number of elements`, a0))
+		switch rm.Kind() {
+		case reflect.Map:
+			return FromReflectedMap(rm, true).(dgo.Map)
+		case reflect.Ptr:
+			re := rm.Elem()
+			if re.Kind() == reflect.Struct {
+				return FromReflectedStruct(re)
+			}
+		case reflect.Struct:
+			return FromReflectedStruct(rm)
 		}
-		return MapFromReflected(rm, true).(dgo.Map)
+		panic(fmt.Errorf(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
 		return Values(args).ToMap()
 	default:
@@ -211,10 +219,10 @@ func Map(args []interface{}) dgo.Map {
 	}
 }
 
-// MapFromReflected creates a Map from a reflected map. If frozen is true, the created Map will be
-// immutable and the type will reflect exactly that map and nothing else. If frozen is false, the
-// created Map will be mutable and its type will be derived from the reflected map.
-func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
+// FromReflectedMap creates a Map from a reflected map. It panics if rm's kind is not reflect.Map. If frozen is true,
+// the created Map will be immutable and the type will reflect exactly that map and nothing else. If frozen is false,
+// the created Map will be mutable and its type will be derived from the reflected map.
+func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 	if rm.IsNil() {
 		return Nil
 	}
@@ -266,6 +274,28 @@ func MapFromReflected(rm reflect.Value, frozen bool) dgo.Value {
 		typ = TypeFromReflected(rm.Type()).(dgo.MapType)
 	}
 	m.typ = typ
+	return m
+}
+
+// FromReflectedStruct creates a frozen Map from the exported fields of a Struct. It panics if rm's kind is not
+// reflect.Map.
+func FromReflectedStruct(rv reflect.Value) dgo.Map {
+	rt := rv.Type()
+	nf := rt.NumField()
+	m := &hashMap{table: make([]*hashNode, tableSizeFor(int(float64(nf)/loadFactor)))}
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		rf := rt.Field(i)
+		if rf.PkgPath == `` {
+			// TODO: Check for dgo annotation on the field and coerce the field content
+			//  into given type.
+			v := ValueFromReflected(rv.Field(i))
+			if f, ok := v.(dgo.Freezable); ok {
+				v = f.FrozenCopy()
+			}
+			m.Put(rf.Name, v)
+		}
+	}
+	m.frozen = true
 	return m
 }
 
@@ -417,7 +447,7 @@ func (g *hashMap) Equals(other interface{}) bool {
 }
 
 func (g *hashMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if om, ok := other.(*hashMap); ok && g.len == om.len {
+	if om, ok := other.(dgo.Map); ok && g.len == om.Len() {
 		for e := g.first; e != nil; e = e.next {
 			if !equals(seen, e.value, om.Get(e.key)) {
 				return false
@@ -429,9 +459,11 @@ func (g *hashMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
 }
 
 func (g *hashMap) Freeze() {
-	g.frozen = true
-	for e := g.first; e != nil; e = e.next {
-		e.Freeze()
+	if !g.frozen {
+		g.frozen = true
+		for e := g.first; e != nil; e = e.next {
+			e.Freeze()
+		}
 	}
 }
 
@@ -1089,8 +1121,8 @@ func (t *sizedMapType) Instance(value interface{}) bool {
 }
 
 func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
-	if ov, ok := value.(*hashMap); ok {
-		l := ov.len
+	if ov, ok := value.(dgo.Map); ok {
+		l := ov.Len()
 		if t.min <= l && l <= t.max {
 			kt := t.keyType
 			vt := t.valueType
@@ -1231,7 +1263,7 @@ func (t *exactMapType) HashCode() int {
 }
 
 func (t *exactMapType) Instance(value interface{}) bool {
-	if ov, ok := value.(*hashMap); ok {
+	if ov, ok := value.(dgo.Map); ok {
 		return (*hashMap)(t).Equals(ov)
 	}
 	return false

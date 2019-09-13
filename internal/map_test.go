@@ -325,6 +325,37 @@ func TestMap_fromArray(t *testing.T) {
 	require.True(t, m.Frozen())
 }
 
+type testMapFromStruct struct {
+	A string
+	B int
+	C *string
+	D *int
+	E []string
+	f string // Not exported
+}
+
+func TestMap_fromStruct(t *testing.T) {
+	c := `Charlie`
+	d := 42
+	s := testMapFromStruct{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}}
+
+	// Pass pointer to struct
+	m := vf.Map(&s)
+	require.Equal(t, 5, m.Len())
+	require.True(t, m.Frozen())
+	require.Equal(t, `Alpha`, m.Get(`A`))
+	require.Equal(t, 32, m.Get(`B`))
+	require.Equal(t, `Charlie`, m.Get(`C`))
+	require.Equal(t, 42, m.Get(`D`))
+	e, ok := m.Get(`E`).(dgo.Array)
+	require.True(t, ok)
+	require.True(t, e.Frozen())
+
+	// Pass by value. Should give us the same result
+	m2 := vf.Map(s)
+	require.Equal(t, m, m2)
+}
+
 func TestMap_immutable(t *testing.T) {
 	gm := map[string]int{
 		`first`:  1,
@@ -361,7 +392,7 @@ func TestMutableMap(t *testing.T) {
 }
 
 func TestMapFromReflected(t *testing.T) {
-	m := vf.MapFromReflected(reflect.ValueOf(map[string]string{}), false)
+	m := vf.FromReflectedMap(reflect.ValueOf(map[string]string{}), false)
 	require.Equal(t, 0, m.Len())
 	require.Equal(t, newtype.Map(typ.String, typ.String), m.Type())
 	m.Put(`hi`, `there`)
@@ -654,7 +685,7 @@ func TestMap_RemoveAll(t *testing.T) {
 }
 
 func TestMap_SetType(t *testing.T) {
-	m := vf.MapFromReflected(reflect.ValueOf(map[string]interface{}{
+	m := vf.FromReflectedMap(reflect.ValueOf(map[string]interface{}{
 		`first`:  1,
 		`second`: 2.0,
 		`third`:  `three`,

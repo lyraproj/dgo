@@ -61,22 +61,32 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		return Nil
 	}
 
+	isPtr := false
 	switch vr.Kind() {
 	case reflect.Slice:
 		return ArrayFromReflected(vr, true)
 	case reflect.Map:
-		return MapFromReflected(vr, true)
+		return FromReflectedMap(vr, true)
 	case reflect.Ptr:
 		if vr.IsNil() {
 			return Nil
 		}
+		isPtr = true
 	}
 	vi := vr.Interface()
+	if v, ok := vi.(dgo.Value); ok {
+		return v
+	}
 	if v := value(vi); v != nil {
 		return v
 	}
-	if v, ok := vi.(dgo.Value); ok {
-		return v
+	if isPtr {
+		er := vr.Elem()
+		// Pointer to struct should have been handled at this point or it is a pointer to
+		// an unknown struct and should be a native
+		if er.Kind() != reflect.Struct {
+			return ValueFromReflected(er)
+		}
 	}
 	// Value as unsafe. Immutability is not guaranteed
 	return native(vr)
