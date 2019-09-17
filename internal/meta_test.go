@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -25,6 +26,8 @@ func TestMeta(t *testing.T) {
 	require.Equal(t, dgo.OpMeta, tp.(dgo.UnaryType).Operator())
 	require.Equal(t, `type`, tp.String())
 	require.Equal(t, `type[int]`, typ.Integer.Type().String())
+
+	require.True(t, reflect.ValueOf(typ.Any).Type().AssignableTo(tp.ReflectType()))
 }
 
 func TestMetaMeta(t *testing.T) {

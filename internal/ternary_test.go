@@ -40,6 +40,8 @@ func TestAllOfType(t *testing.T) {
 
 	require.Equal(t, `("a"|"b"|"c")&("b"|"c"|"d")`, tp.String())
 
+	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
+
 	tp = newtype.AllOf(newtype.Pattern(regexp.MustCompile(`a`)), newtype.Pattern(regexp.MustCompile(`b`)), newtype.Pattern(regexp.MustCompile(`c`)))
 	require.Instance(t, tp, `abc`)
 	require.NotInstance(t, tp, `c`)
@@ -83,6 +85,8 @@ func TestAnyOfType(t *testing.T) {
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpOr)
 
 	require.Equal(t, `int|string`, tp.String())
+
+	require.Equal(t, typ.Any.ReflectType(), tp.ReflectType())
 }
 
 func TestOneOfType(t *testing.T) {
@@ -117,6 +121,7 @@ func TestOneOfType(t *testing.T) {
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpOne)
 
 	require.Equal(t, `int^/a/^/b/`, tp.String())
+	require.Equal(t, typ.Any.ReflectType(), tp.ReflectType())
 }
 
 func TestEnum(t *testing.T) {

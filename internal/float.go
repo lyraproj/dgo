@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"math"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 
@@ -28,6 +29,8 @@ type (
 
 // DefaultFloatType is the unconstrained floatVal type
 const DefaultFloatType = floatType(0)
+
+var reflectFloatType = reflect.TypeOf(float64(0))
 
 // FloatRangeType returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
@@ -117,6 +120,10 @@ func (t *floatRangeType) String() string {
 	return TypeString(t)
 }
 
+func (t *floatRangeType) ReflectType() reflect.Type {
+	return reflectFloatType
+}
+
 func (t *floatRangeType) Type() dgo.Type {
 	return &metaType{t}
 }
@@ -161,6 +168,10 @@ func (t exactFloatType) Min() float64 {
 	return float64(t)
 }
 
+func (t exactFloatType) ReflectType() reflect.Type {
+	return reflectFloatType
+}
+
 func (t exactFloatType) Type() dgo.Type {
 	return &metaType{t}
 }
@@ -174,8 +185,7 @@ func (t exactFloatType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t exactFloatType) Value() dgo.Value {
-	v := (floatVal)(t)
-	return v
+	return floatVal(t)
 }
 
 func (t floatType) Assignable(other dgo.Type) bool {
@@ -214,6 +224,10 @@ func (t floatType) Max() float64 {
 
 func (t floatType) Min() float64 {
 	return -math.MaxFloat64
+}
+
+func (t floatType) ReflectType() reflect.Type {
+	return reflectFloatType
 }
 
 func (t floatType) String() string {
@@ -277,12 +291,33 @@ func (v floatVal) Equals(other interface{}) bool {
 	return ok && float64(v) == f
 }
 
+func (v floatVal) GoFloat() float64 {
+	return float64(v)
+}
+
 func (v floatVal) HashCode() int {
 	return int(v)
 }
 
 func (v floatVal) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!float`, Value: v.String()}, nil
+}
+
+func (v floatVal) ReflectTo(value reflect.Value) {
+	switch value.Kind() {
+	case reflect.Interface:
+		value.Set(reflect.ValueOf(float64(v)))
+	case reflect.Ptr:
+		if value.Type().Elem().Kind() == reflect.Float32 {
+			gv := float32(v)
+			value.Set(reflect.ValueOf(&gv))
+		} else {
+			gv := float64(v)
+			value.Set(reflect.ValueOf(&gv))
+		}
+	default:
+		value.SetFloat(float64(v))
+	}
 }
 
 func (v floatVal) String() string {
@@ -295,10 +330,6 @@ func (v floatVal) ToFloat() float64 {
 
 func (v floatVal) ToInt() int64 {
 	return int64(v)
-}
-
-func (v floatVal) GoFloat() float64 {
-	return float64(v)
 }
 
 // ToFloat returns the given value as a float64 if, and only if, the value is a float32 or float64. An

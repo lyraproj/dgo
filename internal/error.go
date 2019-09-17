@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"reflect"
+
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -14,6 +16,8 @@ type (
 
 // DefaultErrorType is the unconstrained Error type
 const DefaultErrorType = errType(0)
+
+var reflectErrorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (t errType) Type() dgo.Type {
 	return &metaType{t}
@@ -37,6 +41,10 @@ func (t errType) Assignable(other dgo.Type) bool {
 func (t errType) Instance(value interface{}) bool {
 	_, ok := value.(error)
 	return ok
+}
+
+func (t errType) ReflectType() reflect.Type {
+	return reflectErrorType
 }
 
 func (t errType) String() string {
@@ -63,6 +71,14 @@ func (e *errw) HashCode() int {
 
 func (e *errw) Error() string {
 	return e.error.Error()
+}
+
+func (e *errw) ReflectTo(value reflect.Value) {
+	if value.Kind() == reflect.Ptr {
+		value.Set(reflect.ValueOf(&e.error))
+	} else {
+		value.Set(reflect.ValueOf(e.error))
+	}
 }
 
 func (e *errw) String() string {

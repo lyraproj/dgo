@@ -54,6 +54,7 @@ type (
 		Iterable
 		Freezable
 		Comparable
+		ReflectedValue
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler
@@ -199,6 +200,7 @@ type (
 	// ArrayType is implemented by types representing implementations of the Array value
 	ArrayType interface {
 		SizedType
+
 		// ElementType returns the type of the elements for instances of this type
 		ElementType() Type
 	}

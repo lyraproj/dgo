@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"reflect"
 	"regexp"
 	"testing"
 
@@ -28,6 +29,8 @@ func TestRegexpDefault(t *testing.T) {
 	require.Instance(t, tp.Type(), tp)
 
 	require.Equal(t, `regexp`, tp.String())
+
+	require.True(t, reflect.ValueOf(r).Type().AssignableTo(tp.ReflectType()))
 }
 
 func TestRegexpExact(t *testing.T) {
@@ -50,6 +53,7 @@ func TestRegexpExact(t *testing.T) {
 	require.Instance(t, tp.Type(), tp)
 
 	require.Equal(t, `regexp["[a-z]+"]`, tp.String())
+	require.Equal(t, typ.Regexp.ReflectType(), tp.ReflectType())
 }
 
 func TestRegexp(t *testing.T) {
@@ -61,4 +65,23 @@ func TestRegexp(t *testing.T) {
 	require.NotEqual(t, rx, `[a-z]*`)
 	require.Same(t, rx, vf.Value(rx).(dgo.Regexp).GoRegexp())
 	require.NotEqual(t, vf.Float(3.14).ToFloat(), vf.Integer(3).ToFloat())
+}
+
+func TestRegexp_ReflectTo(t *testing.T) {
+	var ex *regexp.Regexp
+	v := vf.Value(regexp.MustCompile(`[a-z]+`))
+	vf.ReflectTo(v, reflect.ValueOf(&ex).Elem())
+	require.NotNil(t, ex)
+	require.Equal(t, v, ex)
+
+	var ev regexp.Regexp
+	vf.ReflectTo(v, reflect.ValueOf(&ev).Elem())
+	require.Equal(t, v, &ev)
+
+	var mi interface{}
+	mip := &mi
+	vf.ReflectTo(v, reflect.ValueOf(mip).Elem())
+	ec, ok := mi.(*regexp.Regexp)
+	require.True(t, ok)
+	require.Same(t, ex, ec)
 }

@@ -46,4 +46,6 @@ func TestNotType(t *testing.T) {
 
 	require.Equal(t, `!nil`, notNil.String())
 	require.Equal(t, dgo.OpNot, notNil.Operator())
+
+	require.Equal(t, notNil.ReflectType(), typ.Any.ReflectType())
 }

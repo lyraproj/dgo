@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/lyraproj/dgo/util"
 
@@ -162,7 +163,7 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 		}
 		return t.additional || oc == len(oks)
 	case *exactMapType:
-		ov := (*hashMap)(ot)
+		ov := ot.value
 		return Instance(guard, t, ov)
 	}
 	return CheckAssignableTo(guard, other, t)
@@ -273,6 +274,10 @@ func (t *structType) Min() int {
 		}
 	}
 	return min
+}
+
+func (t *structType) ReflectType() reflect.Type {
+	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
 func (t *structType) Resolve(ap dgo.AliasProvider) {

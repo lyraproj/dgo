@@ -47,6 +47,10 @@ func (t *nativeType) HashCode() int {
 	return stringHash(t.rt.Name())*31 + int(dgo.TiNative)
 }
 
+func (t *nativeType) ReflectType() reflect.Type {
+	return t.rt
+}
+
 func (t *nativeType) Type() dgo.Type {
 	return &metaType{t}
 }
@@ -131,6 +135,17 @@ func structHash(rv *reflect.Value) int {
 		h = h*31 + ValueFromReflected(rv.Field(i)).HashCode()
 	}
 	return h
+}
+
+func (v native) ReflectTo(value reflect.Value) {
+	vr := reflect.Value(v)
+	if value.Kind() == reflect.Ptr {
+		p := reflect.New(vr.Type())
+		p.Elem().Set(vr)
+		value.Set(p)
+	} else {
+		value.Set(vr)
+	}
 }
 
 func (v native) String() string {

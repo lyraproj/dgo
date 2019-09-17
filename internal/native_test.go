@@ -73,6 +73,13 @@ func TestNative(t *testing.T) {
 	s, ok = vf.Value(&testStructNoStringer{`a`}).(dgo.Native)
 	require.True(t, ok)
 	require.Equal(t, `<*internal_test.testStructNoStringer Value>`, s.String())
+}
+
+func TestNativeType(t *testing.T) {
+	c, ok := vf.Value(make(chan bool)).(dgo.Native)
+	require.True(t, ok)
+	f, ok := vf.Value(reflect.ValueOf).(dgo.Native)
+	require.True(t, ok)
 
 	nt := f.Type()
 	ct := c.Type()
@@ -100,4 +107,27 @@ func TestNative(t *testing.T) {
 	require.NotEqual(t, 1234, internal.Native(reflect.ValueOf(&n)).HashCode())
 	require.Equal(t, 1234, internal.Native(reflect.ValueOf(n)).HashCode())
 	require.Equal(t, 1, internal.Native(reflect.ValueOf(n)).GoValue())
+
+	require.Equal(t, nt.ReflectType(), reflect.ValueOf(f.GoValue()).Type())
+}
+
+func TestNative_ReflectTo(t *testing.T) {
+	var c chan bool
+	v := vf.Value(make(chan bool)).(dgo.Native)
+	vf.ReflectTo(v, reflect.ValueOf(&c).Elem())
+	require.NotNil(t, c)
+	require.Equal(t, v, c)
+
+	var cp *chan bool
+	vf.ReflectTo(v, reflect.ValueOf(&cp).Elem())
+	require.NotNil(t, cp)
+	require.NotNil(t, *cp)
+	require.Equal(t, v, *cp)
+
+	var mi interface{}
+	mip := &mi
+	vf.ReflectTo(v, reflect.ValueOf(mip).Elem())
+	cc, ok := mi.(chan bool)
+	require.True(t, ok)
+	require.Equal(t, v, cc)
 }

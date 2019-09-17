@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"reflect"
+
 	"github.com/lyraproj/dgo/dgo"
 	"gopkg.in/yaml.v3"
 )
@@ -54,6 +56,12 @@ func (t booleanType) Instance(v interface{}) bool {
 
 func (t booleanType) IsInstance(v bool) bool {
 	return t < 0 || (t == 1) == v
+}
+
+var reflectBooleanType = reflect.TypeOf(true)
+
+func (t booleanType) ReflectType() reflect.Type {
+	return reflectBooleanType
 }
 
 func (t booleanType) String() string {
@@ -118,6 +126,18 @@ func (v boolean) HashCode() int {
 
 func (v boolean) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!bool`, Value: v.String()}, nil
+}
+
+func (v boolean) ReflectTo(value reflect.Value) {
+	b := bool(v)
+	switch value.Kind() {
+	case reflect.Interface:
+		value.Set(reflect.ValueOf(b))
+	case reflect.Ptr:
+		value.Set(reflect.ValueOf(&b))
+	default:
+		value.SetBool(b)
+	}
 }
 
 func (v boolean) String() string {

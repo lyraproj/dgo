@@ -154,6 +154,10 @@ func (t defaultArrayType) Min() int {
 	return 0
 }
 
+func (t defaultArrayType) ReflectType() reflect.Type {
+	return reflect.SliceOf(reflectAnyType)
+}
+
 func (t defaultArrayType) String() string {
 	return TypeString(t)
 }
@@ -247,6 +251,10 @@ func (t *sizedArrayType) Resolve(ap dgo.AliasProvider) {
 	t.elementType = ap.Replace(t.elementType)
 }
 
+func (t *sizedArrayType) ReflectType() reflect.Type {
+	return reflect.SliceOf(t.elementType.ReflectType())
+}
+
 func (t *sizedArrayType) String() string {
 	return TypeString(t)
 }
@@ -338,13 +346,16 @@ func (t *exactArrayType) Min() int {
 	return len(t.slice)
 }
 
+func (t *exactArrayType) ReflectType() reflect.Type {
+	return reflect.SliceOf(t.ElementType().ReflectType())
+}
+
 func (t *exactArrayType) String() string {
 	return TypeString(t)
 }
 
 func (t *exactArrayType) Value() dgo.Value {
-	a := (*array)(t)
-	return a
+	return (*array)(t)
 }
 
 func (t *exactArrayType) Type() dgo.Type {
@@ -503,6 +514,10 @@ func (t *tupleType) Max() int {
 
 func (t *tupleType) Min() int {
 	return len(t.slice)
+}
+
+func (t *tupleType) ReflectType() reflect.Type {
+	return reflect.SliceOf(t.ElementType().ReflectType())
 }
 
 func (t *tupleType) Resolve(ap dgo.AliasProvider) {
@@ -969,6 +984,35 @@ func (v *array) Reduce(mi interface{}, reductor func(memo dgo.Value, elem dgo.Va
 		memo = Value(reductor(memo, a[i]))
 	}
 	return memo
+}
+
+func (v *array) ReflectTo(value reflect.Value) {
+	vt := value.Type()
+	ptr := vt.Kind() == reflect.Ptr
+	if ptr {
+		vt = vt.Elem()
+	}
+	if vt.Kind() == reflect.Interface && vt.Name() == `` {
+		vt = v.Type().ReflectType()
+	}
+	a := v.slice
+	var s reflect.Value
+	if !v.frozen && vt.Elem() == reflectValueType {
+		s = reflect.ValueOf(a)
+	} else {
+		l := len(a)
+		s = reflect.MakeSlice(vt, l, l)
+		for i := range a {
+			ReflectTo(a[i], s.Index(i))
+		}
+	}
+	if ptr {
+		// The created slice cannot be addressed. A pointer to it is necessary
+		x := reflect.New(s.Type())
+		x.Elem().Set(s)
+		s = x
+	}
+	value.Set(s)
 }
 
 func (v *array) removePos(pos int) dgo.Value {

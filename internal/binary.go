@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
 	"gopkg.in/yaml.v3"
@@ -112,6 +113,12 @@ func (t *binaryType) Max() int {
 
 func (t *binaryType) Min() int {
 	return t.min
+}
+
+var reflectBinaryType = reflect.TypeOf([]byte{})
+
+func (t *binaryType) ReflectType() reflect.Type {
+	return reflectBinaryType
 }
 
 func (t *binaryType) String() string {
@@ -233,6 +240,15 @@ func (v *binary) FrozenCopy() dgo.Value {
 	return v
 }
 
+func (v *binary) GoBytes() []byte {
+	if v.frozen {
+		c := make([]byte, len(v.bytes))
+		copy(c, v.bytes)
+		return c
+	}
+	return v.bytes
+}
+
 func (v *binary) HashCode() int {
 	return bytesHash(v.bytes)
 }
@@ -241,17 +257,21 @@ func (v *binary) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!binary`, Value: v.String()}, nil
 }
 
-func (v *binary) String() string {
-	return base64.StdEncoding.Strict().EncodeToString(v.bytes)
+func (v *binary) ReflectTo(value reflect.Value) {
+	switch value.Kind() {
+	case reflect.Ptr:
+		x := reflect.New(reflectBinaryType)
+		x.Elem().SetBytes(v.GoBytes())
+		value.Set(x)
+	case reflect.Slice:
+		value.SetBytes(v.GoBytes())
+	default:
+		value.Set(reflect.ValueOf(v.GoBytes()))
+	}
 }
 
-func (v *binary) GoBytes() []byte {
-	if v.frozen {
-		c := make([]byte, len(v.bytes))
-		copy(c, v.bytes)
-		return c
-	}
-	return v.bytes
+func (v *binary) String() string {
+	return base64.StdEncoding.Strict().EncodeToString(v.bytes)
 }
 
 func (v *binary) Type() dgo.Type {

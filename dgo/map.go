@@ -40,6 +40,7 @@ type (
 	Map interface {
 		Value
 		Freezable
+		ReflectedValue
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler

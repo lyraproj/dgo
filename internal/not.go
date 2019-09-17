@@ -1,6 +1,10 @@
 package internal
 
-import "github.com/lyraproj/dgo/dgo"
+import (
+	"reflect"
+
+	"github.com/lyraproj/dgo/dgo"
+)
 
 type notType struct {
 	negated dgo.Type
@@ -77,6 +81,10 @@ func (t *notType) Operand() dgo.Type {
 
 func (t *notType) Operator() dgo.TypeOp {
 	return dgo.OpNot
+}
+
+func (t *notType) ReflectType() reflect.Type {
+	return reflectAnyType
 }
 
 func (t *notType) Resolve(ap dgo.AliasProvider) {

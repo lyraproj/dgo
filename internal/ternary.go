@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"reflect"
+
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -104,6 +106,10 @@ func (t *allOfType) Operator() dgo.TypeOp {
 	return dgo.OpAnd
 }
 
+func (t *allOfType) ReflectType() reflect.Type {
+	return commonReflectTo(t.slice, typeAsType)
+}
+
 func (t *allOfType) Resolve(ap dgo.AliasProvider) {
 	resolveSlice(t.slice, ap)
 }
@@ -184,6 +190,10 @@ func (t *allOfValueType) Operands() dgo.Array {
 
 func (t *allOfValueType) Operator() dgo.TypeOp {
 	return dgo.OpAnd
+}
+
+func (t *allOfValueType) ReflectType() reflect.Type {
+	return commonReflectTo(t.slice, valueAsType)
 }
 
 func (t *allOfValueType) String() string {
@@ -276,6 +286,10 @@ func (t *anyOfType) Operands() dgo.Array {
 
 func (t *anyOfType) Operator() dgo.TypeOp {
 	return dgo.OpOr
+}
+
+func (t *anyOfType) ReflectType() reflect.Type {
+	return commonReflectTo(t.slice, typeAsType)
 }
 
 func (t *anyOfType) Resolve(ap dgo.AliasProvider) {
@@ -386,6 +400,10 @@ func (t *oneOfType) Operator() dgo.TypeOp {
 	return dgo.OpOne
 }
 
+func (t *oneOfType) ReflectType() reflect.Type {
+	return commonReflectTo(t.slice, typeAsType)
+}
+
 func (t *oneOfType) Resolve(ap dgo.AliasProvider) {
 	resolveSlice(t.slice, ap)
 }
@@ -400,6 +418,25 @@ func (t *oneOfType) Type() dgo.Type {
 
 func (t *oneOfType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiOneOf
+}
+
+func commonReflectTo(s []dgo.Value, fc func(dgo.Value) dgo.Type) reflect.Type {
+	var prev reflect.Type
+	for i := range s {
+		rt := fc(s[i]).ReflectType()
+		if prev != nil {
+			if rt.AssignableTo(prev) {
+				// prev is equal or more restrictive
+				continue
+			}
+			if !prev.AssignableTo(rt) {
+				// prev is not compatible. Fall back to interface{}
+				return reflectAnyType
+			}
+		}
+		prev = rt // make prev less restrictive
+	}
+	return prev
 }
 
 func typeSlice(s []dgo.Value, fc func(dgo.Value) dgo.Type) []dgo.Type {
