@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -20,6 +21,8 @@ type (
 
 // DefaultRegexpType is the unconstrained Regexp type
 const DefaultRegexpType = regexpType(0)
+
+var reflectRegexpType = reflect.TypeOf(&regexp.Regexp{})
 
 func (t regexpType) Assignable(ot dgo.Type) bool {
 	switch ot.(type) {
@@ -43,6 +46,10 @@ func (t regexpType) Instance(v interface{}) bool {
 		_, ok = v.(*regexp.Regexp)
 	}
 	return ok
+}
+
+func (t regexpType) ReflectType() reflect.Type {
+	return reflectRegexpType
 }
 
 func (t regexpType) String() string {
@@ -86,6 +93,10 @@ func (t *exactRegexpType) IsInstance(v *regexp.Regexp) bool {
 	return (*regexp.Regexp)(t).String() == v.String()
 }
 
+func (t *exactRegexpType) ReflectType() reflect.Type {
+	return reflectRegexpType
+}
+
 func (t *exactRegexpType) String() string {
 	return TypeString(t)
 }
@@ -99,8 +110,7 @@ func (t *exactRegexpType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *exactRegexpType) Value() dgo.Value {
-	v := (*regexpVal)(t)
-	return v
+	return (*regexpVal)(t)
 }
 
 func (v *regexpVal) GoRegexp() *regexp.Regexp {
@@ -119,6 +129,15 @@ func (v *regexpVal) Equals(other interface{}) bool {
 
 func (v *regexpVal) HashCode() int {
 	return stringHash((*regexp.Regexp)(v).String())
+}
+
+func (v *regexpVal) ReflectTo(value reflect.Value) {
+	rv := reflect.ValueOf((*regexp.Regexp)(v))
+	k := value.Kind()
+	if !(k == reflect.Ptr || k == reflect.Interface) {
+		rv = rv.Elem()
+	}
+	value.Set(rv)
 }
 
 func (v *regexpVal) String() string {

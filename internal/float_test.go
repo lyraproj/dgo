@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"math"
+	"reflect"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -29,6 +30,8 @@ func TestFloat(t *testing.T) {
 	require.NotEqual(t, 0, typ.Float.HashCode())
 
 	require.Equal(t, `float`, typ.Float.String())
+
+	require.Equal(t, reflect.ValueOf(3.14).Type(), typ.Float.ReflectType())
 }
 
 func TestFloatExact(t *testing.T) {
@@ -54,6 +57,8 @@ func TestFloatExact(t *testing.T) {
 	require.Equal(t, `3.1415927`, tp.String())
 
 	require.Instance(t, tp.Type(), tp)
+
+	require.Same(t, tp.ReflectType(), typ.Float.ReflectType())
 }
 
 func TestFloatRange(t *testing.T) {
@@ -91,6 +96,8 @@ func TestFloatRange(t *testing.T) {
 	require.Equal(t, `3.1...5.8`, tp.String())
 
 	require.Panic(t, func() { newtype.FloatRange(3.1, 3.1, false) }, `cannot have equal min and max`)
+
+	require.Same(t, tp.ReflectType(), typ.Float.ReflectType())
 }
 
 func TestNumber(t *testing.T) {
@@ -134,6 +141,34 @@ func TestFloat_CompareTo(t *testing.T) {
 
 	_, ok = vf.Float(3.14).CompareTo(vf.True)
 	require.False(t, ok)
+}
+
+func TestFloat_ReflectTo(t *testing.T) {
+	var f float64
+	fv := vf.Float(0.5403)
+	fv.ReflectTo(reflect.ValueOf(&f).Elem())
+	require.Equal(t, f, fv)
+
+	var fp *float64
+	fv.ReflectTo(reflect.ValueOf(&fp).Elem())
+	require.Equal(t, f, *fp)
+
+	var mi interface{}
+	mip := &mi
+	fv.ReflectTo(reflect.ValueOf(mip).Elem())
+	fc, ok := mi.(float64)
+	require.True(t, ok)
+	require.Equal(t, fv, fc)
+
+	fx := float32(0.5403)
+	fv = vf.Float(float64(fx))
+	var f32 float32
+	fv.ReflectTo(reflect.ValueOf(&f32).Elem())
+	require.Equal(t, f32, fv)
+
+	var fp32 *float32
+	fv.ReflectTo(reflect.ValueOf(&fp32).Elem())
+	require.Equal(t, fx, *fp32)
 }
 
 func TestFloat_String(t *testing.T) {

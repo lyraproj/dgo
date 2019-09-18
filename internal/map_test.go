@@ -196,6 +196,8 @@ func TestMap_SizedType(t *testing.T) {
 
 	require.Equal(t, `map[string]int`, mt.String())
 	require.Equal(t, `map[string,3,3]int`, mtz.String())
+
+	require.Equal(t, mta.ReflectType(), typ.Map.ReflectType())
 }
 
 func TestMap_KeyType(t *testing.T) {
@@ -243,6 +245,8 @@ func TestMap_EntryType(t *testing.T) {
 
 		vm := vt.Type()
 		require.Instance(t, vm, vt)
+
+		require.True(t, reflect.ValueOf(v).Type().AssignableTo(vt.ReflectType()))
 	})
 
 	m := vf.MutableMap(nil)
@@ -325,23 +329,24 @@ func TestMap_fromArray(t *testing.T) {
 	require.True(t, m.Frozen())
 }
 
-type testMapFromStruct struct {
-	A string
-	B int
-	C *string
-	D *int
-	E []string
-	f string // Not exported
-}
-
 func TestMap_fromStruct(t *testing.T) {
+	type TestMapFromStruct struct {
+		A string
+		B int
+		C *string
+		D *int
+		E []string
+	}
+
 	c := `Charlie`
 	d := 42
-	s := testMapFromStruct{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}, f: `private`}
+	s := TestMapFromStruct{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}}
 
 	// Pass pointer to struct
 	m := vf.Map(&s)
 	require.Equal(t, 5, m.Len())
+	require.False(t, m.Frozen())
+	m.Freeze()
 	require.True(t, m.Frozen())
 	require.Equal(t, `Alpha`, m.Get(`A`))
 	require.Equal(t, 32, m.Get(`B`))
@@ -616,6 +621,37 @@ func TestMap_Map(t *testing.T) {
 	require.Equal(t, vf.Map(`a`, nil, `b`, vf.Nil, `c`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil
 	}))
+}
+
+func TestMap_ReflectTo(t *testing.T) {
+	m := vf.Map(
+		`first`, 1,
+		`second`, 2.0,
+		`third`, `three`)
+
+	mr := map[string]interface{}{}
+	m.ReflectTo(reflect.ValueOf(&mr).Elem())
+	require.Equal(t, 1, mr[`first`])
+	require.Equal(t, 2.0, mr[`second`])
+	require.Equal(t, `three`, mr[`third`])
+
+	mr = map[string]interface{}{}
+	mp := &mr
+	m.ReflectTo(reflect.ValueOf(&mp).Elem())
+	mr = *mp
+	require.Equal(t, 1, mr[`first`])
+	require.Equal(t, 2.0, mr[`second`])
+	require.Equal(t, `three`, mr[`third`])
+
+	var mi interface{}
+	mip := &mi
+	m.ReflectTo(reflect.ValueOf(mip).Elem())
+
+	mc, ok := mi.(map[string]interface{})
+	require.True(t, ok)
+	require.Equal(t, 1, mc[`first`])
+	require.Equal(t, 2.0, mc[`second`])
+	require.Equal(t, `three`, mc[`third`])
 }
 
 func TestMap_Remove(t *testing.T) {

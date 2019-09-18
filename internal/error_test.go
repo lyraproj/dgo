@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -25,6 +26,8 @@ func TestErrorType(t *testing.T) {
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, `error`, tp.String())
+
+	require.True(t, reflect.TypeOf(er).AssignableTo(tp.ReflectType()))
 }
 
 type testUnwrapError struct {
@@ -71,4 +74,25 @@ func TestError(t *testing.T) {
 	u, ok = uv.(uvt)
 	require.True(t, ok)
 	require.Equal(t, u.Unwrap(), ev)
+}
+
+func TestError_ReflectTo(t *testing.T) {
+	var err error
+	v := vf.Value(errors.New(`some error`))
+	vf.ReflectTo(v, reflect.ValueOf(&err).Elem())
+	require.NotNil(t, err)
+	require.Equal(t, `some error`, err.Error())
+
+	var bp *error
+	vf.ReflectTo(v, reflect.ValueOf(&bp).Elem())
+	require.NotNil(t, bp)
+	require.NotNil(t, *bp)
+	require.Equal(t, `some error`, (*bp).Error())
+
+	var mi interface{}
+	mip := &mi
+	vf.ReflectTo(v, reflect.ValueOf(mip).Elem())
+	ec, ok := mi.(error)
+	require.True(t, ok)
+	require.Same(t, err, ec)
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 )
 
+var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
+
 // Value returns the dgo.Value representation of its argument
 func Value(v interface{}) dgo.Value {
 	// This function is kept very small to enable inlining so this
@@ -90,6 +92,17 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 	}
 	// Value as unsafe. Immutability is not guaranteed
 	return native(vr)
+}
+
+// ReflectTo assigns the given dgo.Value to the given reflect.Value
+func ReflectTo(src dgo.Value, dest reflect.Value) {
+	if !dest.Type().AssignableTo(reflectValueType) {
+		if rv, ok := src.(dgo.ReflectedValue); ok {
+			rv.ReflectTo(dest)
+			return
+		}
+	}
+	dest.Set(reflect.ValueOf(src))
 }
 
 // Add well known types like regexp, time, etc. here

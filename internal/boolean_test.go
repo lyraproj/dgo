@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -58,6 +59,8 @@ func TestBooleanType(t *testing.T) {
 	require.NotEqual(t, typ.Boolean.HashCode(), typ.False.HashCode())
 	require.NotEqual(t, typ.True.HashCode(), typ.False.HashCode())
 	require.Equal(t, `bool`, typ.Boolean.String())
+
+	require.Equal(t, reflect.TypeOf(false), typ.True.ReflectType())
 }
 
 func TestBoolean(t *testing.T) {
@@ -108,6 +111,23 @@ func TestBoolean_CompareTo(t *testing.T) {
 
 	_, ok = vf.True.CompareTo(vf.Integer(1))
 	require.False(t, ok)
+}
+
+func TestBoolean_ReflectTo(t *testing.T) {
+	var b bool
+	vf.True.ReflectTo(reflect.ValueOf(&b).Elem())
+	require.True(t, b)
+
+	var bp *bool
+	vf.True.ReflectTo(reflect.ValueOf(&bp).Elem())
+	require.True(t, *bp)
+
+	var mi interface{}
+	mip := &mi
+	vf.True.ReflectTo(reflect.ValueOf(mip).Elem())
+	bc, ok := mi.(bool)
+	require.True(t, ok)
+	require.True(t, bc)
 }
 
 func TestBoolean_String(t *testing.T) {

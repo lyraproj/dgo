@@ -13,6 +13,7 @@ type (
 		Value
 		Comparable
 		Freezable
+		ReflectedValue
 
 		// Copy returns a copy of the Binary. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Binary

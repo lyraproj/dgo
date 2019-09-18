@@ -130,6 +130,8 @@ func TestSizedArrayType(t *testing.T) {
 
 	tp = newtype.Array(newtype.Array(2, 2), 0, 10)
 	require.Equal(t, `[0,10][2,2]any`, tp.String())
+
+	require.Equal(t, newtype.Array(typ.Any).ReflectType(), typ.Array.ReflectType())
 }
 
 func TestExactArrayType(t *testing.T) {
@@ -282,10 +284,13 @@ func TestTupleType(t *testing.T) {
 	tt = typ.Tuple
 	require.Assignable(t, tt, newtype.Array(typ.String, 2, 2))
 	tt = newtype.Tuple(typ.String, typ.String)
+	require.Equal(t, tt.ReflectType(), newtype.Array(typ.String).ReflectType())
+
 	require.Assignable(t, tt, newtype.Array(typ.String, 2, 2))
 	require.NotAssignable(t, tt, newtype.AnyOf(typ.Nil, newtype.Array(typ.String, 2, 2)))
 	tt = newtype.Tuple(typ.String, typ.Integer)
 	require.NotAssignable(t, tt, newtype.Array(typ.String, 2, 2))
+	require.Equal(t, tt.ReflectType(), typ.Array.ReflectType())
 
 	require.Equal(t, typ.Any, typ.Tuple.ElementType())
 	require.Equal(t, newtype.AllOf(typ.String, typ.Integer), tt.ElementType())
@@ -812,6 +817,44 @@ func TestArray_Reduce(t *testing.T) {
 	require.Equal(t, vf.Nil, a.Reduce(nil, func(memo, v dgo.Value) interface{} {
 		return nil
 	}))
+}
+
+func TestArray_ReflectTo(t *testing.T) {
+	var s []string
+	a := vf.Strings(`a`, `b`)
+	a.ReflectTo(reflect.ValueOf(&s).Elem())
+	require.Equal(t, a, s)
+
+	var sp *[]string
+	a.ReflectTo(reflect.ValueOf(&sp).Elem())
+	s = *sp
+	require.Equal(t, a, s)
+
+	var mi interface{}
+	mip := &mi
+	a.ReflectTo(reflect.ValueOf(mip).Elem())
+
+	ac, ok := mi.([]string)
+	require.True(t, ok)
+	require.Equal(t, a, ac)
+
+	os := []dgo.Value{vf.String(`a`), vf.Integer(23)}
+	a = vf.MutableArray(nil, os)
+	var as []dgo.Value
+	a.ReflectTo(reflect.ValueOf(&as).Elem())
+	require.Equal(t, os, as)
+
+	// test that os and as is the same slice
+	as[0] = vf.String(`b`)
+	require.Equal(t, os, as)
+
+	a = vf.Array(os)
+	a.ReflectTo(reflect.ValueOf(&as).Elem())
+	require.Equal(t, os, as)
+
+	// test that os and as are different slices
+	as[0] = vf.String(`a`)
+	require.NotEqual(t, os, as)
 }
 
 func TestArray_Remove(t *testing.T) {

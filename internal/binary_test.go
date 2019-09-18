@@ -20,7 +20,7 @@ import (
 func TestBinaryType(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
-	tp := v.Type()
+	tp := v.Type().(dgo.BinaryType)
 	require.Assignable(t, typ.Binary, tp)
 	require.NotAssignable(t, tp, typ.Binary)
 	require.NotAssignable(t, tp, typ.String)
@@ -56,6 +56,8 @@ func TestBinaryType(t *testing.T) {
 	require.Panic(t, func() { newtype.Binary(1, `blue`) }, `illegal argument 2`)
 	require.Panic(t, func() { newtype.Binary(1, 2, 3) }, `illegal number of arguments`)
 	require.Equal(t, `binary[3,3]`, tp.String())
+
+	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
 }
 
 func TestBinary(t *testing.T) {
@@ -193,4 +195,25 @@ func TestBinary_FrozenEqual(t *testing.T) {
 	require.NotSame(t, a, b)
 	require.NotSame(t, b, b.Copy(true))
 	require.NotSame(t, b, b.Copy(false))
+}
+
+func TestBinary_ReflectTo(t *testing.T) {
+	var s []byte
+	b := vf.Binary([]byte{1, 2}, true)
+	b.ReflectTo(reflect.ValueOf(&s).Elem())
+	require.Equal(t, b, s)
+
+	s = nil
+	sp := &s
+	b.ReflectTo(reflect.ValueOf(&sp).Elem())
+	s = *sp
+	require.Equal(t, b, s)
+
+	var mi interface{}
+	mip := &mi
+	b.ReflectTo(reflect.ValueOf(mip).Elem())
+
+	bc, ok := mi.([]byte)
+	require.True(t, ok)
+	require.Equal(t, b, bc)
 }

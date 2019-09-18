@@ -19,6 +19,11 @@ jobs:
     - name: Set up GolangCI-Lint
       run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- v1.17.1
 
+    - name: Lint
+      env:
+        GO111MODULE: on
+      run: ./bin/golangci-lint -E gocritic -E misspell -E gocyclo -E golint -E gosec run ./...
+
     - name: Test
       env:
         GO111MODULE: on
@@ -28,8 +33,3 @@ jobs:
       run: |
         COV=$(go tool cover -func=coverage.tmp | grep -e '^total:\s*(statements)' | awk '{ print $3 }')
         test $COV = '100.0%' || (echo "Expected 100% test coverage, got $COV" && exit 1)
-
-    - name: Lint
-      env:
-        GO111MODULE: on
-      run: ./bin/golangci-lint -E gocritic -E misspell -E gocyclo -E golint -E gosec run ./...

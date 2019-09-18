@@ -3,6 +3,7 @@ package internal_test
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"regexp"
 	"testing"
 
@@ -183,6 +184,10 @@ func TestStructType(t *testing.T) {
 		newtype.Struct(false,
 			newtype.StructEntry(newtype.Pattern(regexp.MustCompile(`a*`)), typ.Integer, true))
 	}, `non exact key types`)
+
+	tps = newtype.Parse(`{a:0..10,b?:int}`).(dgo.StructType)
+	require.True(t, reflect.ValueOf(map[string]int64{}).Type().AssignableTo(tps.ReflectType()))
+
 }
 
 func TestStructEntry(t *testing.T) {

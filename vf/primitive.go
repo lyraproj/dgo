@@ -61,3 +61,8 @@ func Value(v interface{}) dgo.Value {
 func ValueFromReflected(v reflect.Value) dgo.Value {
 	return internal.ValueFromReflected(v)
 }
+
+// ReflectTo assigns the given dgo.Value to the given reflect.Value
+func ReflectTo(src dgo.Value, dest reflect.Value) {
+	internal.ReflectTo(src, dest)
+}

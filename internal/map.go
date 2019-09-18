@@ -23,7 +23,9 @@ type (
 	defaultMapType int
 
 	// exactMapType represents a map exactly
-	exactMapType hashMap
+	exactMapType struct {
+		value dgo.Map
+	}
 
 	// sizedMapType represents a map with constraints on key type, value type, and size
 	sizedMapType struct {
@@ -81,6 +83,10 @@ func (t *exactEntryType) Instance(value interface{}) bool {
 		return (*mapEntry)(t).Equals(ot)
 	}
 	return false
+}
+
+func (t *exactEntryType) ReflectType() reflect.Type {
+	return reflect.TypeOf((*dgo.MapEntry)(nil)).Elem()
 }
 
 func (t *exactEntryType) String() string {
@@ -280,23 +286,7 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 // FromReflectedStruct creates a frozen Map from the exported fields of a Struct. It panics if rm's kind is not
 // reflect.Map.
 func FromReflectedStruct(rv reflect.Value) dgo.Map {
-	rt := rv.Type()
-	nf := rt.NumField()
-	m := &hashMap{table: make([]*hashNode, tableSizeFor(int(float64(nf)/loadFactor)))}
-	for i, n := 0, rt.NumField(); i < n; i++ {
-		rf := rt.Field(i)
-		if rf.PkgPath == `` {
-			// TODO: Check for dgo annotation on the field and coerce the field content
-			//  into given type.
-			v := ValueFromReflected(rv.Field(i))
-			if f, ok := v.(dgo.Freezable); ok {
-				v = f.FrozenCopy()
-			}
-			m.Put(rf.Name, v)
-		}
-	}
-	m.frozen = true
-	return m
+	return &structMap{rs: rv, frozen: false}
 }
 
 // MapWithCapacity creates an empty dgo.Map with the given capacity. The map can be optionally constrained
@@ -383,10 +373,14 @@ func (g *hashMap) AnyValue(predicate dgo.Predicate) bool {
 }
 
 func (g *hashMap) AppendTo(w util.Indenter) {
+	appendMapTo(g, w)
+}
+
+func appendMapTo(m dgo.Map, w util.Indenter) {
 	w.AppendRune('{')
 	ew := w.Indent()
 	first := true
-	for e := g.first; e != nil; e = e.next {
+	m.Each(func(e dgo.MapEntry) {
 		if first {
 			first = false
 		} else {
@@ -394,7 +388,7 @@ func (g *hashMap) AppendTo(w util.Indenter) {
 		}
 		ew.NewLine()
 		ew.AppendValue(e)
-	}
+	})
 	w.NewLine()
 	w.AppendRune('}')
 }
@@ -447,13 +441,12 @@ func (g *hashMap) Equals(other interface{}) bool {
 }
 
 func (g *hashMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if om, ok := other.(dgo.Map); ok && g.len == om.Len() {
-		for e := g.first; e != nil; e = e.next {
-			if !equals(seen, e.value, om.Get(e.key)) {
-				return false
-			}
-		}
-		return true
+	return mapEqual(seen, g, other)
+}
+
+func mapEqual(seen []dgo.Value, g dgo.Map, other deepEqual) bool {
+	if om, ok := other.(dgo.Map); ok && g.Len() == om.Len() {
+		return g.All(func(e dgo.MapEntry) bool { return equals(seen, e.Value(), om.Get(e.Key())) })
 	}
 	return false
 }
@@ -716,6 +709,34 @@ func (g *hashMap) PutAll(associations dgo.Map) {
 	g.len = l
 }
 
+func (g *hashMap) ReflectTo(value reflect.Value) {
+	ht := value.Type()
+	ptr := ht.Kind() == reflect.Ptr
+	if ptr {
+		ht = ht.Elem()
+	}
+	if ht.Kind() == reflect.Interface && ht.Name() == `` {
+		ht = g.Type().ReflectType()
+	}
+	keyType := ht.Key()
+	valueType := ht.Elem()
+	m := reflect.MakeMapWithSize(ht, g.Len())
+	g.Each(func(e dgo.MapEntry) {
+		rk := reflect.New(keyType).Elem()
+		ReflectTo(e.Key(), rk)
+		rv := reflect.New(valueType).Elem()
+		ReflectTo(e.Value(), rv)
+		m.SetMapIndex(rk, rv)
+	})
+	if ptr {
+		// The created map cannot be addressed. A pointer to it is necessary
+		x := reflect.New(m.Type())
+		x.Elem().Set(m)
+		m = x
+	}
+	value.Set(m)
+}
+
 func (g *hashMap) Remove(ki interface{}) dgo.Value {
 	if g.frozen {
 		panic(frozenMap(`Remove`))
@@ -867,7 +888,7 @@ func (g *hashMap) WithoutAll(keys dgo.Array) dgo.Map {
 
 func (g *hashMap) Type() dgo.Type {
 	if g.typ == nil {
-		return (*exactMapType)(g)
+		return &exactMapType{g}
 	}
 	return g.typ
 }
@@ -1153,6 +1174,10 @@ func (t *sizedMapType) Min() int {
 	return t.min
 }
 
+func (t *sizedMapType) ReflectType() reflect.Type {
+	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
+}
+
 func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
 	t.keyType = ap.Replace(t.keyType)
 	t.valueType = ap.Replace(t.valueType)
@@ -1214,6 +1239,10 @@ func (t defaultMapType) Min() int {
 	return 0
 }
 
+func (t defaultMapType) ReflectType() reflect.Type {
+	return reflect.MapOf(reflectAnyType, reflectAnyType)
+}
+
 func (t defaultMapType) String() string {
 	return TypeString(t)
 }
@@ -1245,40 +1274,43 @@ func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bo
 	case *exactMapType:
 		return t.Equals(ot)
 	case *sizedMapType:
-		m := (*hashMap)(t)
-		return ot.Instance(m)
+		return ot.Instance(t.value)
 	}
 	return false
 }
 
 func (t *exactMapType) Equals(other interface{}) bool {
 	if ot, ok := other.(*exactMapType); ok {
-		return (*hashMap)(t).Equals((*hashMap)(ot))
+		return t.value.Equals(ot.value)
 	}
 	return false
 }
 
 func (t *exactMapType) HashCode() int {
-	return (*hashMap)(t).HashCode()*31 + int(dgo.TiMapExact)
+	return t.value.HashCode()*31 + int(dgo.TiMapExact)
 }
 
 func (t *exactMapType) Instance(value interface{}) bool {
 	if ov, ok := value.(dgo.Map); ok {
-		return (*hashMap)(t).Equals(ov)
+		return t.value.Equals(ov)
 	}
 	return false
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
-	return &allOfValueType{slice: (*hashMap)(t).keys(), frozen: true}
+	return (*allOfValueType)(t.value.Keys().(*array))
 }
 
 func (t *exactMapType) Max() int {
-	return t.len
+	return t.value.Len()
 }
 
 func (t *exactMapType) Min() int {
-	return t.len
+	return t.value.Len()
+}
+
+func (t *exactMapType) ReflectType() reflect.Type {
+	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
 func (t *exactMapType) String() string {
@@ -1294,12 +1326,11 @@ func (t *exactMapType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *exactMapType) Value() dgo.Value {
-	v := (*hashMap)(t)
-	return v
+	return t.value
 }
 
 func (t *exactMapType) ValueType() dgo.Type {
-	return &allOfValueType{slice: (*hashMap)(t).values(), frozen: true}
+	return (*allOfValueType)(t.value.Values().(*array))
 }
 
 func frozenMap(f string) error {

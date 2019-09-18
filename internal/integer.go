@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 
 	"gopkg.in/yaml.v3"
@@ -27,6 +28,8 @@ type (
 
 // DefaultIntegerType is the unconstrained Integer type
 const DefaultIntegerType = integerType(0)
+
+var reflectIntegerType = reflect.TypeOf(int64(0))
 
 // IntegerRangeType returns a dgo.IntegerRangeType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
@@ -119,6 +122,10 @@ func (t *integerRange) Min() int64 {
 	return t.min
 }
 
+func (t *integerRange) ReflectType() reflect.Type {
+	return reflectIntegerType
+}
+
 func (t *integerRange) String() string {
 	return TypeString(t)
 }
@@ -167,6 +174,10 @@ func (t exactIntegerType) Min() int64 {
 	return int64(t)
 }
 
+func (t exactIntegerType) ReflectType() reflect.Type {
+	return reflectIntegerType
+}
+
 func (t exactIntegerType) String() string {
 	return TypeString(t)
 }
@@ -180,8 +191,7 @@ func (t exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t exactIntegerType) Value() dgo.Value {
-	v := (intVal)(t)
-	return v
+	return intVal(t)
 }
 
 func (t integerType) Assignable(other dgo.Type) bool {
@@ -225,6 +235,10 @@ func (t integerType) Min() int64 {
 	return math.MinInt64
 }
 
+func (t integerType) ReflectType() reflect.Type {
+	return reflectIntegerType
+}
+
 func (t integerType) String() string {
 	return TypeString(t)
 }
@@ -240,10 +254,6 @@ func (t integerType) TypeIdentifier() dgo.TypeIdentifier {
 // Integer returns the dgo.Integer for the given int64
 func Integer(v int64) dgo.Integer {
 	return intVal(v)
-}
-
-func (v intVal) Type() dgo.Type {
-	return exactIntegerType(v)
 }
 
 func (v intVal) CompareTo(other interface{}) (r int, ok bool) {
@@ -285,12 +295,66 @@ func (v intVal) Equals(other interface{}) bool {
 	return ok && int64(v) == i
 }
 
+func (v intVal) GoInt() int64 {
+	return int64(v)
+}
+
 func (v intVal) HashCode() int {
 	return int(v ^ (v >> 32))
 }
 
 func (v intVal) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!int`, Value: v.String()}, nil
+}
+
+func (v intVal) ReflectTo(value reflect.Value) {
+	switch value.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value.SetInt(int64(v))
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		value.SetUint(uint64(v))
+	case reflect.Ptr:
+		value.Set(v.intPointer(value.Type().Elem().Kind()))
+	default:
+		value.Set(reflect.ValueOf(int64(v)))
+	}
+}
+
+func (v intVal) intPointer(kind reflect.Kind) reflect.Value {
+	var p reflect.Value
+	switch kind {
+	case reflect.Int:
+		gv := int(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Int8:
+		gv := int8(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Int16:
+		gv := int16(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Int32:
+		gv := int32(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Uint:
+		gv := uint(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Uint8:
+		gv := uint8(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Uint16:
+		gv := uint16(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Uint32:
+		gv := uint32(v)
+		p = reflect.ValueOf(&gv)
+	case reflect.Uint64:
+		gv := uint64(v)
+		p = reflect.ValueOf(&gv)
+	default:
+		gv := int64(v)
+		p = reflect.ValueOf(&gv)
+	}
+	return p
 }
 
 func (v intVal) String() string {
@@ -305,8 +369,8 @@ func (v intVal) ToInt() int64 {
 	return int64(v)
 }
 
-func (v intVal) GoInt() int64 {
-	return int64(v)
+func (v intVal) Type() dgo.Type {
+	return exactIntegerType(v)
 }
 
 // ToInt returns the given value as a int64 if, and only if, the value type is one of the go int types. An

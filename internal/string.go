@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"reflect"
 	"regexp"
 	"strconv"
 
@@ -92,6 +93,10 @@ func (t defaultDgoStringType) Instance(value interface{}) (ok bool) {
 	return
 }
 
+func (t defaultDgoStringType) ReflectType() reflect.Type {
+	return reflectStringType
+}
+
 func (t defaultDgoStringType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiDgoString
 }
@@ -113,6 +118,8 @@ const DefaultStringType = defaultStringType(0)
 
 // DefaultDgoStringType is the unconstrained Dgo String type
 const DefaultDgoStringType = defaultDgoStringType(0)
+
+var reflectStringType = reflect.TypeOf(` `)
 
 // EnumType returns a StringType that represents all of the given strings
 func EnumType(strings []string) dgo.Type {
@@ -173,6 +180,10 @@ func (t defaultStringType) String() string {
 	return TypeString(t)
 }
 
+func (t defaultStringType) ReflectType() reflect.Type {
+	return reflectStringType
+}
+
 func (t defaultStringType) Type() dgo.Type {
 	return &metaType{t}
 }
@@ -223,6 +234,10 @@ func (t *exactStringType) Min() int {
 
 func (t *exactStringType) String() string {
 	return TypeString(t)
+}
+
+func (t *exactStringType) ReflectType() reflect.Type {
+	return reflectStringType
 }
 
 func (t *exactStringType) Type() dgo.Type {
@@ -312,6 +327,10 @@ func (t *patternType) IsInstance(v string) bool {
 	return t.MatchString(v)
 }
 
+func (t *patternType) ReflectType() reflect.Type {
+	return reflectStringType
+}
+
 func (t *patternType) Type() dgo.Type {
 	return &metaType{t}
 }
@@ -396,6 +415,10 @@ func (t *sizedStringType) Max() int {
 
 func (t *sizedStringType) Min() int {
 	return t.min
+}
+
+func (t *sizedStringType) ReflectType() reflect.Type {
+	return reflectStringType
 }
 
 func (t *sizedStringType) String() string {
@@ -490,6 +513,17 @@ func (v *hstring) MarshalYAML() (interface{}, error) {
 	n := &yaml.Node{}
 	n.SetString(v.s)
 	return n, nil
+}
+
+func (v *hstring) ReflectTo(value reflect.Value) {
+	switch value.Kind() {
+	case reflect.Interface:
+		value.Set(reflect.ValueOf(v.s))
+	case reflect.Ptr:
+		value.Set(reflect.ValueOf(&v.s))
+	default:
+		value.SetString(v.s)
+	}
 }
 
 func (v *hstring) String() string {

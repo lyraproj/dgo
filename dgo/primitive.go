@@ -39,6 +39,15 @@ type (
 		HashCode() int
 	}
 
+	// ReflectedValue is implemented by all values that can be assigned to a reflected value in
+	// a go native form.
+	ReflectedValue interface {
+		// ReflectTo assigns the go native form of this value to the given reflect.Value. The given
+		// reflect.Value must be of a type that the native form of this value is assignable to or a pointer
+		// to such a type.
+		ReflectTo(value reflect.Value)
+	}
+
 	// A Type describes an immutable Value. The Type is in itself also a Value
 	Type interface {
 		Value
@@ -52,6 +61,9 @@ type (
 		// TypeIdentifier returns a unique identifier for this type. The TypeIdentifier is intended to be used by
 		// decorators providing string representation of the type
 		TypeIdentifier() TypeIdentifier
+
+		// ReflectType returns the reflect.Type that corresponds to the receiver
+		ReflectType() reflect.Type
 	}
 
 	// Number is implemented by Float and Integer implementations
@@ -68,6 +80,7 @@ type (
 		Value
 		Number
 		Comparable
+		ReflectedValue
 
 		// GoInt returns the Go native representation of this value
 		GoInt() int64
@@ -95,6 +108,7 @@ type (
 		Value
 		Number
 		Comparable
+		ReflectedValue
 
 		// GoFloat returns the Go native representation of this value
 		GoFloat() float64
@@ -121,6 +135,7 @@ type (
 	String interface {
 		Value
 		Comparable
+		ReflectedValue
 
 		// GoString returns the Go native representation of this value
 		GoString() string
@@ -129,6 +144,7 @@ type (
 	// Regexp value is a string that implements the Value interface
 	Regexp interface {
 		Value
+		ReflectedValue
 
 		// GoRegexp returns the Go native representation of this value
 		GoRegexp() *regexp.Regexp
@@ -143,6 +159,7 @@ type (
 	Boolean interface {
 		Value
 		Comparable
+		ReflectedValue
 
 		// GoBool returns the Go native representation of this value
 		GoBool() bool
@@ -169,6 +186,7 @@ type (
 	Native interface {
 		Value
 		Freezable
+		ReflectedValue
 
 		// GoValue returns the Go native representation of this value
 		GoValue() interface{}

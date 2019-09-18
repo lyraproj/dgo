@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 
@@ -44,6 +45,10 @@ func (nilValue) MarshalYAML() (interface{}, error) {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!null`, Value: `null`}, nil
 }
 
+func (nilValue) ReflectTo(value reflect.Value) {
+	value.Set(reflect.Zero(value.Type()))
+}
+
 func (nilValue) String() string {
 	return `null`
 }
@@ -73,6 +78,10 @@ func (t nilType) HashCode() int {
 
 func (t nilType) Instance(v interface{}) bool {
 	return Nil == v || nil == v
+}
+
+func (t nilType) ReflectType() reflect.Type {
+	return reflectAnyType
 }
 
 func (t nilType) Type() dgo.Type {

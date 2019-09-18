@@ -1,8 +1,12 @@
 package internal
 
 import (
+	"reflect"
+
 	"github.com/lyraproj/dgo/dgo"
 )
+
+var reflectTypeType = reflect.TypeOf((*dgo.Type)(nil)).Elem()
 
 // metaType is the Type returned by a Type
 type metaType struct {
@@ -59,6 +63,10 @@ func (t *metaType) Operator() dgo.TypeOp {
 
 func (t *metaType) Operand() dgo.Type {
 	return t.tp
+}
+
+func (t *metaType) ReflectType() reflect.Type {
+	return reflectTypeType
 }
 
 func (t *metaType) Resolve(ap dgo.AliasProvider) {

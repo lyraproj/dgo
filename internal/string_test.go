@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"math"
+	"reflect"
 	"regexp"
 	"testing"
 
@@ -51,6 +52,8 @@ func TestPattern(t *testing.T) {
 	require.Equal(t, `/a\u{14}b/`, newtype.Pattern(regexp.MustCompile(s)).String())
 
 	require.Equal(t, `/a\/b/`, newtype.Pattern(regexp.MustCompile(`a/b`)).String())
+
+	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 }
 
 func TestStringDefault(t *testing.T) {
@@ -73,6 +76,8 @@ func TestStringDefault(t *testing.T) {
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, `string`, tp.String())
+
+	require.True(t, reflect.ValueOf(`hello`).Type().AssignableTo(typ.String.ReflectType()))
 }
 
 func TestStringExact(t *testing.T) {
@@ -103,6 +108,7 @@ func TestStringExact(t *testing.T) {
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, `"doh"`, tp.String())
+	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 }
 
 func TestString_badOneArg(t *testing.T) {
@@ -170,6 +176,7 @@ func TestStringType(t *testing.T) {
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, `string[3,5]`, tp.String())
+	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 }
 
 func TestDgoStringType(t *testing.T) {
@@ -199,6 +206,7 @@ func TestDgoStringType(t *testing.T) {
 	require.NotAssignable(t, typ.DgoString, vf.String(s).Type())
 
 	require.NotEqual(t, 0, typ.DgoString.HashCode())
+	require.Equal(t, typ.String.ReflectType(), typ.DgoString.ReflectType())
 }
 
 func TestString(t *testing.T) {
