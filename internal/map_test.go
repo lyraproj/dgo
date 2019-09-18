@@ -225,7 +225,7 @@ func TestMap_KeyType(t *testing.T) {
 }
 
 func TestMap_EntryType(t *testing.T) {
-	vf.Map(`a`, 3).Each(func(v dgo.MapEntry) {
+	vf.Map(`a`, 3).EachEntry(func(v dgo.MapEntry) {
 		require.True(t, v.Frozen())
 		require.Same(t, v, v.FrozenCopy())
 		require.NotEqual(t, v, `a`)
@@ -251,7 +251,7 @@ func TestMap_EntryType(t *testing.T) {
 
 	m := vf.MutableMap(nil)
 	m.Put(`a`, vf.MutableValues(nil, 1, 2))
-	m.Each(func(v dgo.MapEntry) {
+	m.EachEntry(func(v dgo.MapEntry) {
 		require.False(t, v.Frozen())
 		require.NotSame(t, v, v.FrozenCopy())
 
@@ -572,11 +572,11 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 	m.Put(2, vf.Values(`x`, `y`))
 	m.Put(vf.Values(`a`, `b`), vf.MutableValues(nil, `x`, `y`))
 
-	require.True(t, m.Entries().All(func(v dgo.Value) bool {
+	require.True(t, vf.Array(m).All(func(v dgo.Value) bool {
 		return v.(dgo.MapEntry).Frozen()
 	}), `not all entries in snapshot are frozen`)
 
-	m.Each(func(e dgo.MapEntry) {
+	m.EachEntry(func(e dgo.MapEntry) {
 		if e.Frozen() {
 			require.True(t, typ.Integer.Instance(e.Key()))
 		}
@@ -898,7 +898,7 @@ func TestMap_String(t *testing.T) {
 }
 
 func TestMapEntry_Equal(t *testing.T) {
-	vf.Map(`a`, 1).Each(func(e dgo.MapEntry) {
+	vf.Map(`a`, 1).EachEntry(func(e dgo.MapEntry) {
 		require.Equal(t, e, internal.NewMapEntry(`a`, 1))
 		require.NotEqual(t, e, vf.Values(`a`, 1))
 		require.NotEqual(t, e, internal.NewMapEntry(`a`, 2))
@@ -915,13 +915,13 @@ func TestMapEntry_Frozen(t *testing.T) {
 }
 
 func TestMapEntry_String(t *testing.T) {
-	vf.Map(`a`, 1).Each(func(e dgo.MapEntry) {
+	vf.Map(`a`, 1).EachEntry(func(e dgo.MapEntry) {
 		require.Equal(t, `"a":1`, e.String())
 	})
 }
 
 func TestMapEntry_Type(t *testing.T) {
-	vf.Map(`a`, 1).Each(func(e dgo.MapEntry) {
+	vf.Map(`a`, 1).EachEntry(func(e dgo.MapEntry) {
 		require.Equal(t, e.Type(), internal.NewMapEntry(`a`, 1).Type())
 		require.Assignable(t, e.Type(), internal.NewMapEntry(`a`, 1).Type())
 		require.Instance(t, e.Type(), internal.NewMapEntry(`a`, 1))

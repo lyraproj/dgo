@@ -133,7 +133,7 @@ func Test_structMap_EachValue(t *testing.T) {
 	require.Equal(t, vf.Values(1, 2.0, `three`), vs)
 }
 
-func Test_structMap_Entries(t *testing.T) {
+func Test_structMap_Each(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -141,7 +141,7 @@ func Test_structMap_Entries(t *testing.T) {
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
 	var vs []dgo.Value
-	m.Entries().Each(func(v dgo.Value) {
+	m.Each(func(v dgo.Value) {
 		e := v.(dgo.MapEntry)
 		vs = append(vs, e.Key())
 		vs = append(vs, e.Value())

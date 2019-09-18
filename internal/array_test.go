@@ -363,6 +363,16 @@ func TestMutableArray_tupleTypeMismatch(t *testing.T) {
 	require.Panic(t, func() { vf.MutableArray(newtype.Tuple(typ.String), []dgo.Value{vf.True}) }, `cannot be assigned`)
 }
 
+func TestArray(t *testing.T) {
+	a := vf.Array([]int{1, 2})
+	require.Equal(t, 2, a.Len())
+	require.Equal(t, 1, a.Get(0))
+	require.Equal(t, 2, a.Get(1))
+
+	require.Same(t, a, vf.Array(a))
+	require.Same(t, a, vf.Array(reflect.ValueOf(a)))
+}
+
 func TestArray_Set(t *testing.T) {
 	a := vf.MutableValues(newtype.Array(typ.Integer))
 	a.Add(1)
@@ -961,7 +971,7 @@ func TestArray_ToMapFromEntries(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))
 
-	a = b.Entries()
+	a = vf.Array(b)
 	b, ok = a.ToMapFromEntries()
 	require.True(t, ok)
 	require.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))

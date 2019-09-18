@@ -5,9 +5,10 @@ import (
 	"github.com/lyraproj/dgo/internal"
 )
 
-// Array returns a frozen dgo.Array that represents a copy of the given slice
-func Array(slice []dgo.Value) dgo.Array {
-	return internal.Array(slice)
+// Array returns a frozen dgo.Array that represents a copy of the given value. The value can be
+// a slice or an Iterable
+func Array(value interface{}) dgo.Array {
+	return internal.Array(value)
 }
 
 // MutableArray creates a new mutable array that wraps the given slice. Unset entries in the

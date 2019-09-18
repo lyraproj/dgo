@@ -38,7 +38,7 @@ type (
 	// were added. Associations retain their order even if their value change. When creating a Map from a go map
 	// the associations will be sorted based on the natural order of the keys.
 	Map interface {
-		Value
+		Iterable
 		Freezable
 		ReflectedValue
 		util.Indentable
@@ -76,8 +76,8 @@ type (
 		// overflow panic.
 		Copy(frozen bool) Map
 
-		// Each calls the given doer with each entry of this Map
-		Each(doer EntryDoer)
+		// EachEntry calls the given doer with each entry of this Map
+		EachEntry(doer EntryDoer)
 
 		// EachKey calls the given doer with each key of this Map
 		EachKey(doer Doer)
@@ -85,18 +85,12 @@ type (
 		// EachValue calls the given doer with each value of this Map
 		EachValue(doer Doer)
 
-		// Entries returns a frozen snapshot of the entries in this map.
-		Entries() Array
-
 		// Get returns the value for the given key. The method will return nil when the key is not present
 		// in the map. Use NilValue to bind a key to nil
 		Get(key interface{}) Value
 
 		// Keys returns frozen snapshot of all the keys of this map
 		Keys() Array
-
-		// Len returns the number of associations in this map
-		Len() int
 
 		// Map returns a new map with the same keys where each value has been replaced using the
 		// given mapper function.
@@ -158,7 +152,7 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// Each iterates over each entry of the StructType
+		// EachEntry iterates over each entry of the StructType
 		Each(doer func(StructEntry))
 
 		// Get returns the MapEntry that is identified with the given key

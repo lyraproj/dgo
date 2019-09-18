@@ -84,7 +84,7 @@ func StructFromMap(additional bool, entries dgo.Map) dgo.StructType {
 		return Parse(v.String())
 	}
 
-	entries.Each(func(e dgo.MapEntry) {
+	entries.EachEntry(func(e dgo.MapEntry) {
 		keys[i] = e.Key().Type()
 		if vm, ok := e.Value().(dgo.Map); ok {
 			values[i] = asType(vm.Get(`type`))

@@ -40,7 +40,7 @@ func (v *structMap) HashCode() int {
 
 func (v *structMap) deepHashCode(seen []dgo.Value) int {
 	h := 1
-	v.Each(func(e dgo.MapEntry) { h = h*31 + deepHashCode(seen, e) })
+	v.EachEntry(func(e dgo.MapEntry) { h = h*31 + deepHashCode(seen, e) })
 	return h
 }
 
@@ -173,7 +173,11 @@ func (v *structMap) Copy(frozen bool) dgo.Map {
 	return &structMap{rs: rs, frozen: false}
 }
 
-func (v *structMap) Each(doer dgo.EntryDoer) {
+func (v *structMap) Each(doer dgo.Doer) {
+	v.All(func(entry dgo.MapEntry) bool { doer(entry); return true })
+}
+
+func (v *structMap) EachEntry(doer dgo.EntryDoer) {
 	v.All(func(entry dgo.MapEntry) bool { doer(entry); return true })
 }
 
@@ -183,16 +187,6 @@ func (v *structMap) EachKey(doer dgo.Doer) {
 
 func (v *structMap) EachValue(doer dgo.Doer) {
 	v.AllValues(func(entry dgo.Value) bool { doer(entry); return true })
-}
-
-func (v *structMap) Entries() dgo.Array {
-	es := make([]dgo.Value, v.Len())
-	i := 0
-	v.Each(func(entry dgo.MapEntry) {
-		es[i] = entry
-		i++
-	})
-	return &array{slice: es, frozen: v.frozen}
 }
 
 func stringKey(key interface{}) (string, bool) {
@@ -217,13 +211,7 @@ func (v *structMap) Get(key interface{}) dgo.Value {
 }
 
 func (v *structMap) Keys() dgo.Array {
-	es := make([]dgo.Value, v.Len())
-	i := 0
-	v.EachKey(func(entry dgo.Value) {
-		es[i] = entry
-		i++
-	})
-	return &array{slice: es, frozen: true}
+	return arrayFromIterator(v.Len(), v.EachKey)
 }
 
 func (v *structMap) Len() int {
@@ -266,7 +254,7 @@ func (v *structMap) Put(key, value interface{}) dgo.Value {
 }
 
 func (v *structMap) PutAll(associations dgo.Map) {
-	associations.Each(func(e dgo.MapEntry) { v.Put(e.Key(), e.Value()) })
+	associations.EachEntry(func(e dgo.MapEntry) { v.Put(e.Key(), e.Value()) })
 }
 
 func (v *structMap) ReflectTo(value reflect.Value) {
@@ -298,13 +286,7 @@ func (v *structMap) SetType(t interface{}) {
 }
 
 func (v *structMap) Values() dgo.Array {
-	es := make([]dgo.Value, v.Len())
-	i := 0
-	v.EachValue(func(entry dgo.Value) {
-		es[i] = entry
-		i++
-	})
-	return &array{slice: es, frozen: v.frozen}
+	return arrayFromIterator(v.Len(), v.EachValue)
 }
 
 func (v *structMap) With(key, value interface{}) dgo.Map {
@@ -333,7 +315,7 @@ func (v *structMap) WithoutAll(keys dgo.Array) dgo.Map {
 
 func (v *structMap) toHashMap() *hashMap {
 	c := MapWithCapacity(int(float64(v.Len())/loadFactor), nil)
-	v.Each(func(entry dgo.MapEntry) {
+	v.EachEntry(func(entry dgo.MapEntry) {
 		c.Put(entry.Key(), entry.Value())
 	})
 	return c.(*hashMap)

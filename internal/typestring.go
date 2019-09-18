@@ -170,7 +170,7 @@ func init() {
 		},
 		dgo.TiMapExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
-			joinValueTypes(seen, typ.(dgo.ExactType).Value().(dgo.Map).Entries(), `,`, commaPrio, sb)
+			joinValueTypes(seen, typ.(dgo.ExactType).Value().(dgo.Map), `,`, commaPrio, sb)
 			util.WriteByte(sb, '}')
 		},
 		dgo.TiStruct: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {

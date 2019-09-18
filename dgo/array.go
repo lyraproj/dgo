@@ -46,6 +46,9 @@ type (
 
 		// Each calls the given function once for each value of this Iterable.
 		Each(doer Doer)
+
+		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
+		Len() int
 	}
 
 	// Array represents an immutable list of values. It is ensured that an Array never contains any
@@ -114,9 +117,6 @@ type (
 		// Insert inserts the given value at the given position and moves all values after that position
 		// one step forward. The method panics if the receiver is frozen.
 		Insert(pos int, val interface{})
-
-		// Len returns the number of values in this Array.
-		Len() int
 
 		// Map returns a new equally sized Array where each value has been replaced using the
 		// given mapper function.

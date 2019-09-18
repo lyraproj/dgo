@@ -380,7 +380,7 @@ func appendMapTo(m dgo.Map, w util.Indenter) {
 	w.AppendRune('{')
 	ew := w.Indent()
 	first := true
-	m.Each(func(e dgo.MapEntry) {
+	m.EachEntry(func(e dgo.MapEntry) {
 		if first {
 			first = false
 		} else {
@@ -408,7 +408,13 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 	return c
 }
 
-func (g *hashMap) Each(doer dgo.EntryDoer) {
+func (g *hashMap) Each(doer dgo.Doer) {
+	for e := g.first; e != nil; e = e.next {
+		doer(e)
+	}
+}
+
+func (g *hashMap) EachEntry(doer dgo.EntryDoer) {
 	for e := g.first; e != nil; e = e.next {
 		doer(e)
 	}
@@ -424,16 +430,6 @@ func (g *hashMap) EachValue(doer dgo.Doer) {
 	for e := g.first; e != nil; e = e.next {
 		doer(e.value)
 	}
-}
-
-func (g *hashMap) Entries() dgo.Array {
-	es := make([]dgo.Value, g.len)
-	ei := 0
-	for e := g.first; e != nil; e = e.next {
-		es[ei] = e.FrozenCopy()
-		ei++
-	}
-	return &array{slice: es, frozen: true}
 }
 
 func (g *hashMap) Equals(other interface{}) bool {
@@ -519,17 +515,7 @@ func (g *hashMap) deepHashCode(seen []dgo.Value) int {
 }
 
 func (g *hashMap) Keys() dgo.Array {
-	return &array{slice: g.keys(), frozen: g.frozen}
-}
-
-func (g *hashMap) keys() []dgo.Value {
-	ks := make([]dgo.Value, g.len)
-	p := 0
-	for e := g.first; e != nil; e = e.next {
-		ks[p] = e.key
-		p++
-	}
-	return ks
+	return arrayFromIterator(g.len, g.EachKey)
 }
 
 func (g *hashMap) Len() int {
@@ -684,7 +670,7 @@ func (g *hashMap) PutAll(associations dgo.Map) {
 	}
 	tbl := g.table
 
-	associations.Each(func(entry dgo.MapEntry) {
+	associations.EachEntry(func(entry dgo.MapEntry) {
 		key := entry.Key()
 		val := entry.Value()
 		hk := (len(tbl) - 1) & hash(key.HashCode())
@@ -721,7 +707,7 @@ func (g *hashMap) ReflectTo(value reflect.Value) {
 	keyType := ht.Key()
 	valueType := ht.Elem()
 	m := reflect.MakeMapWithSize(ht, g.Len())
-	g.Each(func(e dgo.MapEntry) {
+	g.EachEntry(func(e dgo.MapEntry) {
 		rk := reflect.New(keyType).Elem()
 		ReflectTo(e.Key(), rk)
 		rv := reflect.New(valueType).Elem()
@@ -1298,7 +1284,7 @@ func (t *exactMapType) Instance(value interface{}) bool {
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
-	return (*allOfValueType)(t.value.Keys().(*array))
+	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachKey))
 }
 
 func (t *exactMapType) Max() int {
@@ -1330,7 +1316,7 @@ func (t *exactMapType) Value() dgo.Value {
 }
 
 func (t *exactMapType) ValueType() dgo.Type {
-	return (*allOfValueType)(t.value.Values().(*array))
+	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachValue))
 }
 
 func frozenMap(f string) error {

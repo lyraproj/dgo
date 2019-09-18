@@ -540,18 +540,45 @@ func (t *tupleType) Unbounded() bool {
 	return len(t.slice) == 0
 }
 
-// Array creates a new frozen array that contains a copy of the given slice
-func Array(values []dgo.Value) dgo.Array {
-	arr := make([]dgo.Value, len(values))
-	for i := range values {
-		e := values[i]
+// Array returns a frozen dgo.Array that represents a copy of the given value. The value can be
+// a slice or an Iterable
+func Array(value interface{}) dgo.Array {
+	switch value := value.(type) {
+	case dgo.Array:
+		return value.FrozenCopy().(dgo.Array)
+	case dgo.Iterable:
+		return arrayFromIterator(value.Len(), value.Each)
+	case []dgo.Value:
+		arr := make([]dgo.Value, len(value))
+		for i := range value {
+			e := value[i]
+			if f, ok := e.(dgo.Freezable); ok {
+				e = f.FrozenCopy()
+			} else if e == nil {
+				e = Nil
+			}
+			arr[i] = e
+		}
+		return &array{slice: arr, frozen: true}
+	case reflect.Value:
+		return ValueFromReflected(value).(dgo.Array)
+	default:
+		return ValueFromReflected(reflect.ValueOf(value)).(dgo.Array)
+	}
+}
+
+// arrayFromIterator creates an array from a size and an iterator function. The
+// iterator function is expected to call its doer exactly size number of times.
+func arrayFromIterator(size int, each func(dgo.Doer)) *array {
+	arr := make([]dgo.Value, size)
+	i := 0
+	each(func(e dgo.Value) {
 		if f, ok := e.(dgo.Freezable); ok {
 			e = f.FrozenCopy()
-		} else if e == nil {
-			e = Nil
 		}
 		arr[i] = e
-	}
+		i++
+	})
 	return &array{slice: arr, frozen: true}
 }
 
