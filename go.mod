@@ -2,4 +2,4 @@ module github.com/lyraproj/dgo
 
 go 1.12
 
-require gopkg.in/yaml.v3 v3.0.0-20190709130402-674ba3eaed22
+require gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966
