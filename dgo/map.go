@@ -25,8 +25,8 @@ type (
 		Required() bool
 	}
 
-	// EntryDoer performs some task on behalf of a caller
-	EntryDoer func(entry MapEntry)
+	// EntryActor performs some task on behalf of a caller
+	EntryActor func(entry MapEntry)
 
 	// EntryMapper maps produces the value of an entry to a new value
 	EntryMapper func(entry MapEntry) interface{}
@@ -57,13 +57,13 @@ type (
 		AllValues(predicate Predicate) bool
 
 		// Any returns true if the predicate returns true for any entry of this Map.
-		Any(doer EntryPredicate) bool
+		Any(actor EntryPredicate) bool
 
 		// AnyKey returns true if the predicate returns true for any key of this Map.
-		AnyKey(doer Predicate) bool
+		AnyKey(actor Predicate) bool
 
 		// AnyValue returns true if the predicate returns true for any value of this Map.
-		AnyValue(doer Predicate) bool
+		AnyValue(actor Predicate) bool
 
 		// Copy returns a copy of the Map. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Map
@@ -76,14 +76,17 @@ type (
 		// overflow panic.
 		Copy(frozen bool) Map
 
-		// EachEntry calls the given doer with each entry of this Map
-		EachEntry(doer EntryDoer)
+		// EachEntry calls the given actor with each entry of this Map
+		EachEntry(actor EntryActor)
 
-		// EachKey calls the given doer with each key of this Map
-		EachKey(doer Doer)
+		// EachKey calls the given actor with each key of this Map
+		EachKey(actor Actor)
 
-		// EachValue calls the given doer with each value of this Map
-		EachValue(doer Doer)
+		// EachValue calls the given actor with each value of this Map
+		EachValue(actor Actor)
+
+		// Find returns the first entry for which the entry predicate returns true
+		Find(predicate EntryPredicate) MapEntry
 
 		// Get returns the value for the given key. The method will return nil when the key is not present
 		// in the map. Use NilValue to bind a key to nil
@@ -120,6 +123,9 @@ type (
 		// to a MapType. The Map must be mutable and an instance of the given type
 		SetType(t interface{})
 
+		// StringKeys returns true if this map's key type is assignable to String (i.e. if all keys are strings)
+		StringKeys() bool
+
 		// Values returns snapshot of all the values of this map.
 		Values() Array
 
@@ -153,7 +159,7 @@ type (
 		Additional() bool
 
 		// EachEntry iterates over each entry of the StructType
-		Each(doer func(StructEntry))
+		Each(actor func(StructEntry))
 
 		// Get returns the MapEntry that is identified with the given key
 		Get(key interface{}) MapEntry

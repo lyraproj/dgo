@@ -568,8 +568,8 @@ func Array(value interface{}) dgo.Array {
 }
 
 // arrayFromIterator creates an array from a size and an iterator function. The
-// iterator function is expected to call its doer exactly size number of times.
-func arrayFromIterator(size int, each func(dgo.Doer)) *array {
+// iterator function is expected to call its actor exactly size number of times.
+func arrayFromIterator(size int, each func(dgo.Actor)) *array {
 	arr := make([]dgo.Value, size)
 	i := 0
 	each(func(e dgo.Value) {
@@ -862,17 +862,17 @@ func (v *array) Copy(frozen bool) dgo.Array {
 	return &array{slice: cp, typ: v.typ, frozen: frozen}
 }
 
-func (v *array) Each(doer dgo.Doer) {
+func (v *array) Each(actor dgo.Actor) {
 	a := v.slice
 	for i := range a {
-		doer(a[i])
+		actor(a[i])
 	}
 }
 
-func (v *array) EachWithIndex(doer dgo.DoWithIndex) {
+func (v *array) EachWithIndex(actor dgo.DoWithIndex) {
 	a := v.slice
 	for i := range a {
-		doer(a[i], i)
+		actor(a[i], i)
 	}
 }
 

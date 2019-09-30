@@ -9,7 +9,10 @@ import (
 
 type (
 	// Doer is performs some task on behalf of a caller
-	Doer func(value Value)
+	Doer func()
+
+	// Actor is performs some task with a value on behalf of a caller
+	Actor func(value Value)
 
 	// Mapper maps a value to another value
 	Mapper func(value Value) interface{}
@@ -45,7 +48,7 @@ type (
 		Value
 
 		// Each calls the given function once for each value of this Iterable.
-		Each(doer Doer)
+		Each(actor Actor)
 
 		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
 		Len() int
@@ -99,7 +102,7 @@ type (
 
 		// EachWithIndex calls the given function once for each value of this Array. The index of
 		// the current value is provided in the call.
-		EachWithIndex(doer DoWithIndex)
+		EachWithIndex(actor DoWithIndex)
 
 		// Get returns the value at the given position. A negative position or a position
 		// that is greater or equal to the length of the array will result in a panic.

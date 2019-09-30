@@ -171,6 +171,21 @@ func Test_structMap_Get(t *testing.T) {
 	require.Equal(t, m.Get(10), nil)
 }
 
+func Test_structMap_Find(t *testing.T) {
+	type structA struct {
+		A string
+		B int
+	}
+	s := structA{A: `Alpha`, B: 32}
+	m := vf.Map(&s)
+	found := m.Find(func(e dgo.MapEntry) bool {
+		return e.Key().Equals(`B`)
+	})
+	require.Equal(t, found.Value(), 32)
+	found = m.Find(func(e dgo.MapEntry) bool { return false })
+	require.Nil(t, found)
+}
+
 func Test_structMap_Freeze(t *testing.T) {
 	type structA struct {
 		A string
@@ -419,6 +434,16 @@ func Test_structMap_String(t *testing.T) {
 	s := structA{A: `Alpha`, B: 32}
 	m := vf.Map(&s)
 	require.Equal(t, `{"A":"Alpha","B":32}`, m.String())
+}
+
+func Test_structMap_StringKeys(t *testing.T) {
+	type structA struct {
+		A string
+		B int
+	}
+	s := structA{A: `Alpha`, B: 32}
+	m := vf.Map(&s)
+	require.True(t, m.StringKeys())
 }
 
 func Test_structMap_Type(t *testing.T) {

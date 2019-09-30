@@ -513,6 +513,25 @@ func TestMap_EachValue(t *testing.T) {
 	require.Equal(t, vf.Values(1, 2.0, `three`), vs)
 }
 
+func TestMap_Find(t *testing.T) {
+	var entry dgo.MapEntry
+	m := vf.Map(
+		`first`, 1,
+		`second`, 2.0,
+		`third`, `three`)
+	found := m.Find(func(e dgo.MapEntry) bool {
+		if e.Value().Equals(2.0) {
+			entry = e
+			return true
+		}
+		return false
+	})
+	require.Same(t, found, entry)
+
+	found = m.Find(func(e dgo.MapEntry) bool { return false })
+	require.Nil(t, found)
+}
+
 func TestMap_Put(t *testing.T) {
 	m := vf.MutableMap(nil)
 	m.Put(1, `hello`)
@@ -551,6 +570,15 @@ func TestMap_PutAll(t *testing.T) {
 
 	m = vf.Map(`first`, 1)
 	require.Panic(t, func() { m.PutAll(vf.Map(`first`, 1)) }, `frozen`)
+}
+
+func TestMap_StringKeys(t *testing.T) {
+	m := vf.Map(`a`, 1, `b`, 2)
+	require.True(t, m.StringKeys())
+	m = vf.Map(`a`, 1, 2, `b`)
+	require.False(t, m.StringKeys())
+	m = vf.MutableMap(newtype.Map(typ.String, typ.String))
+	require.True(t, m.StringKeys())
 }
 
 func TestMap_Freeze_recursive(t *testing.T) {

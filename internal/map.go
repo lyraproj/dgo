@@ -408,27 +408,27 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 	return c
 }
 
-func (g *hashMap) Each(doer dgo.Doer) {
+func (g *hashMap) Each(actor dgo.Actor) {
 	for e := g.first; e != nil; e = e.next {
-		doer(e)
+		actor(e)
 	}
 }
 
-func (g *hashMap) EachEntry(doer dgo.EntryDoer) {
+func (g *hashMap) EachEntry(actor dgo.EntryActor) {
 	for e := g.first; e != nil; e = e.next {
-		doer(e)
+		actor(e)
 	}
 }
 
-func (g *hashMap) EachKey(doer dgo.Doer) {
+func (g *hashMap) EachKey(actor dgo.Actor) {
 	for e := g.first; e != nil; e = e.next {
-		doer(e.key)
+		actor(e.key)
 	}
 }
 
-func (g *hashMap) EachValue(doer dgo.Doer) {
+func (g *hashMap) EachValue(actor dgo.Actor) {
 	for e := g.first; e != nil; e = e.next {
-		doer(e.value)
+		actor(e.value)
 	}
 }
 
@@ -445,6 +445,15 @@ func mapEqual(seen []dgo.Value, g dgo.Map, other deepEqual) bool {
 		return g.All(func(e dgo.MapEntry) bool { return equals(seen, e.Value(), om.Get(e.Key())) })
 	}
 	return false
+}
+
+func (g *hashMap) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
+	for e := g.first; e != nil; e = e.next {
+		if predicate(e) {
+			return e
+		}
+	}
+	return nil
 }
 
 func (g *hashMap) Freeze() {
@@ -626,6 +635,10 @@ func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
 	var hk int
 
 	tbl := g.table
+	if tbl == nil {
+		tbl = make([]*hashNode, tableSizeFor(1))
+		g.table = tbl
+	}
 	hk = (len(tbl) - 1) & hs
 	for e := tbl[hk]; e != nil; e = e.hashNext {
 		if k.Equals(e.key) {
@@ -826,6 +839,18 @@ func (g *hashMap) SetType(ti interface{}) {
 
 func (g *hashMap) String() string {
 	return ToStringERP(g)
+}
+
+func (g *hashMap) StringKeys() bool {
+	if g.typ != nil {
+		return DefaultStringType.Assignable(g.typ.KeyType())
+	}
+	for e := g.first; e != nil; e = e.next {
+		if _, str := e.key.(*hstring); !str {
+			return false
+		}
+	}
+	return true
 }
 
 func (g *hashMap) With(ki, vi interface{}) dgo.Map {

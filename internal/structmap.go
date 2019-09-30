@@ -173,20 +173,20 @@ func (v *structMap) Copy(frozen bool) dgo.Map {
 	return &structMap{rs: rs, frozen: false}
 }
 
-func (v *structMap) Each(doer dgo.Doer) {
-	v.All(func(entry dgo.MapEntry) bool { doer(entry); return true })
+func (v *structMap) Each(actor dgo.Actor) {
+	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
-func (v *structMap) EachEntry(doer dgo.EntryDoer) {
-	v.All(func(entry dgo.MapEntry) bool { doer(entry); return true })
+func (v *structMap) EachEntry(actor dgo.EntryActor) {
+	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
-func (v *structMap) EachKey(doer dgo.Doer) {
-	v.AllKeys(func(entry dgo.Value) bool { doer(entry); return true })
+func (v *structMap) EachKey(actor dgo.Actor) {
+	v.AllKeys(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
-func (v *structMap) EachValue(doer dgo.Doer) {
-	v.AllValues(func(entry dgo.Value) bool { doer(entry); return true })
+func (v *structMap) EachValue(actor dgo.Actor) {
+	v.AllValues(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
 func stringKey(key interface{}) (string, bool) {
@@ -197,6 +197,18 @@ func stringKey(key interface{}) (string, bool) {
 		return s, true
 	}
 	return ``, false
+}
+
+func (v *structMap) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
+	rv := v.rs
+	rt := rv.Type()
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		e := &mapEntry{&hstring{s: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}
+		if predicate(e) {
+			return e
+		}
+	}
+	return nil
 }
 
 func (v *structMap) Get(key interface{}) dgo.Value {
@@ -283,6 +295,10 @@ func (v *structMap) RemoveAll(keys dgo.Array) {
 
 func (v *structMap) SetType(t interface{}) {
 	panic(errors.New(`struct type is read only`))
+}
+
+func (v *structMap) StringKeys() bool {
+	return true
 }
 
 func (v *structMap) Values() dgo.Array {

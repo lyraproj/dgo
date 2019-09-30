@@ -169,12 +169,12 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 	return CheckAssignableTo(guard, other, t)
 }
 
-func (t *structType) Each(doer func(dgo.StructEntry)) {
+func (t *structType) Each(actor func(dgo.StructEntry)) {
 	ks := t.keys.slice
 	vs := t.values.slice
 	rs := t.required
 	for i := range ks {
-		doer(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0})
+		actor(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0})
 	}
 }
 
