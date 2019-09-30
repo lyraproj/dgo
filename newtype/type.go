@@ -18,6 +18,14 @@ func Parse(content string) dgo.Type {
 }
 
 // ParseFile parses the given content into a dgo.Type. The filename is used in error messages.
-func ParseFile(fileName, content string) dgo.Type {
-	return internal.ParseFile(fileName, content)
+//
+// The alias map is optional. If given, the parser will recognize the type aliases provided in the map
+// and also add any new aliases declared within the parsed content to that map.
+func ParseFile(aliasMap dgo.AliasMap, fileName, content string) dgo.Type {
+	return internal.ParseFile(aliasMap, fileName, content)
+}
+
+// NewAliasMap creates a new dgo.Alias map to be used as a scope when parsing types
+func NewAliasMap() dgo.AliasMap {
+	return internal.NewAliasMap()
 }

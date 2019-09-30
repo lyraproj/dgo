@@ -15,11 +15,30 @@ type (
 		Resolve(AliasProvider)
 	}
 
+	// An AliasMap maps names to types and vice versa.
+	AliasMap interface {
+		// GetName returns the name for the given type and returns it or nil if no
+		// type has been added using that name has been added
+		GetName(t Type) String
+
+		// GetType returns the type with the given name and returns it or nil if no
+		// such type has been added with that name.
+		GetType(n String) Type
+
+		// Add adds the type t with the given name to this map
+		Add(t Type, name String)
+	}
+
 	// ExactType is implemented by types that match exactly one value
 	ExactType interface {
 		Type
 
 		Value() Value
+	}
+
+	// Named is implemented by named types such as the StructMap
+	Named interface {
+		Name() string
 	}
 
 	// SizedType is implemented by types that may have a size constraint

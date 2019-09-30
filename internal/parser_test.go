@@ -204,5 +204,5 @@ func TestParse_errors(t *testing.T) {
 }
 
 func TestParseFile_errors(t *testing.T) {
-	require.Panic(t, func() { newtype.ParseFile(`foo.dgo`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
+	require.Panic(t, func() { newtype.ParseFile(nil, `foo.dgo`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
 }

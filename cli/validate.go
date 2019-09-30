@@ -87,7 +87,7 @@ func (h *validateCommand) run(input, spec string) int {
 		}
 		sType = newtype.StructFromMap(false, m)
 	case strings.HasSuffix(spec, `.dgo`):
-		tp := newtype.ParseFile(spec, string(read(spec)))
+		tp := newtype.ParseFile(nil, spec, string(read(spec)))
 		if st, ok := tp.(dgo.StructType); ok {
 			sType = st
 		} else {

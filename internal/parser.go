@@ -39,12 +39,12 @@ type alias struct {
 }
 
 type aliasProvider struct {
-	sc map[string]dgo.Type
+	sc dgo.AliasMap
 }
 
 func (p *aliasProvider) Replace(t dgo.Type) dgo.Type {
 	if a, ok := t.(*alias); ok {
-		if ra, ok := p.sc[a.s]; ok {
+		if ra := p.sc.GetType(String(a.s)); ra != nil {
 			return ra
 		}
 		panic(fmt.Errorf(`reference to unresolved type '%s'`, a.s))
@@ -88,26 +88,27 @@ func badSyntax(t *token, state int) error {
 }
 
 type parser struct {
+	sc dgo.AliasMap
 	d  []dgo.Value
 	sr *util.StringReader
-	sc map[string]dgo.Type
 	pe *token
 	lt *token
 }
 
 // Parse calls ParseFile with the string "<dgo type expression>" as the fileName
 func Parse(content string) dgo.Type {
-	return ParseFile(``, content)
+	return ParseFile(nil, ``, content)
 }
 
-// ParseFile parses the given content into a px.Value. The content must be a string representation
-// of a Puppet literal or a type assignment expression. Valid literals are float, integer, string,
-// boolean, undef, array, hash, parameter lists, and type expressions.
+// ParseFile parses the given content into a dgo.Type. The filename is used in error messages.
 //
-// Double quoted strings containing interpolation expressions will be parsed into a string verbatim
-// without resolving the interpolations.
-func ParseFile(fileName, content string) dgo.Type {
-	p := &parser{sr: util.NewStringReader(content)}
+// The alias map is optional. If given, the parser will recognize the type aliases provided in the map
+// and also add any new aliases declared within the parsed content to that map.
+func ParseFile(am dgo.AliasMap, fileName, content string) dgo.Type {
+	if am == nil {
+		am = &aliasMap{}
+	}
+	p := &parser{sc: am, sr: util.NewStringReader(content)}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -132,10 +133,7 @@ func ParseFile(fileName, content string) dgo.Type {
 	}()
 	p.parse(p.nextToken())
 	tp := p.popLastType()
-	if p.sc != nil {
-		tp = (&aliasProvider{p.sc}).Replace(tp)
-	}
-	return tp
+	return (&aliasProvider{p.sc}).Replace(tp)
 }
 
 func (p *parser) peekToken() *token {
@@ -542,13 +540,8 @@ func (p *parser) aliasReference(t *token) dgo.Value {
 	if t.i != identifier {
 		panic(badSyntax(t, exAliasRef))
 	}
-	if p.sc != nil {
-		if tp, ok := p.sc[t.s]; ok {
-			return tp
-		}
-	} else {
-		// Ensure that a resolution attempt is made
-		p.sc = make(map[string]dgo.Type)
+	if tp := p.sc.GetType(String(t.s)); tp != nil {
+		return tp
 	}
 	return &alias{exactStringType{t.s, 0}}
 }
@@ -557,16 +550,14 @@ func (p *parser) aliasDeclaration(t *token) dgo.Value {
 	// Should result in an unknown identifier or name is reserved
 	tp := p.identifier(t, true)
 	if un, ok := tp.(*unknownIdentifier); ok {
-		if p.sc == nil {
-			p.sc = make(map[string]dgo.Type)
-		}
 		n := un.s
-		if _, ok := p.sc[n]; !ok {
+		if p.sc.GetType(String(n)) == nil {
+			s := String(n)
 			p.nextToken() // skip '='
-			p.sc[n] = &alias{exactStringType: exactStringType{s: n}}
+			p.sc.Add(&alias{exactStringType: exactStringType{s: n}}, s)
 			p.anyOf(p.nextToken())
 			tp = p.popLastType()
-			p.sc[n] = tp.(dgo.Type)
+			p.sc.Add(tp.(dgo.Type), s)
 			return tp
 		}
 	}
