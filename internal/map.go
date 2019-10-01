@@ -516,9 +516,18 @@ func (g *hashMap) HashCode() int {
 }
 
 func (g *hashMap) deepHashCode(seen []dgo.Value) int {
-	h := 1
+	// compute order independent hash code. This is necessary to withhold the
+	// contract that when two maps are equal, their hashes are equal.
+	hs := make([]int, g.len)
+	i := 0
 	for e := g.first; e != nil; e = e.next {
-		h = h*31 + deepHashCode(seen, e)
+		hs[i] = deepHashCode(seen, e)
+		i++
+	}
+	sort.Ints(hs)
+	h := 1
+	for i = range hs {
+		h = h*31 + hs[i]
 	}
 	return h
 }

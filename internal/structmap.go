@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
@@ -39,8 +40,17 @@ func (v *structMap) HashCode() int {
 }
 
 func (v *structMap) deepHashCode(seen []dgo.Value) int {
+	hs := make([]int, v.Len())
+	i := 0
+	v.EachEntry(func(e dgo.MapEntry) {
+		hs[i] = deepHashCode(seen, e)
+		i++
+	})
+	sort.Ints(hs)
 	h := 1
-	v.EachEntry(func(e dgo.MapEntry) { h = h*31 + deepHashCode(seen, e) })
+	for i = range hs {
+		h = h*31 + hs[i]
+	}
 	return h
 }
 

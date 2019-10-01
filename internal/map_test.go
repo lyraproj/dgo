@@ -876,6 +876,13 @@ func TestMap_HashCode(t *testing.T) {
 	require.Equal(t, m.HashCode(), m.HashCode())
 	require.NotEqual(t, 0, m.HashCode())
 
+	m2 := vf.Map(
+		`second`, 2.0,
+		`first`, 1,
+		`third`, `three`)
+	require.Equal(t, m.HashCode(), m2.HashCode())
+
+	// Self containing map
 	m = vf.MutableMap(map[string]interface{}{})
 	m.Put(`first`, 1)
 	m.Put(`self`, m)
@@ -885,13 +892,24 @@ func TestMap_HashCode(t *testing.T) {
 }
 
 func TestMap_Equal(t *testing.T) {
-	m1 := vf.MutableMap(map[string]interface{}{})
+	m1 := vf.Map(
+		`first`, 1,
+		`second`, 2.0,
+		`third`, `three`)
+
+	m2 := vf.Map(
+		`second`, 2.0,
+		`first`, 1,
+		`third`, `three`)
+	require.Equal(t, m1, m2)
+
+	m1 = vf.MutableMap(map[string]interface{}{})
 	m1.Put(`first`, 1)
 	m1.Put(`self`, m1)
 
 	require.NotEqual(t, m1, vf.Values(`first`, `self`))
 
-	m2 := vf.MutableMap(map[string]interface{}{})
+	m2 = vf.MutableMap(map[string]interface{}{})
 	m2.Put(`first`, 1)
 	m2.Put(`self`, m2)
 
