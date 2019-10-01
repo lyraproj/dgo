@@ -582,6 +582,16 @@ func arrayFromIterator(size int, each func(dgo.Actor)) *array {
 	return &array{slice: arr, frozen: true}
 }
 
+func sliceFromIterable(ir dgo.Iterable) []dgo.Value {
+	es := make([]dgo.Value, ir.Len())
+	i := 0
+	ir.Each(func(e dgo.Value) {
+		es[i] = e
+		i++
+	})
+	return es
+}
+
 // ArrayFromReflected creates a new array that contains a copy of the given reflected slice
 func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	if vr.IsNil() {
@@ -723,7 +733,7 @@ func (v *array) assertType(e dgo.Value, pos int) {
 	}
 }
 
-func (v *array) assertTypes(values dgo.Array) {
+func (v *array) assertTypes(values dgo.Iterable) {
 	if t := v.typ; t != nil {
 		addedSize := values.Len()
 		if addedSize == 0 {
@@ -734,12 +744,11 @@ func (v *array) assertTypes(values dgo.Array) {
 			panic(IllegalSize(t, sz+addedSize))
 		}
 		et := t.ElementType()
-		for i := 0; i < addedSize; i++ {
-			e := values.Get(i)
+		values.Each(func(e dgo.Value) {
 			if !et.Instance(e) {
 				panic(IllegalAssignment(et, e))
 			}
-		}
+		})
 	}
 }
 
@@ -752,12 +761,18 @@ func (v *array) Add(vi interface{}) {
 	v.slice = append(v.slice, val)
 }
 
-func (v *array) AddAll(values dgo.Array) {
+func (v *array) AddAll(values dgo.Iterable) {
 	if v.frozen {
 		panic(frozenArray(`AddAll`))
 	}
 	v.assertTypes(values)
-	v.slice = values.AppendToSlice(v.slice)
+	a := v.slice
+	if ar, ok := values.(*array); ok {
+		a = ar.AppendToSlice(a)
+	} else {
+		values.Each(func(e dgo.Value) { a = append(a, e) })
+	}
+	v.slice = a
 }
 
 func (v *array) AddValues(values ...interface{}) {
@@ -860,6 +875,45 @@ func (v *array) Copy(frozen bool) dgo.Array {
 		}
 	}
 	return &array{slice: cp, typ: v.typ, frozen: frozen}
+}
+
+func (v *array) ContainsAll(other dgo.Iterable) bool {
+	a := v.slice
+	l := len(a)
+	if l < other.Len() {
+		return false
+	}
+	if l == 0 {
+		return true
+	}
+
+	var vs []dgo.Value
+	if oa, ok := other.(*array); ok {
+		vs = sliceCopy(oa.slice)
+	} else {
+		vs = sliceFromIterable(other)
+	}
+
+	// Keep track of elements that have been found equal using a copy
+	// where such elements are set to nil. This avoids excessive calls
+	// to Equals
+	for i := range vs {
+		ea := a[i]
+		f := false
+		for j := range vs {
+			if be := vs[j]; be != nil {
+				if be.Equals(ea) {
+					vs[j] = nil
+					f = true
+					break
+				}
+			}
+		}
+		if !f {
+			return false
+		}
+	}
+	return true
 }
 
 func (v *array) Each(actor dgo.Actor) {
@@ -1086,43 +1140,8 @@ func (v *array) Reject(predicate dgo.Predicate) dgo.Array {
 	return &array{slice: vs, typ: v.typ, frozen: v.frozen}
 }
 
-func (v *array) SameValues(other dgo.Array) bool {
+func (v *array) SameValues(other dgo.Iterable) bool {
 	return len(v.slice) == other.Len() && v.ContainsAll(other)
-}
-
-func (v *array) ContainsAll(other dgo.Array) bool {
-	oa := other.(*array)
-	a := v.slice
-	b := oa.slice
-	l := len(a)
-	if l < len(b) {
-		return false
-	}
-	if l == 0 {
-		return true
-	}
-
-	// Keep track of elements that have been found equal using a copy
-	// where such elements are set to nil. This avoids excessive calls
-	// to Equals
-	vs := sliceCopy(b)
-	for i := range b {
-		ea := a[i]
-		f := false
-		for j := range vs {
-			if be := vs[j]; be != nil {
-				if be.Equals(ea) {
-					vs[j] = nil
-					f = true
-					break
-				}
-			}
-		}
-		if !f {
-			return false
-		}
-	}
-	return true
 }
 
 func (v *array) Select(predicate dgo.Predicate) dgo.Array {
@@ -1376,12 +1395,17 @@ func (v *array) With(vi interface{}) dgo.Array {
 	return &array{slice: append(v.slice, val), typ: v.typ, frozen: v.frozen}
 }
 
-func (v *array) WithAll(values dgo.Array) dgo.Array {
+func (v *array) WithAll(values dgo.Iterable) dgo.Array {
 	if values.Len() == 0 {
 		return v
 	}
-	v.assertTypes(values)
-	return &array{slice: values.AppendToSlice(v.slice), typ: v.typ, frozen: v.frozen}
+	c := v.Copy(false)
+	if v.frozen {
+		values = values.FrozenCopy().(dgo.Iterable)
+	}
+	c.AddAll(values)
+	c.(*array).frozen = v.frozen
+	return c
 }
 
 func (v *array) WithValues(values ...interface{}) dgo.Array {

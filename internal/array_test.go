@@ -455,10 +455,14 @@ func TestArray_Add(t *testing.T) {
 func TestArray_AddAll(t *testing.T) {
 	a := vf.Values(`a`)
 	require.Panic(t, func() { a.AddAll(vf.Values(`b`)) }, `AddAll .* frozen`)
-	m := a.Copy(false)
-	m.AddAll(vf.Values(`b`))
+	c := a.Copy(false)
+	c.AddAll(vf.Values(`b`))
 	require.Equal(t, vf.Values(`a`), a)
-	require.Equal(t, vf.Values(`a`, `b`), m)
+	require.Equal(t, vf.Values(`a`, `b`), c)
+
+	m := vf.Map(`c`, `C`, `d`, `D`)
+	c.AddAll(m)
+	require.Equal(t, vf.Values(`a`, `b`, internal.NewMapEntry(`c`, `C`), internal.NewMapEntry(`d`, `D`)), c)
 }
 
 func TestArray_AddValues(t *testing.T) {
@@ -915,6 +919,9 @@ func TestContainsAll(t *testing.T) {
 	require.True(t, vf.Values(1, 2, 3).ContainsAll(vf.Values(2, 1)))
 	require.False(t, vf.Values(1, 2).ContainsAll(vf.Values(3, 2, 1)))
 	require.False(t, vf.Values(1, 2).ContainsAll(vf.Values(1, 4)))
+
+	m := vf.Map(`c`, `C`, `d`, `D`)
+	require.True(t, vf.Values(internal.NewMapEntry(`c`, `C`), internal.NewMapEntry(`d`, `D`)).ContainsAll(m))
 }
 
 func TestArray_SameValues(t *testing.T) {
@@ -997,4 +1004,16 @@ func TestArray_Unique(t *testing.T) {
 
 	a = vf.Strings(`the one and only`)
 	require.Same(t, a, a.Unique())
+}
+
+func TestArray_WithAll(t *testing.T) {
+	a := vf.Values(`a`)
+	c := a.WithAll(vf.Values(`b`))
+	require.Equal(t, vf.Values(`a`), a)
+	require.Equal(t, vf.Values(`a`, `b`), c)
+
+	m := vf.Map(`c`, `C`, `d`, `D`)
+	c = a.WithAll(m)
+	require.Equal(t, vf.Values(`a`, internal.NewMapEntry(`c`, `C`), internal.NewMapEntry(`d`, `D`)), c)
+	require.True(t, c.Frozen())
 }

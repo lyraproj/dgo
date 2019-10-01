@@ -39,7 +39,6 @@ type (
 	// the associations will be sorted based on the natural order of the keys.
 	Map interface {
 		Iterable
-		Freezable
 		ReflectedValue
 		util.Indentable
 		json.Marshaler

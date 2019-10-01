@@ -45,6 +45,7 @@ type (
 
 	// Iterable enables the implementor to express how iteration is performed over contained elements
 	Iterable interface {
+		Freezable
 		Value
 
 		// Each calls the given function once for each value of this Iterable.
@@ -58,7 +59,6 @@ type (
 	// unset positions. Uninitialized positions are always converted to the Nil value.
 	Array interface {
 		Iterable
-		Freezable
 		Comparable
 		ReflectedValue
 		util.Indentable
@@ -71,7 +71,7 @@ type (
 		Add(val interface{})
 
 		// AddAll adds the elements of the given Array to the end of this array. It panics if the receiver is frozen.
-		AddAll(values Array)
+		AddAll(values Iterable)
 
 		// AddValues adds the given values to the end of this array. It panics if the receiver is frozen.
 		AddValues(values ...interface{})
@@ -86,8 +86,8 @@ type (
 		// result of the append.
 		AppendToSlice([]Value) []Value
 
-		// ContainsAll returns true if this Array contains all elements of the other Array
-		ContainsAll(other Array) bool
+		// ContainsAll returns true if this Array contains all elements of the given Iterable
+		ContainsAll(other Iterable) bool
 
 		// Copy returns a copy of the Array. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Array
@@ -156,8 +156,8 @@ type (
 		// method panics if the receiver is frozen.
 		RemoveValue(value interface{}) bool
 
-		// SameValues returns true if this Array is the same size as the other Array and contains all of its values
-		SameValues(other Array) bool
+		// SameValues returns true if this Array is the same size as the given Iterable and contains all of its values
+		SameValues(other Iterable) bool
 
 		// Select returns a new Array where only values for which the predicate returned true
 		// are included.
@@ -182,9 +182,8 @@ type (
 		ToMap() Map
 
 		// ToMapFromEntries assumes that all elements of this Array are either Arrays with two elements or MapEntries.
-		// If it is the former, MapEntries are created using the two elements of the Arrays as the key and value. A
-		// new Map is created that will contained all the MapEntries. The frozen status of this array is inherited
-		// by the new Map.
+		// If it is the former, MapEntries are created using the two elements as the key and value. A new Map is created
+		// that will contained all the MapEntries. The frozen status of this array is inherited by the new Map.
 		ToMapFromEntries() (Map, bool)
 
 		// Unique returns a new Array where all duplicate values have been removed
@@ -194,7 +193,7 @@ type (
 		With(value interface{}) Array
 
 		// WithAll appends the elements of the given Array to a copy of this array and returns the resulting Array
-		WithAll(values Array) Array
+		WithAll(values Iterable) Array
 
 		// WithValues appends the given values to a copy of this array and returns the resulting Array
 		WithValues(values ...interface{}) Array
@@ -212,6 +211,7 @@ type (
 	TupleType interface {
 		ArrayType
 
+		// ElementTypes returns the types of the elements for instances of this type
 		ElementTypes() Array
 	}
 )
