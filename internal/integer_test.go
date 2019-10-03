@@ -51,6 +51,8 @@ func TestIntegerExact(t *testing.T) {
 
 	require.Equal(t, `3`, tp.String())
 
+	require.Same(t, typ.Integer, typ.Generic(tp))
+
 	require.Instance(t, tp.Type(), tp)
 
 	require.Same(t, tp.ReflectType(), typ.Integer.ReflectType())

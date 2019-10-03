@@ -18,6 +18,8 @@ func TestNil_CompareTo(t *testing.T) {
 	c, ok = vf.Nil.CompareTo(vf.Integer(1))
 	require.True(t, ok)
 	require.Equal(t, -1, c)
+
+	require.Nil(t, vf.Nil.GoNil())
 }
 
 func TestNil_ReflectTo(t *testing.T) {

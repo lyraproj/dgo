@@ -48,22 +48,11 @@ type (
 		ReflectTo(value reflect.Value)
 	}
 
-	// A Type describes an immutable Value. The Type is in itself also a Value
-	Type interface {
+	// Nil is implemented by the singleton that represents nil
+	Nil interface {
 		Value
 
-		// Assignable returns true if a variable or parameter of this type can be hold a value of the other type
-		Assignable(other Type) bool
-
-		// Instance returns true if the value is an instance of this type
-		Instance(value interface{}) bool
-
-		// TypeIdentifier returns a unique identifier for this type. The TypeIdentifier is intended to be used by
-		// decorators providing string representation of the type
-		TypeIdentifier() TypeIdentifier
-
-		// ReflectType returns the reflect.Type that corresponds to the receiver
-		ReflectType() reflect.Type
+		GoNil() interface{}
 	}
 
 	// Number is implemented by Float and Integer implementations
@@ -86,23 +75,6 @@ type (
 		GoInt() int64
 	}
 
-	// IntegerRangeType describes integers that are within an inclusive or exclusive range
-	IntegerRangeType interface {
-		Type
-
-		// Inclusive returns true if this range has an inclusive end
-		Inclusive() bool
-
-		// IsInstance returns true if the given int64 is an instance of this type
-		IsInstance(int64) bool
-
-		// Max returns the maximum constraint
-		Max() int64
-
-		// Min returns the minimum constraint
-		Min() int64
-	}
-
 	// Float value is a float64 that implements the Value interface
 	Float interface {
 		Value
@@ -112,23 +84,6 @@ type (
 
 		// GoFloat returns the Go native representation of this value
 		GoFloat() float64
-	}
-
-	// FloatRangeType describes floating point numbers that are within an inclusive or exclusive range
-	FloatRangeType interface {
-		Type
-
-		// Inclusive returns true if this range has an inclusive end
-		Inclusive() bool
-
-		// IsInstance returns true if the given float64 is an instance of this type
-		IsInstance(float64) bool
-
-		// Max returns the maximum constraint
-		Max() float64
-
-		// Min returns the minimum constraint
-		Min() float64
 	}
 
 	// String value is a string that implements the Value interface
@@ -150,11 +105,6 @@ type (
 		GoRegexp() *regexp.Regexp
 	}
 
-	// StringType is a SizedType.
-	StringType interface {
-		SizedType
-	}
-
 	// Boolean value
 	Boolean interface {
 		Value
@@ -164,23 +114,6 @@ type (
 		// GoBool returns the Go native representation of this value
 		GoBool() bool
 	}
-
-	// BooleanType matches the true and false literals
-	BooleanType interface {
-		Type
-
-		// IsInstance returns true if the Go native value is represented by this type
-		IsInstance(value bool) bool
-	}
-
-	// NativeType is the type for all Native values
-	NativeType interface {
-		Type
-
-		// GoType returns the reflect.Type
-		GoType() reflect.Type
-	}
-
 	// Native is a wrapper of a runtime value such as a chan or a pointer for which there is no proper immutable Value
 	// representation
 	Native interface {

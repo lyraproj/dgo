@@ -149,6 +149,10 @@ func (t exactIntegerType) Equals(other interface{}) bool {
 	return t == other
 }
 
+func (t exactIntegerType) Generic() dgo.Type {
+	return DefaultIntegerType
+}
+
 func (t exactIntegerType) HashCode() int {
 	return intVal(t).HashCode() * 5
 }

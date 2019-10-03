@@ -210,6 +210,14 @@ func init() {
 			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 			util.WriteByte(sb, ']')
 		},
+		dgo.TiSensitive: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			util.WriteString(sb, `sensitive`)
+			if op := typ.(dgo.UnaryType).Operand(); DefaultAnyType != op {
+				util.WriteByte(sb, '[')
+				buildTypeString(seen, op, prio, sb)
+				util.WriteByte(sb, ']')
+			}
+		},
 		dgo.TiStringExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 		},
@@ -236,7 +244,7 @@ func init() {
 		dgo.TiMeta: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			nt := typ.(dgo.UnaryType)
 			util.WriteString(sb, `type`)
-			if op := nt.Operand(); op != DefaultAnyType {
+			if op := nt.Operand(); DefaultAnyType != op {
 				if op == nil {
 					util.WriteString(sb, `[type]`)
 				} else {

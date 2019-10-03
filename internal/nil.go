@@ -37,6 +37,10 @@ func (nilValue) Equals(other interface{}) bool {
 	return Nil == other || nil == other
 }
 
+func (nilValue) GoNil() interface{} {
+	return nil
+}
+
 func (nilValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }

@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/vf"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/newtype"
 	"github.com/lyraproj/dgo/typ"
@@ -26,4 +28,10 @@ func TestFromReflected(t *testing.T) {
 
 	v = newtype.FromReflected(reflect.ValueOf(struct{ A int }{3}).Type())
 	require.Assignable(t, typ.Native, v)
+}
+
+func TestGeneric(t *testing.T) {
+	require.Same(t, typ.Generic(typ.String), typ.String)
+	require.NotEqual(t, typ.Generic(typ.String), newtype.String(10))
+	require.Same(t, typ.String, typ.Generic(vf.String(`hello`).Type()))
 }

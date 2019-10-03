@@ -19,111 +19,8 @@ type (
 	}
 )
 
-func (v *structMap) String() string {
-	return ToStringERP(v)
-}
-
-func (v *structMap) Type() dgo.Type {
-	return &exactMapType{v}
-}
-
-func (v *structMap) Equals(other interface{}) bool {
-	return equals(nil, v, other)
-}
-
-func (v *structMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	return mapEqual(seen, v, other)
-}
-
-func (v *structMap) HashCode() int {
-	return deepHashCode(nil, v)
-}
-
-func (v *structMap) deepHashCode(seen []dgo.Value) int {
-	hs := make([]int, v.Len())
-	i := 0
-	v.EachEntry(func(e dgo.MapEntry) {
-		hs[i] = deepHashCode(seen, e)
-		i++
-	})
-	sort.Ints(hs)
-	h := 1
-	for i = range hs {
-		h = h*31 + hs[i]
-	}
-	return h
-}
-
-func (v *structMap) Freeze() {
-	// Perform a shallow copy of the struct
-	if !v.frozen {
-		v.frozen = true
-		v.rs = reflect.ValueOf(v.rs.Interface())
-		v.EachValue(func(e dgo.Value) {
-			if f, ok := e.(dgo.Freezable); ok {
-				f.Freeze()
-			}
-		})
-	}
-}
-
-func (v *structMap) Frozen() bool {
-	return v.frozen
-}
-
-func (v *structMap) FrozenCopy() dgo.Value {
-	if v.frozen {
-		return v
-	}
-
-	// Perform a by-value copy of the struct
-	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
-	rs.Set(v.rs)                          // copy v.rs to the zero value
-
-	for i, n := 0, rs.NumField(); i < n; i++ {
-		ef := rs.Field(i)
-		ev := ValueFromReflected(ef)
-		if f, ok := ev.(dgo.Freezable); ok && !f.Frozen() {
-			ReflectTo(f.FrozenCopy(), ef)
-		}
-	}
-	return &structMap{rs: rs, frozen: true}
-}
-
 func (v *structMap) AppendTo(w util.Indenter) {
 	appendMapTo(v, w)
-}
-
-func (v *structMap) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.rs.Addr().Interface())
-}
-
-func (v *structMap) MarshalYAML() (interface{}, error) {
-	// A bit wasteful but this is currently the only way to create a yaml.Node
-	// from a struct
-	n := &yaml.Node{}
-	b, err := yaml.Marshal(v.rs.Addr().Interface())
-	if err == nil {
-		if err = yaml.Unmarshal(b, n); err == nil {
-			// n is the document node at this point.
-			n = n.Content[0]
-		}
-	}
-	return n, err
-}
-
-func (v *structMap) UnmarshalJSON(data []byte) error {
-	if v.frozen {
-		panic(frozenMap(`UnmarshalJSON`))
-	}
-	return json.Unmarshal(data, v.rs.Addr().Interface())
-}
-
-func (v *structMap) UnmarshalYAML(value *yaml.Node) error {
-	if v.frozen {
-		panic(frozenMap(`UnmarshalYAML`))
-	}
-	return value.Decode(v.rs.Addr().Interface())
 }
 
 func (v *structMap) All(predicate dgo.EntryPredicate) bool {
@@ -199,14 +96,67 @@ func (v *structMap) EachValue(actor dgo.Actor) {
 	v.AllValues(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
-func stringKey(key interface{}) (string, bool) {
-	if hs, ok := key.(*hstring); ok {
-		return hs.s, true
+func (v *structMap) Equals(other interface{}) bool {
+	return equals(nil, v, other)
+}
+
+func (v *structMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
+	return mapEqual(seen, v, other)
+}
+
+func (v *structMap) HashCode() int {
+	return deepHashCode(nil, v)
+}
+
+func (v *structMap) deepHashCode(seen []dgo.Value) int {
+	hs := make([]int, v.Len())
+	i := 0
+	v.EachEntry(func(e dgo.MapEntry) {
+		hs[i] = deepHashCode(seen, e)
+		i++
+	})
+	sort.Ints(hs)
+	h := 1
+	for i = range hs {
+		h = h*31 + hs[i]
 	}
-	if s, ok := key.(string); ok {
-		return s, true
+	return h
+}
+
+func (v *structMap) Freeze() {
+	// Perform a shallow copy of the struct
+	if !v.frozen {
+		v.frozen = true
+		v.rs = reflect.ValueOf(v.rs.Interface())
+		v.EachValue(func(e dgo.Value) {
+			if f, ok := e.(dgo.Freezable); ok {
+				f.Freeze()
+			}
+		})
 	}
-	return ``, false
+}
+
+func (v *structMap) Frozen() bool {
+	return v.frozen
+}
+
+func (v *structMap) FrozenCopy() dgo.Value {
+	if v.frozen {
+		return v
+	}
+
+	// Perform a by-value copy of the struct
+	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v.rs)                          // copy v.rs to the zero value
+
+	for i, n := 0, rs.NumField(); i < n; i++ {
+		ef := rs.Field(i)
+		ev := ValueFromReflected(ef)
+		if f, ok := ev.(dgo.Freezable); ok && !f.Frozen() {
+			ReflectTo(f.FrozenCopy(), ef)
+		}
+	}
+	return &structMap{rs: rs, frozen: true}
 }
 
 func (v *structMap) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
@@ -219,6 +169,16 @@ func (v *structMap) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 		}
 	}
 	return nil
+}
+
+func stringKey(key interface{}) (string, bool) {
+	if hs, ok := key.(*hstring); ok {
+		return hs.s, true
+	}
+	if s, ok := key.(string); ok {
+		return s, true
+	}
+	return ``, false
 }
 
 func (v *structMap) Get(key interface{}) dgo.Value {
@@ -247,6 +207,24 @@ func (v *structMap) Map(mapper dgo.EntryMapper) dgo.Map {
 	}
 	c.frozen = v.frozen
 	return c
+}
+
+func (v *structMap) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.rs.Addr().Interface())
+}
+
+func (v *structMap) MarshalYAML() (interface{}, error) {
+	// A bit wasteful but this is currently the only way to create a yaml.Node
+	// from a struct
+	n := &yaml.Node{}
+	b, err := yaml.Marshal(v.rs.Addr().Interface())
+	if err == nil {
+		if err = yaml.Unmarshal(b, n); err == nil {
+			// n is the document node at this point.
+			n = n.Content[0]
+		}
+	}
+	return n, err
 }
 
 func (v *structMap) Merge(associations dgo.Map) dgo.Map {
@@ -307,8 +285,30 @@ func (v *structMap) SetType(t interface{}) {
 	panic(errors.New(`struct type is read only`))
 }
 
+func (v *structMap) String() string {
+	return ToStringERP(v)
+}
+
 func (v *structMap) StringKeys() bool {
 	return true
+}
+
+func (v *structMap) Type() dgo.Type {
+	return &exactMapType{v}
+}
+
+func (v *structMap) UnmarshalJSON(data []byte) error {
+	if v.frozen {
+		panic(frozenMap(`UnmarshalJSON`))
+	}
+	return json.Unmarshal(data, v.rs.Addr().Interface())
+}
+
+func (v *structMap) UnmarshalYAML(value *yaml.Node) error {
+	if v.frozen {
+		panic(frozenMap(`UnmarshalYAML`))
+	}
+	return value.Decode(v.rs.Addr().Interface())
 }
 
 func (v *structMap) Values() dgo.Array {

@@ -47,6 +47,11 @@ func Float(value float64) dgo.Float {
 	return internal.Float(value)
 }
 
+// Sensitive creates a new Sensitive that wraps the given value
+func Sensitive(v dgo.Value) dgo.Sensitive {
+	return internal.Sensitive(v)
+}
+
 // String returns the given string as a dgo.String
 func String(string string) dgo.String {
 	return internal.String(string)

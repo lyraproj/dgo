@@ -40,6 +40,9 @@ const (
 	// OpOne is the ternary operator returned by the OneOf type
 	OpOne
 
-	// OpMeta is the unary meta operator returned by the Meta type
+	// OpMeta is the unary operator returned by the Meta type
 	OpMeta
+
+	// OpSensitive is the unary operator returned by the Sensitive type
+	OpSensitive
 )

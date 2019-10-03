@@ -143,6 +143,10 @@ func (t exactFloatType) Equals(other interface{}) bool {
 	return t == other
 }
 
+func (t exactFloatType) Generic() dgo.Type {
+	return DefaultFloatType
+}
+
 func (t exactFloatType) HashCode() int {
 	return floatVal(t).HashCode() * 3
 }

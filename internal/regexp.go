@@ -75,6 +75,10 @@ func (t *exactRegexpType) Equals(other interface{}) bool {
 	return false
 }
 
+func (t *exactRegexpType) Generic() dgo.Type {
+	return DefaultRegexpType
+}
+
 func (t *exactRegexpType) HashCode() int {
 	return (*regexpVal)(t).HashCode()*31 + int(dgo.TiRegexpExact)
 }

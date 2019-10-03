@@ -159,6 +159,10 @@ func (t *allOfValueType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) 
 	return true
 }
 
+func (t *allOfValueType) Generic() dgo.Type {
+	return commonGeneric(t.slice, valueAsType)
+}
+
 func (t *allOfValueType) Equals(other interface{}) bool {
 	if ot, ok := other.(*allOfValueType); ok {
 		return (*array)(t).SameValues((*array)(ot))
@@ -206,6 +210,10 @@ func (t *allOfValueType) Type() dgo.Type {
 
 func (t *allOfValueType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiAllOfValue
+}
+
+func (t *allOfValueType) Value() dgo.Value {
+	return (*array)(t)
 }
 
 var notAnyType = &notType{DefaultAnyType}
@@ -420,13 +428,34 @@ func (t *oneOfType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiOneOf
 }
 
+// commonGeneric returns the least generic type that is assignable from all types given
+// in the slice.
+func commonGeneric(s []dgo.Value, fc func(dgo.Value) dgo.Type) dgo.Type {
+	var prev dgo.Type
+	for i := range s {
+		rt := Generic(fc(s[i]))
+		if prev != nil {
+			if prev.Assignable(rt) {
+				// prev is equal or more generic
+				continue
+			}
+			if !prev.Assignable(rt) {
+				// prev is not compatible. Fall back to Any
+				return DefaultAnyType
+			}
+		}
+		prev = rt // make prev more generic
+	}
+	return prev
+}
+
 func commonReflectTo(s []dgo.Value, fc func(dgo.Value) dgo.Type) reflect.Type {
 	var prev reflect.Type
 	for i := range s {
 		rt := fc(s[i]).ReflectType()
 		if prev != nil {
 			if rt.AssignableTo(prev) {
-				// prev is equal or more restrictive
+				// prev is equal or more generic
 				continue
 			}
 			if !prev.AssignableTo(rt) {
@@ -434,7 +463,7 @@ func commonReflectTo(s []dgo.Value, fc func(dgo.Value) dgo.Type) reflect.Type {
 				return reflectAnyType
 			}
 		}
-		prev = rt // make prev less restrictive
+		prev = rt // make prev more generic
 	}
 	return prev
 }

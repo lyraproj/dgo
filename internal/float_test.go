@@ -56,6 +56,8 @@ func TestFloatExact(t *testing.T) {
 
 	require.Equal(t, `3.1415927`, tp.String())
 
+	require.Same(t, typ.Float, typ.Generic(tp))
+
 	require.Instance(t, tp.Type(), tp)
 
 	require.Same(t, tp.ReflectType(), typ.Float.ReflectType())

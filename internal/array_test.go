@@ -163,6 +163,8 @@ func TestExactArrayType(t *testing.T) {
 	require.Equal(t, 2, tp.Max())
 	require.False(t, tp.Unbounded())
 
+	require.Equal(t, newtype.Array(typ.String), typ.Generic(tp))
+
 	require.NotAssignable(t, tp, newtype.AnyOf(newtype.Array(newtype.String(5, 5)), newtype.Array(newtype.String(8, 8))))
 	require.Equal(t, tp, tp)
 	require.Equal(t, vf.Values(vf.String(`a`).Type(), vf.String(`b`).Type()), tp.ElementTypes())

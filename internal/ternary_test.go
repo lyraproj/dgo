@@ -55,6 +55,10 @@ func TestAllOfType(t *testing.T) {
 	require.NotAssignable(t, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType(), tp)
 	require.Assignable(t, tp, newtype.Parse(`"abc"^/a/&/b/&/c/`))
 	require.Assignable(t, newtype.Parse(`/a/|/b/|/c/`), tp)
+
+	a := vf.Values(`a`, `b`, nil)
+	require.Same(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).Value(), a)
+	require.Same(t, typ.Any, typ.Generic(a.Type()).(dgo.ArrayType).ElementType())
 }
 
 func TestAnyOfType(t *testing.T) {

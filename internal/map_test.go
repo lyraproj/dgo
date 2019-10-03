@@ -133,6 +133,8 @@ func TestMap_ExactType(t *testing.T) {
 	require.NotEqual(t, t1, typ.String)
 	require.NotEqual(t, newtype.Map(typ.String, typ.Integer), t1)
 
+	require.Equal(t, newtype.Map(typ.String, typ.Integer), typ.Generic(t1))
+
 	require.True(t, t1.HashCode() > 0)
 	require.Equal(t, t1.HashCode(), t1.HashCode())
 	vm := t1.Type()
@@ -245,6 +247,8 @@ func TestMap_EntryType(t *testing.T) {
 
 		vm := vt.Type()
 		require.Instance(t, vm, vt)
+
+		require.Same(t, typ.Any, vt.(dgo.ExactType).Generic())
 
 		require.True(t, reflect.ValueOf(v).Type().AssignableTo(vt.ReflectType()))
 	})

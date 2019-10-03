@@ -36,6 +36,8 @@ func TestPattern(t *testing.T) {
 
 	require.Equal(t, `/^doh$/`, tp.String())
 
+	require.Same(t, typ.String, typ.Generic(tp))
+
 	s := "a\tb"
 	require.Equal(t, `/a\tb/`, newtype.Pattern(regexp.MustCompile(s)).String())
 
@@ -103,6 +105,8 @@ func TestStringExact(t *testing.T) {
 	require.Equal(t, 3, tp.Min())
 	require.Equal(t, 3, tp.Max())
 	require.False(t, tp.Unbounded())
+
+	require.Same(t, typ.String, typ.Generic(tp))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())

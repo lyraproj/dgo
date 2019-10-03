@@ -74,6 +74,10 @@ func (t *exactEntryType) Equals(other interface{}) bool {
 	return false
 }
 
+func (t *exactEntryType) Generic() dgo.Type {
+	return DefaultAnyType
+}
+
 func (t *exactEntryType) HashCode() int {
 	return (*mapEntry)(t).HashCode()
 }
@@ -1297,6 +1301,14 @@ func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bo
 		return ot.Instance(t.value)
 	}
 	return false
+}
+
+func (t *exactMapType) Generic() dgo.Type {
+	return &sizedMapType{
+		keyType:   t.KeyType().(dgo.ExactType).Generic(),
+		valueType: t.ValueType().(dgo.ExactType).Generic(),
+		min:       0,
+		max:       math.MaxInt64}
 }
 
 func (t *exactMapType) Equals(other interface{}) bool {

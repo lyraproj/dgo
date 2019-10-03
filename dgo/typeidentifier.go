@@ -61,6 +61,8 @@ const (
 	TiMap
 	// TiMapExact is the type identifier for exact Map type
 	TiMapExact
+	// TiMapEntry is the type identifier the generic map entry type
+	TiMapEntry
 	// TiMapEntryExact is the type identifier the map entry type of the exact Map type
 	TiMapEntryExact
 	// TiStruct is the type identifier for the Struct type
@@ -82,6 +84,9 @@ const (
 
 	// TiDgoString is the type identifier for for the DgoString type
 	TiDgoString
+
+	// TiSensitive is the type identifier for for the Sensitive type
+	TiSensitive
 )
 
 var tiLabels = map[TypeIdentifier]string{
@@ -119,6 +124,7 @@ var tiLabels = map[TypeIdentifier]string{
 	TiOneOf:         `one of`,
 	TiError:         `error`,
 	TiDgoString:     `dgo`,
+	TiSensitive:     `sensitive`,
 }
 
 func (ti TypeIdentifier) String() string {

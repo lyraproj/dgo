@@ -327,6 +327,10 @@ func (t *exactArrayType) Equals(other interface{}) bool {
 	return false
 }
 
+func (t *exactArrayType) Generic() dgo.Type {
+	return &sizedArrayType{elementType: t.ElementType().(dgo.ExactType).Generic(), min: 0, max: math.MaxInt64}
+}
+
 func (t *exactArrayType) HashCode() int {
 	return (*array)(t).HashCode()*7 + int(dgo.TiArrayExact)
 }

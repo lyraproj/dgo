@@ -210,6 +210,10 @@ func (t *exactStringType) Equals(v interface{}) bool {
 	return false
 }
 
+func (t *exactStringType) Generic() dgo.Type {
+	return DefaultStringType
+}
+
 func (t *exactStringType) HashCode() int {
 	return (*hstring)(t).HashCode() * 5
 }
@@ -307,6 +311,10 @@ func (t *patternType) Equals(v interface{}) bool {
 		return t.String() == ov.String()
 	}
 	return false
+}
+
+func (t *patternType) Generic() dgo.Type {
+	return DefaultStringType
 }
 
 func (t *patternType) HashCode() int {
