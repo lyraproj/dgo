@@ -19,6 +19,7 @@ type (
 // DefaultSensitiveType is the unconstrained Sensitive type
 var DefaultSensitiveType = &sensitiveType{wrapped: DefaultAnyType}
 
+// SensitiveType returns a Sensitive dgo.Type that wraps the given dgo.Type
 func SensitiveType(wrappedType dgo.Type) dgo.Type {
 	return &sensitiveType{wrapped: wrappedType}
 }

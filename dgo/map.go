@@ -18,14 +18,6 @@ type (
 		Value() Value
 	}
 
-	MapEntryType interface {
-		Type
-
-		KeyType() Type
-
-		ValueType() Type
-	}
-
 	// StructEntry describes a MapEntry
 	StructEntry interface {
 		MapEntry
