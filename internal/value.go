@@ -9,7 +9,9 @@ import (
 
 var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 
-// Value returns the dgo.Value representation of its argument
+// Value returns the dgo.Value representation of its argument. If the argument type
+// is known, it will be more efficient to use explicit methods such as Float(), String(),
+// Map(), etc.
 func Value(v interface{}) dgo.Value {
 	// This function is kept very small to enable inlining so this
 	// if statement should not be baked in to the grand switch
@@ -92,6 +94,16 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 	}
 	// Value as unsafe. Immutability is not guaranteed
 	return native(vr)
+}
+
+// FromValue converts a dgo.Value into a go native value. The given `dest` must be a pointer
+// to the expected native value.
+func FromValue(src dgo.Value, dest interface{}) {
+	dp := reflect.ValueOf(dest)
+	if reflect.Ptr != dp.Kind() {
+		panic("destination is not a pointer")
+	}
+	ReflectTo(src, dp.Elem())
 }
 
 // ReflectTo assigns the given dgo.Value to the given reflect.Value

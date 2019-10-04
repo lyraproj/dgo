@@ -2,8 +2,6 @@
 package vf
 
 import (
-	"reflect"
-
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 )
@@ -55,19 +53,4 @@ func Sensitive(v dgo.Value) dgo.Sensitive {
 // String returns the given string as a dgo.String
 func String(string string) dgo.String {
 	return internal.String(string)
-}
-
-// Value converts the given value into an immutable dgo.Value
-func Value(v interface{}) dgo.Value {
-	return internal.Value(v)
-}
-
-// ValueFromReflected converts the given reflected value into an immutable dgo.Value
-func ValueFromReflected(v reflect.Value) dgo.Value {
-	return internal.ValueFromReflected(v)
-}
-
-// ReflectTo assigns the given dgo.Value to the given reflect.Value
-func ReflectTo(src dgo.Value, dest reflect.Value) {
-	internal.ReflectTo(src, dest)
 }

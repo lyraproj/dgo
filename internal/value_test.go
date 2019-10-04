@@ -1,24 +1,15 @@
 package internal_test
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"regexp"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
-
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/vf"
 )
-
-func ExampleValueFromReflected() {
-	v1 := vf.ValueFromReflected(reflect.ValueOf([]string{`a`, `b`}))
-	v2 := vf.Value([]string{`a`, `b`})
-	fmt.Println(v1.Equals(v2))
-	// Output: true
-}
 
 func TestValue(t *testing.T) {
 	s := vf.String(`a`)
