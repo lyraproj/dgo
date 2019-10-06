@@ -631,18 +631,53 @@ func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	return &array{slice: arr, frozen: frozen}
 }
 
-// MutableArray creates a new mutable array that wraps the given slice. Unset entries in the
-// slice will be replaced by Nil.
-func MutableArray(t dgo.ArrayType, values []dgo.Value) dgo.Array {
-	if t != nil {
+func asArrayType(typ interface{}) dgo.ArrayType {
+	if typ == nil {
+		return nil
+	}
+
+	parseArrayType := func(s string) dgo.ArrayType {
+		if t, ok := Parse(s).(dgo.ArrayType); ok {
+			return t
+		}
+		panic(fmt.Errorf("expression '%s' does not evaluate to a slice type", s))
+	}
+
+	var mt dgo.ArrayType
+	switch typ := typ.(type) {
+	case dgo.ArrayType:
+		mt = typ
+	case string:
+		mt = parseArrayType(typ)
+	case dgo.String:
+		mt = parseArrayType(typ.GoString())
+	default:
+		mt = TypeFromReflected(reflect.TypeOf(typ)).(dgo.ArrayType)
+	}
+	return mt
+}
+
+// ArrayWithCapacity creates a new mutable array of the given type and initial capacity. The type can be nil, the
+// zero value of a go slice, a dgo.ArrayType, or a dgo string that parses to a dgo.ArrayType.
+func ArrayWithCapacity(capacity int, typ interface{}) dgo.Array {
+	mt := asArrayType(typ)
+	return &array{slice: make([]dgo.Value, 0, capacity), typ: mt, frozen: false}
+}
+
+// WrapSlice wraps the given slice in an array. The type can be nil, the zero value of a go slice, a dgo.ArrayType,
+// or a dgo string that parses to a dgo.ArrayType.
+// Unset entries in the slice will be replaced by Nil. A type check is performed on the slice unless the type is nil.
+func WrapSlice(typ interface{}, values []dgo.Value) dgo.Array {
+	mt := asArrayType(typ)
+	if mt != nil {
 		l := len(values)
-		if l < t.Min() {
-			panic(IllegalSize(t, l))
+		if l < mt.Min() {
+			panic(IllegalSize(mt, l))
 		}
-		if l > t.Max() {
-			panic(IllegalSize(t, l))
+		if l > mt.Max() {
+			panic(IllegalSize(mt, l))
 		}
-		if tt, ok := t.(*tupleType); ok {
+		if tt, ok := mt.(*tupleType); ok {
 			es := tt.slice
 			for i := range values {
 				e := values[i]
@@ -652,7 +687,7 @@ func MutableArray(t dgo.ArrayType, values []dgo.Value) dgo.Array {
 				}
 			}
 		} else {
-			et := t.ElementType()
+			et := mt.ElementType()
 			if DefaultAnyType != et {
 				for i := range values {
 					e := values[i]
@@ -663,16 +698,13 @@ func MutableArray(t dgo.ArrayType, values []dgo.Value) dgo.Array {
 			}
 		}
 	}
-	return &array{slice: ReplaceNil(values), typ: t, frozen: false}
+	ReplaceNil(values)
+	return &array{slice: values, typ: mt, frozen: false}
 }
 
 // MutableValues returns a frozen dgo.Array that represents the given values
-func MutableValues(t dgo.ArrayType, values []interface{}) dgo.Array {
-	s := make([]dgo.Value, len(values))
-	for i := range values {
-		s[i] = Value(values[i])
-	}
-	return MutableArray(t, s)
+func MutableValues(typ interface{}, values []interface{}) dgo.Array {
+	return WrapSlice(typ, valueSlice(values, false))
 }
 
 func valueSlice(values []interface{}, frozen bool) []dgo.Value {
@@ -1422,13 +1454,12 @@ func (v *array) WithValues(values ...interface{}) dgo.Array {
 }
 
 // ReplaceNil performs an in-place replacement of nil interfaces with the NilValue
-func ReplaceNil(vs []dgo.Value) []dgo.Value {
+func ReplaceNil(vs []dgo.Value) {
 	for i := range vs {
 		if vs[i] == nil {
 			vs[i] = Nil
 		}
 	}
-	return vs
 }
 
 // allInstance returns true when all elements of slice vs are assignable to the given type t

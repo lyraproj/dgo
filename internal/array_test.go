@@ -307,7 +307,7 @@ func TestTupleType(t *testing.T) {
 
 func TestTupleType_selfReference(t *testing.T) {
 	tp := newtype.Parse(`x={string,x}`).(dgo.ArrayType)
-	d := vf.MutableArray(nil, nil)
+	d := vf.MutableValues(nil)
 	d.Add(`hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
@@ -318,37 +318,37 @@ func TestTupleType_selfReference(t *testing.T) {
 	require.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
 }
 
-func TestMutableArray_withoutType(t *testing.T) {
-	a := vf.MutableArray(nil, []dgo.Value{nil})
+func TestMutableValues_withoutType(t *testing.T) {
+	a := vf.MutableValues(nil, nil)
 	require.True(t, vf.Nil == a.Get(0))
 }
 
-func TestMutableArray_maxSizeMismatch(t *testing.T) {
-	a := vf.MutableArray(newtype.Array(0, 1), []dgo.Value{vf.True})
+func TestMutableValues_maxSizeMismatch(t *testing.T) {
+	a := vf.MutableValues(newtype.Array(0, 1), true)
 	require.Panic(t, func() { a.Add(vf.False) }, `size constraint`)
 	require.Panic(t, func() { a.With(vf.False) }, `size constraint`)
 	require.Panic(t, func() { a.WithAll(vf.Values(false)) }, `size constraint`)
 	require.Panic(t, func() { a.WithValues(false) }, `size constraint`)
-	require.Panic(t, func() { vf.MutableArray(newtype.Array(0, 1), []dgo.Value{vf.True, vf.False}) }, `size constraint`)
+	require.Panic(t, func() { vf.MutableValues(newtype.Array(0, 1), true, false) }, `size constraint`)
 
 	a.WithAll(vf.Values()) // No panic
 	a.WithValues()         // No panic
 }
 
-func TestMutableArray_minSizeMismatch(t *testing.T) {
-	require.Panic(t, func() { vf.MutableArray(newtype.Array(1, 1), []dgo.Value{}) }, `size constraint`)
+func TestMutableValues_minSizeMismatch(t *testing.T) {
+	require.Panic(t, func() { vf.MutableValues(newtype.Array(1, 1)) }, `size constraint`)
 
-	a := vf.MutableArray(newtype.Array(typ.Boolean, 1, 1), []dgo.Value{vf.True})
+	a := vf.MutableValues(`[1,1]bool`, true)
 	require.Panic(t, func() { a.Remove(0) }, `size constraint`)
 	require.Panic(t, func() { a.RemoveValue(vf.True) }, `size constraint`)
 	require.Panic(t, func() { a.Add(vf.True) }, `size constraint`)
 	require.Panic(t, func() { a.AddAll(vf.Values(vf.True)) }, `size constraint`)
 }
 
-func TestMutableArray_elementTypeMismatch(t *testing.T) {
-	require.Panic(t, func() { vf.MutableArray(newtype.Array(typ.String), []dgo.Value{vf.True}) }, `cannot be assigned`)
+func TestMutableValues_elementTypeMismatch(t *testing.T) {
+	require.Panic(t, func() { vf.MutableValues(`[]string`, true) }, `cannot be assigned`)
 
-	a := vf.MutableArray(newtype.Array(typ.String), []dgo.Value{})
+	a := vf.MutableValues(`[]string`)
 	a.Add(`hello`)
 	a.AddAll(vf.Values(`hello`))
 	a.AddAll(vf.Values())
@@ -361,8 +361,38 @@ func TestMutableArray_elementTypeMismatch(t *testing.T) {
 	require.Panic(t, func() { a.Set(0, 3) }, `cannot be assigned`)
 }
 
-func TestMutableArray_tupleTypeMismatch(t *testing.T) {
-	require.Panic(t, func() { vf.MutableArray(newtype.Tuple(typ.String), []dgo.Value{vf.True}) }, `cannot be assigned`)
+func TestMutableValues_tupleTypeMismatch(t *testing.T) {
+	require.Panic(t, func() { vf.MutableValues(newtype.Tuple(typ.String), true) }, `cannot be assigned`)
+}
+
+func TestMutableArray(t *testing.T) {
+	s := []dgo.Value{nil}
+	a := vf.MutableArray(nil, s)
+	require.True(t, vf.Nil == s[0])
+	a.Set(0, `hello`)
+	require.Equal(t, `hello`, s[0])
+}
+
+func TestMutableArray_stringType(t *testing.T) {
+	a := vf.MutableArray(`[]int`, nil)
+	a.Add(3)
+	require.Equal(t, 3, a.Get(0))
+}
+
+func TestMutableArray_dgoStringType(t *testing.T) {
+	a := vf.MutableArray(vf.String(`[]int`), nil)
+	a.Add(3)
+	require.Equal(t, 3, a.Get(0))
+}
+
+func TestMutableArray_badType(t *testing.T) {
+	require.Panic(t, func() { vf.MutableArray(vf.String(`map[string]int`), nil) }, `does not evaluate to a slice type`)
+}
+
+func TestMutableArray_zeroType(t *testing.T) {
+	a := vf.MutableArray([]int{}, nil)
+	a.Add(3)
+	require.Equal(t, 3, a.Get(0))
 }
 
 func TestArray(t *testing.T) {
@@ -413,8 +443,7 @@ func TestArray_SetType(t *testing.T) {
 
 func TestArray_selfReference(t *testing.T) {
 	tp := newtype.Parse(`x=[](string|x)`).(dgo.ArrayType)
-	d := vf.MutableArray(tp, nil)
-	d.Add(`hello`)
+	d := vf.MutableValues(tp, `hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
@@ -631,7 +660,7 @@ func TestArray_CompareTo(t *testing.T) {
 }
 
 func TestArray_Copy(t *testing.T) {
-	a := vf.Values(`a`, `b`, vf.MutableArray(nil, []dgo.Value{vf.String(`c`)}))
+	a := vf.Values(`a`, `b`, vf.MutableValues(nil, `c`))
 	require.Same(t, a, a.Copy(true))
 	require.True(t, a.Get(2).(dgo.Freezable).Frozen())
 
@@ -702,7 +731,7 @@ func TestArray_EachWithIndex(t *testing.T) {
 }
 
 func TestArray_Freeze(t *testing.T) {
-	a := vf.MutableValues(nil, `a`, `b`, vf.MutableArray(nil, []dgo.Value{vf.String(`c`)}))
+	a := vf.MutableValues(nil, `a`, `b`, vf.MutableValues(nil, `c`))
 	require.False(t, a.Frozen())
 
 	sa := a.Get(2).(dgo.Array)
