@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"time"
 )
 
 type (
@@ -96,13 +97,22 @@ type (
 		GoString() string
 	}
 
-	// Regexp value is a string that implements the Value interface
+	// Regexp value is a *regexp.Regexp that implements the Value interface
 	Regexp interface {
 		Value
 		ReflectedValue
 
 		// GoRegexp returns the Go native representation of this value
 		GoRegexp() *regexp.Regexp
+	}
+
+	// Time value is a *time.Time that implements the Value interface
+	Time interface {
+		Value
+		ReflectedValue
+
+		// GoTime returns the Go native representation of this value
+		GoTime() *time.Time
 	}
 
 	// Boolean value

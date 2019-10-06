@@ -206,7 +206,14 @@ func init() {
 			writeIntRange(st.Min(), st.Max(), st.Inclusive(), sb)
 		},
 		dgo.TiRegexpExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			util.WriteString(sb, `regexp[`)
+			util.WriteString(sb, typ.TypeIdentifier().String())
+			util.WriteByte(sb, '[')
+			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
+			util.WriteByte(sb, ']')
+		},
+		dgo.TiTimeExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			util.WriteString(sb, typ.TypeIdentifier().String())
+			util.WriteByte(sb, '[')
 			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 			util.WriteByte(sb, ']')
 		},

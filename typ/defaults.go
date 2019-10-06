@@ -53,6 +53,9 @@ const Integer = internal.DefaultIntegerType
 // Regexp is a type that represents all regexps
 const Regexp = internal.DefaultRegexpType
 
+// Time is a type that represents all timestamps
+const Time = internal.DefaultTimeType
+
 // Binary is a type that represents all Binary values
 var Binary = internal.DefaultBinaryType
 

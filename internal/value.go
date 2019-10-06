@@ -3,6 +3,7 @@ package internal
 import (
 	"reflect"
 	"regexp"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 )
@@ -41,7 +42,9 @@ func value(v interface{}) dgo.Value {
 	case []int:
 		dv = Integers(v)
 	case *regexp.Regexp:
-		dv = (*regexpVal)(v)
+		dv = Regexp(v)
+	case time.Time:
+		dv = (*timeVal)(&v)
 	case error:
 		dv = &errw{v}
 	case reflect.Value:
@@ -123,5 +126,6 @@ var wellKnownTypes map[reflect.Type]dgo.Type
 func init() {
 	wellKnownTypes = map[reflect.Type]dgo.Type{
 		reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
+		reflect.TypeOf(time.Time{}):      DefaultTimeType,
 	}
 }

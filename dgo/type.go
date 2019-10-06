@@ -107,12 +107,10 @@ type (
 
 	// An AliasMap maps names to types and vice versa.
 	AliasMap interface {
-		// GetName returns the name for the given type and returns it or nil if no
-		// type has been added using that name has been added
+		// GetName returns the name for the given type or nil if the type isn't found
 		GetName(t Type) String
 
-		// GetType returns the type with the given name and returns it or nil if no
-		// such type has been added with that name.
+		// GetType returns the type with the given name or nil if the type isn't found
 		GetType(n String) Type
 
 		// Add adds the type t with the given name to this map

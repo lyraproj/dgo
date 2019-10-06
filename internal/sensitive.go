@@ -76,8 +76,8 @@ func (t *sensitiveType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 // Sensitive creates a new Sensitive that wraps the given value
-func Sensitive(v dgo.Value) dgo.Sensitive {
-	return &sensitive{v}
+func Sensitive(v interface{}) dgo.Sensitive {
+	return &sensitive{Value(v)}
 }
 
 func (v *sensitive) Equals(other interface{}) bool {

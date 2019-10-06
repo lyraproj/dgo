@@ -117,6 +117,11 @@ func (t *exactRegexpType) Value() dgo.Value {
 	return (*regexpVal)(t)
 }
 
+// Regexp returns the given regexp as a dgo.Regexp
+func Regexp(rx *regexp.Regexp) dgo.Regexp {
+	return (*regexpVal)(rx)
+}
+
 func (v *regexpVal) GoRegexp() *regexp.Regexp {
 	return (*regexp.Regexp)(v)
 }

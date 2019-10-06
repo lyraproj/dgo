@@ -61,8 +61,6 @@ const (
 	TiMap
 	// TiMapExact is the type identifier for exact Map type
 	TiMapExact
-	// TiMapEntry is the type identifier the generic map entry type
-	TiMapEntry
 	// TiMapEntryExact is the type identifier the map entry type of the exact Map type
 	TiMapEntryExact
 	// TiStruct is the type identifier for the Struct type
@@ -87,6 +85,11 @@ const (
 
 	// TiSensitive is the type identifier for for the Sensitive type
 	TiSensitive
+
+	// TiTime is the type identifier for for the Time type
+	TiTime
+	// TiTimeExact is the type identifier for the exact Time type
+	TiTimeExact
 )
 
 var tiLabels = map[TypeIdentifier]string{
@@ -109,6 +112,8 @@ var tiLabels = map[TypeIdentifier]string{
 	TiStringPattern: `pattern`,
 	TiRegexp:        `regexp`,
 	TiRegexpExact:   `regexp`,
+	TiTime:          `time`,
+	TiTimeExact:     `time`,
 	TiNative:        `native`,
 	TiArray:         `slice`,
 	TiArrayExact:    `slice`,
