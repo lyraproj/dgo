@@ -1,75 +1,76 @@
 package typ
 
 import (
+	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 )
 
 // AllOf is the default AllOf type. Since it contains no types, everything is
 // assignable to it.
-var AllOf = internal.DefaultAllOfType
+var AllOf dgo.TernaryType = internal.DefaultAllOfType
 
 // AnyOf is the default AnyOf type. Since it contains no types, nothing is
 // assignable to it except all AnyOf types.
-var AnyOf = internal.DefaultAnyOfType
+var AnyOf dgo.TernaryType = internal.DefaultAnyOfType
 
 // OneOf is the default OneOf type. Since it contains no types, nothing is
 // assignable to it except all OneOf types
-var OneOf = internal.DefaultOneOfType
+var OneOf dgo.TernaryType = internal.DefaultOneOfType
 
 // Array represents all array values
-const Array = internal.DefaultArrayType
+var Array dgo.ArrayType = internal.DefaultArrayType
 
 // Tuple represents all Array values since it has no elements with type constraints
-var Tuple = internal.DefaultTupleType
+var Tuple dgo.TupleType = internal.DefaultTupleType
 
 // Not represents a negated type. The default Not is negated Any so no other type
 // is assignable to it.
-var Not = internal.DefaultNotType
+var Not dgo.UnaryType = internal.DefaultNotType
 
 // Map is the unconstrained type. It represents all Map values
-const Map = internal.DefaultMapType
+var Map dgo.MapType = internal.DefaultMapType
 
 // Any is a type that represents all values
-const Any = internal.DefaultAnyType
+var Any dgo.Type = internal.DefaultAnyType
 
 // Nil is a type that represents the nil Value
-const Nil = internal.DefaultNilType
+var Nil dgo.Type = internal.DefaultNilType
 
 // Boolean is a type that represents both true and false
-const Boolean = internal.DefaultBooleanType
+var Boolean dgo.BooleanType = internal.DefaultBooleanType
 
 // False is a type that only represents the value false
-const False = internal.FalseType
+var False dgo.BooleanType = internal.FalseType
 
 // True is a type that only represents the value true
-const True = internal.TrueType
+var True dgo.BooleanType = internal.TrueType
 
 // Float is a type that represents all floats
-const Float = internal.DefaultFloatType
+var Float dgo.FloatRangeType = internal.DefaultFloatType
 
 // Integer is a type that represents all integers
-const Integer = internal.DefaultIntegerType
+var Integer dgo.IntegerRangeType = internal.DefaultIntegerType
 
 // Regexp is a type that represents all regexps
-const Regexp = internal.DefaultRegexpType
+var Regexp dgo.Type = internal.DefaultRegexpType
 
 // Time is a type that represents all timestamps
-const Time = internal.DefaultTimeType
+var Time dgo.Type = internal.DefaultTimeType
 
 // Binary is a type that represents all Binary values
-var Binary = internal.DefaultBinaryType
+var Binary dgo.BinaryType = internal.DefaultBinaryType
 
 // String is a type that represents all strings
-const String = internal.DefaultStringType
+var String dgo.StringType = internal.DefaultStringType
 
 // DgoString is a type that represents all strings with Dgo syntax
-const DgoString = internal.DefaultDgoStringType
+var DgoString dgo.StringType = internal.DefaultDgoStringType
 
 // Error is a type that represents all implementation of error
-const Error = internal.DefaultErrorType
+var Error dgo.Type = internal.DefaultErrorType
 
 // Native is a type that represents all Native values
-var Native = internal.DefaultNativeType
+var Native dgo.Type = internal.DefaultNativeType
 
 // Sensitive is a type that represents Sensitive values
-var Sensitive = internal.DefaultSensitiveType
+var Sensitive dgo.UnaryType = internal.DefaultSensitiveType
