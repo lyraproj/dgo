@@ -19,7 +19,6 @@ type (
 		keys       array
 		values     array
 		required   []byte
-		// TODO: Add entries where key is matched by Pattern or Ternary types
 	}
 
 	structEntry struct {
