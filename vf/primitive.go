@@ -46,6 +46,13 @@ func Time(ts time.Time) dgo.Time {
 	return internal.Time(ts)
 }
 
+// TimeFromString returns the given time string as a dgo.Time. The string must conform to
+// the time.RFC3339 or time.RFC3339Nano format. The function will panic if the given string
+// cannot be parsed.
+func TimeFromString(s string) dgo.Time {
+	return internal.TimeFromString(s)
+}
+
 // Regexp returns the given regexp as a dgo.Regexp
 func Regexp(rx *regexp.Regexp) dgo.Regexp {
 	return internal.Regexp(rx)

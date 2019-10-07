@@ -64,16 +64,26 @@ func TestTime(t *testing.T) {
 	met, _ := time.LoadLocation(`Europe/Zurich`)
 
 	v := vf.Time(ts)
-	require.Equal(t, v, ts)
+	require.Equal(t, v, v)
 	require.Equal(t, v, vf.Time(zt.In(met)))
 	require.NotEqual(t, v, ot)
 	require.NotEqual(t, v, `2019-10-06:16:15:00-01:00`)
 	require.Equal(t, v, v.GoTime())
 }
 
+func TestTimeFromString(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, `2019-10-06T07:15:00-07:00`)
+	v := vf.TimeFromString(`2019-10-06T07:15:00-07:00`)
+	require.Equal(t, v, ts)
+}
+
+func TestTimeFromString_bad(t *testing.T) {
+	require.Panic(t, func() { vf.TimeFromString(`2019-13-06T07:15:00-07:00`) }, `month out of range`)
+}
+
 func TestTime_ReflectTo(t *testing.T) {
 	var ex *time.Time
-	ts, _ := time.Parse(time.RFC3339, `2019-10-06:16:15:00-01:00`)
+	ts, _ := time.Parse(time.RFC3339, `2019-10-06T16:15:00-01:00`)
 	v := vf.Time(ts)
 	vf.ReflectTo(v, reflect.ValueOf(&ex).Elem())
 	require.NotNil(t, ex)
