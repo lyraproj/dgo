@@ -990,7 +990,6 @@ func TestArray_Sort(t *testing.T) {
 	b = a.Sort()
 
 	require.Equal(t, b, vf.Values(-3.14, 4.2, `hello`))
-
 }
 
 func TestArray_ToMap(t *testing.T) {

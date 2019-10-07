@@ -420,7 +420,6 @@ func (t *tupleType) deepAssignable2(guard dgo.RecursionGuard, ot *exactArrayType
 		}
 	}
 	return true
-
 }
 
 func (t *tupleType) deepAssignable3(guard dgo.RecursionGuard, ot *sizedArrayType) bool {
