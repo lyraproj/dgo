@@ -3,14 +3,13 @@ package internal_test
 import (
 	"errors"
 	"testing"
-
-	"github.com/lyraproj/dgo/internal"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
+	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
-
-	require "github.com/lyraproj/dgo/dgo_test"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,7 +24,7 @@ func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
 }
 
 func TestMap_MarshalYaml(t *testing.T) {
-	m := vf.Map("a", 1, "b", "two", "c", vf.Values(`hello`, true, 1, 3.14, vf.BinaryFromString(`AQQD`), typ.String, nil))
+	m := vf.Map("a", 1, "b", "two", "c", vf.Values(`hello`, true, 1, 3.14, nil))
 	b, err := yaml.Marshal(m)
 	require.Nil(t, err)
 	require.Equal(t, `a: 1
@@ -35,9 +34,32 @@ c:
   - true
   - 1
   - 3.14
-  - !!binary AQQD
-  - !puppet.com,2019:dgo/type string
   - null
+`, string(b))
+}
+
+func TestMap_MarshalYaml_binary(t *testing.T) {
+	m := vf.Map("b", vf.BinaryFromString(`AQQD`))
+	b, err := yaml.Marshal(m)
+	require.Nil(t, err)
+	require.Equal(t, `b: !!binary AQQD
+`, string(b))
+}
+
+func TestMap_MarshalYaml_timestamp(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, `2019-10-06T07:15:00-07:00`)
+	m := vf.Map("t", vf.Time(ts))
+	b, err := yaml.Marshal(m)
+	require.Nil(t, err)
+	require.Equal(t, `t: !!timestamp 2019-10-06T07:15:00-07:00
+`, string(b))
+}
+
+func TestMap_MarshalYaml_type(t *testing.T) {
+	m := vf.Map("t", typ.String)
+	b, err := yaml.Marshal(m)
+	require.Nil(t, err)
+	require.Equal(t, `t: !puppet.com,2019:dgo/type string
 `, string(b))
 }
 
@@ -70,12 +92,33 @@ c:
   - true
   - 1
   - 3.14
-  - !!binary AQQD
-  - !puppet.com,2019:dgo/type string
   - null
 `), m))
-	require.Equal(t, vf.Map("a", 1, "b", "two", "c", vf.Values(
-		`hello`, true, 1, 3.14, vf.BinaryFromString(`AQQD`), typ.String, nil)), m)
+	require.Equal(t, vf.Map("a", 1, "b", "two", "c", vf.Values(`hello`, true, 1, 3.14, nil)), m)
+}
+
+func TestMap_UnmarshalYAML_binary(t *testing.T) {
+	m := vf.MutableMap(nil)
+	require.Ok(t, yaml.Unmarshal([]byte("b: !!binary AQQD\n"), m))
+	require.Equal(t, vf.Map("b", vf.BinaryFromString(`AQQD`)), m)
+}
+
+func TestMap_UnmarshalYAML_timestamp(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, `2019-10-06T07:15:00-07:00`)
+	m := vf.MutableMap(nil)
+	require.Ok(t, yaml.Unmarshal([]byte("t: !!timestamp 2019-10-06T07:15:00-07:00\n"), m))
+	require.Equal(t, vf.Map("t", vf.Time(ts)), m)
+}
+
+func TestMap_UnmarshalYAML_bad_timestamp(t *testing.T) {
+	m := vf.MutableMap(nil)
+	require.Panic(t, func() { _ = yaml.Unmarshal([]byte("t: !!timestamp 2019-13-06T07:15:00-07:00\n"), m) }, `cannot decode`)
+}
+
+func TestMap_UnmarshalYAML_type(t *testing.T) {
+	m := vf.MutableMap(nil)
+	require.Ok(t, yaml.Unmarshal([]byte("t: !puppet.com,2019:dgo/type string\n"), m))
+	require.Equal(t, vf.Map("t", typ.String), m)
 }
 
 func TestMap_UnmarshalYAML_TypedMap(t *testing.T) {

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	"gopkg.in/yaml.v3"
@@ -65,14 +66,12 @@ func yamlDecodeScalar(n *yaml.Node) (dgo.Value, error) {
 		v = floatVal(x)
 	case `!!str`:
 		v = makeHString(n.Value)
-	/* TODO: timestamp and binary
 	case `!!timestamp`:
 		var x time.Time
 		if err := n.Decode(&x); err != nil {
 			panic(err)
 		}
-		v = Timestamp(x)
-	*/
+		v = Time(x)
 	case `!!binary`:
 		v = BinaryFromString(n.Value)
 	case `!puppet.com,2019:dgo/type`:

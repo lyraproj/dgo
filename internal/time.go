@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -136,6 +137,14 @@ func (v *timeVal) GoTime() *time.Time {
 
 func (v *timeVal) HashCode() int {
 	return int((*time.Time)(v).UnixNano())
+}
+
+func (v *timeVal) MarshalYAML() (interface{}, error) {
+	return &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Tag:   `!!timestamp`,
+		Value: (*time.Time)(v).Format(time.RFC3339Nano),
+		Style: yaml.TaggedStyle}, nil
 }
 
 func (v *timeVal) ReflectTo(value reflect.Value) {

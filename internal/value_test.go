@@ -170,3 +170,16 @@ func TestValue_reflected(t *testing.T) {
 
 	require.Panic(t, func() { vf.Value(reflect.ValueOf(struct{ bar int }{bar: 1}).Field(0)) }, `field or method`)
 }
+
+func TestFromValue(t *testing.T) {
+	v := vf.Integer(32)
+	var vc int
+	vf.FromValue(v, &vc)
+	require.Equal(t, v, vc)
+}
+
+func TestFromValue_notPointer(t *testing.T) {
+	v := vf.Integer(32)
+	var vc int
+	require.Panic(t, func() { vf.FromValue(v, vc) }, `not a pointer`)
+}
