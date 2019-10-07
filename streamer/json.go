@@ -16,19 +16,18 @@ const (
 	afterKey
 )
 
-// JSON creates a new streamer that will produce JSON when
-// receiving values
+// JSON creates a new Consumer encode everything into JSON
 func JSON(out io.Writer) Consumer {
-	return &jsonStreamer{out: out, state: firstInArray, dialect: DgoDialect()}
+	return &jsonEncoder{out: out, state: firstInArray, dialect: DgoDialect()}
 }
 
-type jsonStreamer struct {
+type jsonEncoder struct {
 	out     io.Writer
 	dialect Dialect
 	state   int
 }
 
-func (j *jsonStreamer) AddArray(len int, doer dgo.Doer) {
+func (j *jsonEncoder) AddArray(len int, doer dgo.Doer) {
 	j.delimit(func() {
 		j.state = firstInArray
 		assertOk(j.out.Write([]byte{'['}))
@@ -37,7 +36,7 @@ func (j *jsonStreamer) AddArray(len int, doer dgo.Doer) {
 	})
 }
 
-func (j *jsonStreamer) AddMap(len int, doer dgo.Doer) {
+func (j *jsonEncoder) AddMap(len int, doer dgo.Doer) {
 	j.delimit(func() {
 		assertOk(j.out.Write([]byte{'{'}))
 		j.state = firstInObject
@@ -46,35 +45,35 @@ func (j *jsonStreamer) AddMap(len int, doer dgo.Doer) {
 	})
 }
 
-func (j *jsonStreamer) Add(element dgo.Value) {
+func (j *jsonEncoder) Add(element dgo.Value) {
 	j.delimit(func() {
 		j.write(element)
 	})
 }
 
-func (j *jsonStreamer) AddRef(ref int) {
+func (j *jsonEncoder) AddRef(ref int) {
 	j.delimit(func() {
 		assertOk(fmt.Fprintf(j.out, `{"%s":%d}`, j.dialect.RefKey(), ref))
 	})
 }
 
-func (j *jsonStreamer) CanDoBinary() bool {
+func (j *jsonEncoder) CanDoBinary() bool {
 	return false
 }
 
-func (j *jsonStreamer) CanDoComplexKeys() bool {
+func (j *jsonEncoder) CanDoComplexKeys() bool {
 	return false
 }
 
-func (j *jsonStreamer) CanDoTime() bool {
+func (j *jsonEncoder) CanDoTime() bool {
 	return false
 }
 
-func (j *jsonStreamer) StringDedupThreshold() int {
+func (j *jsonEncoder) StringDedupThreshold() int {
 	return 20
 }
 
-func (j *jsonStreamer) delimit(doer dgo.Doer) {
+func (j *jsonEncoder) delimit(doer dgo.Doer) {
 	switch j.state {
 	case firstInArray:
 		doer()
@@ -96,7 +95,7 @@ func (j *jsonStreamer) delimit(doer dgo.Doer) {
 	}
 }
 
-func (j *jsonStreamer) write(e dgo.Value) {
+func (j *jsonEncoder) write(e dgo.Value) {
 	var v []byte
 	var err error
 	switch e := e.(type) {

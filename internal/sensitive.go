@@ -25,21 +25,33 @@ func SensitiveType(wrappedType dgo.Type) dgo.Type {
 }
 
 func (t *sensitiveType) Assignable(other dgo.Type) bool {
+	return Assignable(nil, t, other)
+}
+
+func (t *sensitiveType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
 	if ot, ok := other.(*sensitiveType); ok {
-		return t.wrapped.Assignable(ot.wrapped)
+		return Assignable(guard, t.wrapped, ot.wrapped)
 	}
-	return CheckAssignableTo(nil, other, t)
+	return CheckAssignableTo(guard, other, t)
 }
 
 func (t *sensitiveType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *sensitiveType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*sensitiveType); ok {
-		return t.wrapped.Equals(ot.wrapped)
+		return equals(seen, t.wrapped, ot.wrapped)
 	}
 	return false
 }
 
 func (t *sensitiveType) HashCode() int {
-	return int(dgo.TiSensitive)*31 + t.wrapped.HashCode()
+	return deepHashCode(nil, t)
+}
+
+func (t *sensitiveType) deepHashCode(seen []dgo.Value) int {
+	return int(dgo.TiSensitive)*31 + deepHashCode(seen, t.wrapped)
 }
 
 func (t *sensitiveType) Instance(value interface{}) bool {
@@ -81,8 +93,12 @@ func Sensitive(v interface{}) dgo.Sensitive {
 }
 
 func (v *sensitive) Equals(other interface{}) bool {
+	return equals(nil, v, other)
+}
+
+func (v *sensitive) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ov, ok := other.(*sensitive); ok {
-		return v.value.Equals(ov.value)
+		return equals(seen, v.value, ov.value)
 	}
 	return false
 }
@@ -108,7 +124,11 @@ func (v *sensitive) FrozenCopy() dgo.Value {
 }
 
 func (v *sensitive) HashCode() int {
-	return v.value.HashCode() * 7
+	return deepHashCode(nil, v)
+}
+
+func (v *sensitive) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, v.value) * 7
 }
 
 func (v *sensitive) String() string {

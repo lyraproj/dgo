@@ -16,7 +16,7 @@ import (
 )
 
 func TestSensitiveType(t *testing.T) {
-	tp := typ.Sensitive
+	var tp dgo.Type = typ.Sensitive
 	s := vf.Sensitive(vf.Integer(0))
 	require.Assignable(t, tp, tp)
 	require.NotAssignable(t, tp, typ.Any)
@@ -25,8 +25,12 @@ func TestSensitiveType(t *testing.T) {
 	require.Assignable(t, newtype.Sensitive(typ.Integer), s.Type())
 	require.Instance(t, tp.Type(), s.Type())
 
+	tp = s.Type()
 	require.Equal(t, tp, tp)
+	require.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
+	require.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
 	require.NotEqual(t, tp, typ.Any)
+	require.NotEqual(t, tp, newtype.Array(typ.String))
 
 	require.NotEqual(t, 0, tp.HashCode())
 	require.Equal(t, tp.HashCode(), tp.HashCode())
@@ -35,7 +39,7 @@ func TestSensitiveType(t *testing.T) {
 	require.NotInstance(t, tp, vf.Integer(0))
 	require.True(t, reflect.TypeOf(s).AssignableTo(tp.ReflectType()))
 	require.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
-	require.Equal(t, dgo.OpSensitive, tp.Operator())
+	require.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
 	require.Equal(t, `sensitive[int]`, s.Type().String())
 }
 
@@ -44,7 +48,7 @@ func TestSensitive(t *testing.T) {
 	require.Equal(t, s, s)
 	require.Equal(t, s, vf.Sensitive(vf.String(`a`)))
 	require.NotEqual(t, s, vf.Sensitive(vf.String(`b`)))
-	require.NotEqual(t, s, vf.String(`a`))
+	require.NotEqual(t, s, vf.Strings(`a`))
 
 	require.True(t, s.Frozen())
 	a := vf.MutableValues(nil, `a`)
