@@ -1,3 +1,5 @@
+// Package require contains the test helper functions for easy testing of assignability, instance of, equality, and
+// panic assertions.
 package require
 
 import (

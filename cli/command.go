@@ -1,3 +1,4 @@
+// Package cli contains the dgo CLI (Command Line Interface)
 package cli
 
 import (

@@ -1,3 +1,4 @@
+// Package streamer contains the logic to convert dgo values into sequences of data and vice versa.
 package streamer
 
 import (

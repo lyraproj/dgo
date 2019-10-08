@@ -1,3 +1,4 @@
+// Package main contains the main dgo CLI command.
 package main
 
 import (

@@ -1,3 +1,4 @@
+// Package typ contains the static dgo types such as typ.String and typ.Any
 package typ
 
 import (
