@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -31,6 +32,10 @@ type (
 
 	// exactStringType only represents its own string
 	exactStringType hstring
+
+	ciStringType struct {
+		exactStringType
+	}
 
 	// patternType constrains its instances to those that match the regexp pattern
 	patternType struct {
@@ -131,8 +136,23 @@ func EnumType(strings []string) dgo.Type {
 	}
 	ts := make([]dgo.Value, len(strings))
 	for i := range strings {
-		et := (*exactStringType)(makeHString(strings[i]))
-		ts[i] = et
+		ts[i] = (*exactStringType)(makeHString(strings[i]))
+	}
+	return &anyOfType{slice: ts, frozen: true}
+}
+
+// CiEnumType returns a StringType that represents all strings that are equal to one of the given strings
+// under Unicode case-folding.
+func CiEnumType(strings []string) dgo.Type {
+	switch len(strings) {
+	case 0:
+		return &notType{DefaultAnyType}
+	case 1:
+		return CiStringType(strings[0])
+	}
+	ts := make([]dgo.Value, len(strings))
+	for i := range strings {
+		ts[i] = CiStringType(strings[i])
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
@@ -144,7 +164,7 @@ func String(s string) dgo.String {
 
 func (t defaultStringType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultStringType, defaultDgoStringType, *exactStringType, *sizedStringType, *patternType:
+	case defaultStringType, defaultDgoStringType, *exactStringType, *ciStringType, *sizedStringType, *patternType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -258,6 +278,53 @@ func (t *exactStringType) Unbounded() bool {
 
 func (t *exactStringType) Value() dgo.Value {
 	return makeHString(t.s)
+}
+
+// CiStringType returns a StringType that is constrained to strings that are equal to the given string under
+// Unicode case-folding.
+func CiStringType(si interface{}) dgo.StringType {
+	var s string
+	if ov, ok := si.(*hstring); ok {
+		s = ov.s
+	} else {
+		s = si.(string)
+	}
+	return &ciStringType{exactStringType: exactStringType{s: strings.ToLower(s)}}
+}
+
+func (t *ciStringType) Assignable(other dgo.Type) bool {
+	if ot, ok := other.(*exactStringType); ok {
+		return strings.EqualFold(t.s, ot.s)
+	}
+	if ot, ok := other.(*ciStringType); ok {
+		return t.s == ot.s
+	}
+	return CheckAssignableTo(nil, other, t)
+}
+
+func (t *ciStringType) Equals(v interface{}) bool {
+	if ot, ok := v.(*ciStringType); ok {
+		return t.s == ot.s
+	}
+	return false
+}
+
+func (t *ciStringType) Instance(v interface{}) bool {
+	if ov, ok := v.(*hstring); ok {
+		return strings.EqualFold(t.s, ov.s)
+	}
+	if ov, ok := v.(string); ok {
+		return strings.EqualFold(t.s, ov)
+	}
+	return false
+}
+
+func (t *ciStringType) Type() dgo.Type {
+	return &metaType{t}
+}
+
+func (t *ciStringType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiCiString
 }
 
 // PatternType returns a StringType that is constrained to strings that match the given
@@ -377,6 +444,8 @@ func (t *sizedStringType) Assignable(other dgo.Type) bool {
 	case defaultDgoStringType:
 		return t.min <= 1
 	case *exactStringType:
+		return t.IsInstance(ot.s)
+	case *ciStringType:
 		return t.IsInstance(ot.s)
 	case *sizedStringType:
 		return t.min <= ot.min && t.max >= ot.max

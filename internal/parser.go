@@ -21,6 +21,7 @@ const (
 	exRightParen
 	exRightAngle
 	exIntOrFloat
+	exStringLiteral
 	exTypeExpression
 	exAliasRef
 	exEnd
@@ -73,6 +74,8 @@ func expect(state int) (s string) {
 		s = `'>'`
 	case exIntOrFloat:
 		s = `an integer or a float`
+	case exStringLiteral:
+		s = `a literal string`
 	case exTypeExpression:
 		s = `a type expression`
 	case exAliasRef:
@@ -364,13 +367,28 @@ func (p *parser) allOf(t *token) {
 
 func (p *parser) unary(t *token) {
 	negate := false
+	ciString := false
 	if t.i == '!' {
 		negate = true
 		t = p.nextToken()
 	}
+	if t.i == '^' {
+		ciString = true
+		t = p.nextToken()
+	}
+
 	p.typeExpression(t)
+
+	if ciString {
+		if s, ok := p.popLast().(dgo.String); ok {
+			p.d = append(p.d, CiStringType(s))
+		} else {
+			panic(badSyntax(t, exStringLiteral))
+		}
+	}
 	if negate {
-		p.d = append(p.d, NotType(p.popLastType()))
+		nt := NotType(p.popLastType())
+		p.d = append(p.d, nt)
 	}
 }
 

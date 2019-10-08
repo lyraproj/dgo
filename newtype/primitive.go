@@ -23,9 +23,21 @@ func Pattern(pattern *regexp.Regexp) dgo.Type {
 	return internal.PatternType(pattern)
 }
 
-// Enum returns an AnyOf that represents all of the given strings
+// CiString returns a StringType that is constrained to strings that are equal to the given string under
+// Unicode case-folding.
+func CiString(s interface{}) dgo.StringType {
+	return internal.CiStringType(s)
+}
+
+// Enum returns a Type that represents all of the given strings.
 func Enum(strings ...string) dgo.Type {
 	return internal.EnumType(strings)
+}
+
+// CiEnum returns a Type that represents all strings that are equal to one of the given strings
+// under Unicode case-folding.
+func CiEnum(strings ...string) dgo.Type {
+	return internal.CiEnumType(strings)
 }
 
 // IntegerRange returns a dgo.Type that is limited to the inclusive range given by min and max

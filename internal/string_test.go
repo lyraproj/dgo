@@ -115,6 +115,21 @@ func TestStringExact(t *testing.T) {
 	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 }
 
+func TestCiString(t *testing.T) {
+	tp := newtype.CiString(`abc`)
+	require.Equal(t, tp, tp)
+	require.Equal(t, tp, newtype.CiString(`ABC`))
+	require.NotEqual(t, tp, vf.String(`abc`).Type())
+
+	require.Instance(t, tp, `abc`)
+	require.Instance(t, tp, `ABC`)
+	require.Instance(t, tp, vf.String(`aBc`))
+	require.NotInstance(t, tp, `cde`)
+	require.NotInstance(t, tp, []byte(`abc`))
+
+	require.Instance(t, tp.Type(), tp)
+}
+
 func TestString_badOneArg(t *testing.T) {
 	require.Panic(t, func() { newtype.String(true) }, `illegal argument 1`)
 }

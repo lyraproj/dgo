@@ -136,11 +136,29 @@ func TestEnum(t *testing.T) {
 	require.Instance(t, tp, `foo`)
 	require.NotInstance(t, tp, `oops`)
 	require.Assignable(t, typ.String, tp)
-	require.NotAssignable(t, newtype.String(3, 3), tp)
+	require.NotAssignable(t, tp, newtype.CiEnum(`f`, `foo`, `foobar`))
 	require.Assignable(t, newtype.String(1, 6), tp)
+	require.NotAssignable(t, newtype.String(3, 3), tp)
 	require.Assignable(t, newtype.Pattern(regexp.MustCompile(`f`)), tp)
 	require.NotAssignable(t, newtype.Pattern(regexp.MustCompile(`o`)), tp)
 	require.Equal(t, tp, newtype.Enum(`foo`, `f`, `foobar`))
 	require.NotEqual(t, tp, newtype.Enum(`foo`, `f`, `foobar`, `x`))
 	require.NotEqual(t, tp, newtype.Enum(`foo`, `foobar`))
+}
+
+func TestCiEnum(t *testing.T) {
+	tp := newtype.CiEnum()
+	require.Equal(t, tp, newtype.Not(typ.Any))
+
+	tp = newtype.CiEnum(`f`, `foo`, `foobar`)
+	require.Instance(t, tp, `FOO`)
+	require.NotInstance(t, tp, `Oops`)
+	require.Assignable(t, typ.String, tp)
+	require.NotAssignable(t, newtype.String(3, 3), tp)
+	require.Assignable(t, newtype.String(1, 6), tp)
+	require.Assignable(t, tp, newtype.CiEnum(`foo`))
+	require.NotAssignable(t, newtype.Pattern(regexp.MustCompile(`f`)), tp)
+	require.Assignable(t, tp, newtype.Enum(`f`, `foo`, `foobar`))
+
+	require.Equal(t, `^"f"|^"foo"|^"foobar"`, tp.String())
 }

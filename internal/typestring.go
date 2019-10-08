@@ -240,6 +240,10 @@ func init() {
 				util.WriteByte(sb, ']')
 			}
 		},
+		dgo.TiCiString: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			util.WriteByte(sb, '^')
+			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
+		},
 		dgo.TiNot: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			nt := typ.(dgo.UnaryType)
 			util.WriteByte(sb, '!')

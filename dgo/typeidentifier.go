@@ -41,6 +41,8 @@ const (
 	TiStringSized
 	// TiStringPattern is the type identifier for the String pattern type
 	TiStringPattern
+	// TiCiString is the type identifier for the case insensitive String type
+	TiCiString
 
 	// TiRegexp is the type identifier for the Regexp type
 	TiRegexp
@@ -110,6 +112,7 @@ var tiLabels = map[TypeIdentifier]string{
 	TiStringExact:   `string`,
 	TiStringSized:   `string`,
 	TiStringPattern: `pattern`,
+	TiCiString:      `string`,
 	TiRegexp:        `regexp`,
 	TiRegexpExact:   `regexp`,
 	TiTime:          `time`,

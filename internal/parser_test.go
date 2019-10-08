@@ -54,6 +54,12 @@ func TestParse_exact(t *testing.T) {
 	require.Equal(t, `{...}`, st.String())
 }
 
+func TestParse_ciEnum(t *testing.T) {
+	st := newtype.Parse(`^"foo"|^"fee"`)
+	require.Equal(t, newtype.CiEnum(`foo`, `fee`), st)
+	require.Panic(t, func() { newtype.Parse(`^32`) }, `expected a literal string, got 32`)
+}
+
 func TestParse_sized(t *testing.T) {
 	require.Equal(t, newtype.String(1), newtype.Parse(`string[1]`))
 	require.Equal(t, newtype.String(1, 10), newtype.Parse(`string[1,10]`))
