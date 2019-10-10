@@ -142,8 +142,8 @@ func (v *timeVal) Equals(other interface{}) bool {
 	return false
 }
 
-func (v *timeVal) GoTime() *time.Time {
-	return (*time.Time)(v)
+func (v *timeVal) GoTime() time.Time {
+	return *(*time.Time)(v)
 }
 
 func (v *timeVal) HashCode() int {

@@ -112,7 +112,7 @@ type (
 		ReflectedValue
 
 		// GoTime returns the Go native representation of this value
-		GoTime() *time.Time
+		GoTime() time.Time
 	}
 
 	// Boolean value
