@@ -75,3 +75,6 @@ var Native dgo.Type = internal.DefaultNativeType
 
 // Sensitive is a type that represents Sensitive values
 var Sensitive dgo.UnaryType = internal.DefaultSensitiveType
+
+// Type is a type that represents all types
+var Type dgo.Type = internal.DefaultMetaType

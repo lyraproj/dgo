@@ -13,9 +13,12 @@ type metaType struct {
 	tp dgo.Type
 }
 
+// DefaultMetaType is the unconstrained meta type
+var DefaultMetaType = &metaType{tp: DefaultAnyType}
+
 func (t *metaType) Type() dgo.Type {
 	if t.tp == nil {
-		return t
+		return t // type of meta type is meta type
 	}
 	return &metaType{nil} // Short circuit meta chain
 }

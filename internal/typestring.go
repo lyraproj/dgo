@@ -250,7 +250,13 @@ func init() {
 			buildTypeString(seen, nt.Operand(), typePrio, sb)
 		},
 		dgo.TiNative: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			util.WriteString(sb, typ.(dgo.NativeType).GoType().String())
+			rt := typ.(dgo.NativeType).GoType()
+			util.WriteString(sb, `native`)
+			if rt != nil {
+				util.WriteByte(sb, '[')
+				util.WriteString(sb, strconv.Quote(rt.String()))
+				util.WriteByte(sb, ']')
+			}
 		},
 		dgo.TiMeta: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			nt := typ.(dgo.UnaryType)

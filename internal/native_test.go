@@ -99,7 +99,7 @@ func TestNativeType(t *testing.T) {
 	require.NotEqual(t, 0, nt.HashCode())
 	require.Equal(t, nt.HashCode(), nt.HashCode())
 
-	require.Equal(t, `chan bool`, ct.String())
+	require.Equal(t, `native["chan bool"]`, ct.String())
 
 	// Force native of something that will never be native, just to
 	// force a kind that is unknown to native
