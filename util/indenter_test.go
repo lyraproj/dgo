@@ -77,6 +77,12 @@ func TestIndenter_Level(t *testing.T) {
 	require.Equal(t, 1, i.Indent().Level())
 }
 
+func TestIndenter_Printf(t *testing.T) {
+	i := util.NewIndenter(``)
+	i.Printf(`the %s %d`, `digit`, 12)
+	require.Equal(t, "the digit 12", i.String())
+}
+
 func TestIndenter_Reset(t *testing.T) {
 	i := util.NewIndenter(``)
 	i.Append(`one`)

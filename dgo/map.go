@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/lyraproj/dgo/util"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -43,8 +42,6 @@ type (
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler
-		yaml.Marshaler
-		yaml.Unmarshaler
 
 		// All returns true if the predicate returns true for all entries of this Map.
 		All(predicate EntryPredicate) bool
@@ -136,6 +133,14 @@ type (
 
 		// WithoutAll returns a Map that is guaranteed to have no values associated with any of the given keys.
 		WithoutAll(keys Array) Map
+	}
+
+	// A Struct represents a go struct as a Value.
+	Struct interface {
+		Map
+
+		// GoStruct returns a pointer to the wrapped struct value.
+		GoStruct() interface{}
 	}
 
 	// MapType is implemented by types representing implementations of the Map value

@@ -9,7 +9,6 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/vf"
-	"gopkg.in/yaml.v3"
 )
 
 func Test_structMap_Any(t *testing.T) {
@@ -230,6 +229,17 @@ func Test_structMap_HashCode(t *testing.T) {
 	require.Equal(t, m.HashCode(), m.HashCode())
 }
 
+func Test_structMap_GoStruct(t *testing.T) {
+	type structA struct {
+		A string
+		B int
+	}
+	s := structA{A: `Alpha`, B: 32}
+	m := vf.Map(&s).(dgo.Struct)
+	_, ok := m.GoStruct().(*structA)
+	require.True(t, ok)
+}
+
 func Test_structMap_Keys(t *testing.T) {
 	type structA struct {
 		A string
@@ -266,42 +276,6 @@ func Test_structMap_MarshalJSON(t *testing.T) {
 	j, err := m.MarshalJSON()
 	require.Ok(t, err)
 	require.Equal(t, `{"a":"Alpha","b":32}`, string(j))
-}
-
-func Test_structMap_MarshalYAML(t *testing.T) {
-	type structA struct {
-		A string `json:"a"`
-		B int    `json:"b"`
-	}
-
-	type structAyaml struct {
-		A string `yaml:"a"`
-		B int    `yaml:"b"`
-	}
-
-	s := structA{A: `Alpha`, B: 32}
-	m := vf.Map(&s)
-	j, err := yaml.Marshal(m)
-	require.Ok(t, err)
-	require.Equal(t, `a: Alpha
-b: 32
-`, string(j))
-
-	s2 := structAyaml{A: `Alpha`, B: 32}
-	m = vf.Map(&s2)
-	j, err = yaml.Marshal(m)
-	require.Ok(t, err)
-	require.Equal(t, `a: Alpha
-b: 32
-`, string(j))
-
-	m = vf.Map(`nested`, m)
-	j, err = yaml.Marshal(m)
-	require.Ok(t, err)
-	require.Equal(t, `nested:
-    a: Alpha
-    b: 32
-`, string(j))
 }
 
 func Test_structMap_Merge(t *testing.T) {
@@ -471,23 +445,6 @@ func Test_structMap_UnmarshalJSON(t *testing.T) {
 
 	m.Freeze()
 	require.Panic(t, func() { _ = json.Unmarshal([]byte(`{"b":"two"}`), m) }, `UnmarshalJSON .* frozen`)
-}
-
-func Test_structMap_UnmarshalYAML(t *testing.T) {
-	type structA struct {
-		A string `yaml:"a"`
-		B int    `yaml:"b"`
-	}
-	s := structA{}
-	m := vf.Map(&s)
-	require.Ok(t, yaml.Unmarshal([]byte(`a: Adam
-b: 38
-`), m))
-	require.Equal(t, s.A, `Adam`)
-	require.Equal(t, s.B, 38)
-
-	m.Freeze()
-	require.Panic(t, func() { _ = yaml.Unmarshal([]byte(`{"b":"two"}`), m) }, `UnmarshalYAML .* frozen`)
 }
 
 func Test_structMap_Values(t *testing.T) {

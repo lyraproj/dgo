@@ -73,6 +73,16 @@ func TestMap_UnmarshalJSON(t *testing.T) {
 	require.Equal(t, vf.Map("a", 1, "b", "two", "c", vf.Values(`hello`, true, 1, 3.14, nil)), m)
 }
 
+func TestMap_UnmarshalJSON_typed(t *testing.T) {
+	m := vf.MutableMap(`map[string]any`)
+	err := m.UnmarshalJSON([]byte(`{"a":1,"b":"two","c":["hello",true,1,3.14,null]}`))
+	require.Nil(t, err)
+	require.Equal(t, vf.Map("a", 1, "b", "two", "c", vf.Values(`hello`, true, 1, 3.14, nil)), m)
+
+	m = vf.MutableMap(`map[string]string`)
+	require.Panic(t, func() { _ = m.UnmarshalJSON([]byte(`{"a":1}`)) }, `the value 1 cannot be assigned to a variable of type string`)
+}
+
 func TestMap_UnmarshalJSON_frozen(t *testing.T) {
 	m := vf.Map(map[string]int{})
 	require.Panic(t, func() { _ = m.UnmarshalJSON([]byte(`{"a":1,"b":"two","c":["hello",true,1,3.14,null]}`)) }, `frozen`)

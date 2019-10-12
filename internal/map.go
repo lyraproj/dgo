@@ -11,7 +11,6 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
-	"gopkg.in/yaml.v3"
 )
 
 const initialCapacity = 1 << 4
@@ -288,7 +287,7 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 }
 
 // FromReflectedStruct creates a frozen Map from the exported fields of a Struct. It panics if rm's kind is not
-// reflect.Map.
+// reflect.Struct.
 func FromReflectedStruct(rv reflect.Value) dgo.Map {
 	return &structMap{rs: rv, frozen: false}
 }
@@ -578,20 +577,6 @@ func (g *hashMap) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (g *hashMap) UnmarshalYAML(n *yaml.Node) error {
-	if g.frozen {
-		panic(frozenMap(`UnmarshalYAML`))
-	}
-	if n.Kind != yaml.MappingNode {
-		return errors.New("expecting data to be a map")
-	}
-	m, err := yamlDecodeMap(n)
-	if err == nil {
-		g.assignFrom(m)
-	}
-	return err
-}
-
 func (g *hashMap) assignFrom(m *hashMap) {
 	if g.typ != nil {
 		*g = hashMap{typ: g.typ}
@@ -600,27 +585,6 @@ func (g *hashMap) assignFrom(m *hashMap) {
 	} else {
 		*g = *m
 	}
-}
-
-// MarshalYAML returns a *yaml.Node that represents this Map.
-func (g *hashMap) MarshalYAML() (interface{}, error) {
-	s := make([]*yaml.Node, g.len*2)
-	i := 0
-	for e := g.first; e != nil; e = e.next {
-		n, err := yamlEncodeValue(e.key)
-		if err != nil {
-			return nil, err
-		}
-		s[i] = n
-		i++
-		n, err = yamlEncodeValue(e.value)
-		if err != nil {
-			return nil, err
-		}
-		s[i] = n
-		i++
-	}
-	return &yaml.Node{Kind: yaml.MappingNode, Tag: `!!map`, Content: s}, nil
 }
 
 func (g *hashMap) Merge(associations dgo.Map) dgo.Map {

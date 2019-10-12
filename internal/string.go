@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -584,12 +582,6 @@ func (v *hstring) HashCode() int {
 
 func (v *hstring) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.s)
-}
-
-func (v *hstring) MarshalYAML() (interface{}, error) {
-	n := &yaml.Node{}
-	n.SetString(v.s)
-	return n, nil
 }
 
 func (v *hstring) ReflectTo(value reflect.Value) {

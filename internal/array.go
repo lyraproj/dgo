@@ -11,7 +11,6 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -1366,19 +1365,6 @@ func (v *array) MarshalJSON() ([]byte, error) {
 	return []byte(ToStringERP(v)), nil
 }
 
-func (v *array) MarshalYAML() (interface{}, error) {
-	a := v.slice
-	s := make([]*yaml.Node, len(a))
-	var err error
-	for i := range a {
-		s[i], err = yamlEncodeValue(a[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &yaml.Node{Kind: yaml.SequenceNode, Tag: `!!seq`, Content: s}, nil
-}
-
 func (v *array) Pop() (dgo.Value, bool) {
 	if v.frozen {
 		panic(frozenArray(`Pop`))
@@ -1406,20 +1392,6 @@ func (v *array) UnmarshalJSON(b []byte) error {
 		if err == nil {
 			*v = *a
 		}
-	}
-	return err
-}
-
-func (v *array) UnmarshalYAML(n *yaml.Node) error {
-	if v.frozen {
-		panic(frozenArray(`UnmarshalYAML`))
-	}
-	if n.Kind != yaml.SequenceNode {
-		return errors.New("expecting data to be an array")
-	}
-	a, err := yamlDecodeArray(n)
-	if err == nil {
-		*v = *a
 	}
 	return err
 }
