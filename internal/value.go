@@ -74,6 +74,10 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		return ArrayFromReflected(vr, true)
 	case reflect.Map:
 		return FromReflectedMap(vr, true)
+	case reflect.Interface:
+		if vr.Type().NumMethod() == 0 {
+			return ValueFromReflected(vr.Elem())
+		}
 	case reflect.Ptr:
 		if vr.IsNil() {
 			return Nil
