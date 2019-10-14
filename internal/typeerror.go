@@ -9,7 +9,7 @@ import (
 
 type (
 	mapKeyError struct {
-		mapType dgo.StructType
+		mapType dgo.StructMapType
 		key     dgo.Value
 	}
 
@@ -108,7 +108,7 @@ func IllegalAssignment(t dgo.Type, v dgo.Value) dgo.Value {
 }
 
 // IllegalMapKey returns the error that represents an assignment map key constraint mismatch
-func IllegalMapKey(t dgo.StructType, v dgo.Value) dgo.Value {
+func IllegalMapKey(t dgo.StructMapType, v dgo.Value) dgo.Value {
 	return &mapKeyError{t, v.Type()}
 }
 

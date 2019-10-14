@@ -1,422 +1,330 @@
 package internal
 
 import (
-	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
-
-	"github.com/lyraproj/dgo/util"
+	"sort"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (
-	// structType describes each mapEntry of a map
-	structType struct {
-		additional bool
-		keys       array
-		values     array
-		required   []byte
-	}
-
-	structEntry struct {
-		mapEntry
-		required bool
+	structVal struct {
+		rs     reflect.Value
+		frozen bool
 	}
 )
 
-// Struct returns a new Struct type built from the given MapEntryTypes.
-func Struct(additional bool, entries []dgo.StructEntry) dgo.StructType {
-	l := len(entries)
-	keys := make([]dgo.Value, l)
-	values := make([]dgo.Value, l)
-	required := make([]byte, l)
-	for i := range entries {
-		e := entries[i]
-		switch k := e.Key().(type) {
-		case *exactStringType, exactIntegerType, exactFloatType, *exactArrayType, *exactMapType, booleanType:
-			keys[i] = k
-			values[i] = e.Value()
-			if e.Required() {
-				required[i] = 1
-			}
-		default:
-			panic(`non exact key types is not yet supported`)
+func (v *structVal) AppendTo(w util.Indenter) {
+	appendMapTo(v, w)
+}
+
+func (v *structVal) All(predicate dgo.EntryPredicate) bool {
+	rv := v.rs
+	rt := rv.Type()
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		if !predicate(&mapEntry{&hstring{s: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}) {
+			return false
 		}
 	}
-	return &structType{
-		additional: additional,
-		keys:       array{slice: keys, frozen: true},
-		values:     array{slice: values, frozen: true},
-		required:   required}
+	return true
 }
 
-var sfmType dgo.MapType
-
-// StructFromMapType returns the map type used when validating the map sent to
-// StructFromMap
-func StructFromMapType() dgo.MapType {
-	if sfmType == nil {
-		sfmType = Parse(`map[string](dgo|type|{type:dgo|type,required?:bool,...})`).(dgo.MapType)
+func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
+	rv := v.rs
+	rt := rv.Type()
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		if !predicate(&hstring{s: rt.Field(i).Name}) {
+			return false
+		}
 	}
-	return sfmType
+	return true
 }
 
-// StructFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
-func StructFromMap(additional bool, entries dgo.Map) dgo.StructType {
-	if !StructFromMapType().Instance(entries) {
-		panic(IllegalAssignment(sfmType, entries))
+func (v *structVal) AllValues(predicate dgo.Predicate) bool {
+	rv := v.rs
+	for i, n := 0, rv.NumField(); i < n; i++ {
+		if !predicate(ValueFromReflected(rv.Field(i))) {
+			return false
+		}
 	}
-	l := entries.Len()
-	keys := make([]dgo.Value, l)
-	values := make([]dgo.Value, l)
-	required := make([]byte, l)
+	return true
+}
+
+func (v *structVal) Any(predicate dgo.EntryPredicate) bool {
+	return !v.All(func(entry dgo.MapEntry) bool { return !predicate(entry) })
+}
+
+func (v *structVal) AnyKey(predicate dgo.Predicate) bool {
+	return !v.AllKeys(func(entry dgo.Value) bool { return !predicate(entry) })
+}
+
+func (v *structVal) AnyValue(predicate dgo.Predicate) bool {
+	return !v.AllValues(func(entry dgo.Value) bool { return !predicate(entry) })
+}
+
+func (v *structVal) Copy(frozen bool) dgo.Map {
+	if frozen && v.frozen {
+		return v
+	}
+	if frozen {
+		return v.FrozenCopy().(dgo.Map)
+	}
+	// Thaw: Perform a by-value copy of the frozen struct
+	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v.rs)                          // copy v.rs to the zero value
+	return &structVal{rs: rs, frozen: false}
+}
+
+func (v *structVal) Each(actor dgo.Actor) {
+	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
+}
+
+func (v *structVal) EachEntry(actor dgo.EntryActor) {
+	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
+}
+
+func (v *structVal) EachKey(actor dgo.Actor) {
+	v.AllKeys(func(entry dgo.Value) bool { actor(entry); return true })
+}
+
+func (v *structVal) EachValue(actor dgo.Actor) {
+	v.AllValues(func(entry dgo.Value) bool { actor(entry); return true })
+}
+
+func (v *structVal) Equals(other interface{}) bool {
+	return equals(nil, v, other)
+}
+
+func (v *structVal) GoStruct() interface{} {
+	return v.rs.Addr().Interface()
+}
+
+func (v *structVal) deepEqual(seen []dgo.Value, other deepEqual) bool {
+	return mapEqual(seen, v, other)
+}
+
+func (v *structVal) HashCode() int {
+	return deepHashCode(nil, v)
+}
+
+func (v *structVal) deepHashCode(seen []dgo.Value) int {
+	hs := make([]int, v.Len())
 	i := 0
-
-	// turn dgo|type into type
-	asType := func(v dgo.Value) dgo.Type {
-		if tp, ok := v.(dgo.Type); ok {
-			return tp
-		}
-		return Parse(v.String())
-	}
-
-	entries.EachEntry(func(e dgo.MapEntry) {
-		keys[i] = e.Key().Type()
-		if vm, ok := e.Value().(dgo.Map); ok {
-			values[i] = asType(vm.Get(`type`))
-			if rq := vm.Get(`required`); rq != nil && rq.(dgo.Boolean).GoBool() {
-				required[i] = 1
-			}
-		} else {
-			values[i] = asType(e.Value())
-		}
+	v.EachEntry(func(e dgo.MapEntry) {
+		hs[i] = deepHashCode(seen, e)
 		i++
 	})
-	return &structType{
-		additional: additional,
-		keys:       array{slice: keys, frozen: true},
-		values:     array{slice: values, frozen: true},
-		required:   required}
-}
-
-func (t *structType) Additional() bool {
-	return t.additional
-}
-
-func (t *structType) CheckEntry(k, v dgo.Value) dgo.Value {
-	ks := t.keys.slice
-	for i := range ks {
-		kt := ks[i].(dgo.Type)
-		if kt.Instance(k) {
-			vt := t.values.slice[i].(dgo.Type)
-			if vt.Instance(v) {
-				return nil
-			}
-			return IllegalAssignment(vt, v)
-		}
-	}
-	if t.additional {
-		return nil
-	}
-	return IllegalMapKey(t, k)
-}
-
-func (t *structType) Assignable(other dgo.Type) bool {
-	return Assignable(nil, t, other)
-}
-
-func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	switch ot := other.(type) {
-	case *structType:
-		mrs := t.required
-		mks := t.keys.slice
-		mvs := t.values.slice
-		ors := ot.required
-		oks := ot.keys.slice
-		ovs := ot.values.slice
-		oc := 0
-
-	nextKey:
-		for mi := range mks {
-			rq := mrs[mi] != 0
-			mk := mks[mi]
-			for oi := range oks {
-				ok := oks[oi]
-				if mk.Equals(ok) {
-					if rq && ors[oi] == 0 {
-						return false
-					}
-					if !Assignable(guard, mvs[mi].(dgo.Type), ovs[oi].(dgo.Type)) {
-						return false
-					}
-					oc++
-					continue nextKey
-				}
-			}
-			if rq || ot.additional { // additional included since key is allowed with unconstrained value
-				return false
-			}
-		}
-		return t.additional || oc == len(oks)
-	case *exactMapType:
-		ov := ot.value
-		return Instance(guard, t, ov)
-	}
-	return CheckAssignableTo(guard, other, t)
-}
-
-func (t *structType) Each(actor func(dgo.StructEntry)) {
-	ks := t.keys.slice
-	vs := t.values.slice
-	rs := t.required
-	for i := range ks {
-		actor(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0})
-	}
-}
-
-func (t *structType) Equals(other interface{}) bool {
-	return equals(nil, t, other)
-}
-
-func (t *structType) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if ot, ok := other.(*structType); ok {
-		return t.additional == ot.additional &&
-			bytes.Equal(t.required, ot.required) &&
-			equals(seen, &t.keys, &ot.keys) &&
-			equals(seen, &t.values, &ot.values)
-	}
-	return false
-}
-
-func (t *structType) HashCode() int {
-	return deepHashCode(nil, t)
-}
-
-func (t *structType) deepHashCode(seen []dgo.Value) int {
-	h := bytesHash(t.required)*31 + t.keys.HashCode()*31 + t.values.HashCode()
-	if t.additional {
-		h *= 3
+	sort.Ints(hs)
+	h := 1
+	for i = range hs {
+		h = h*31 + hs[i]
 	}
 	return h
 }
 
-func (t *structType) Instance(value interface{}) bool {
-	return Instance(nil, t, value)
-}
-
-func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
-	if om, ok := value.(dgo.Map); ok {
-		ks := t.keys.slice
-		vs := t.values.slice
-		rs := t.required
-		oc := 0
-		for i := range ks {
-			k := ks[i].(dgo.ExactType)
-			if ov := om.Get(k.Value()); ov != nil {
-				oc++
-				if !Instance(guard, vs[i].(dgo.Type), ov) {
-					return false
-				}
-			} else if rs[i] != 0 {
-				return false
+func (v *structVal) Freeze() {
+	// Perform a shallow copy of the struct
+	if !v.frozen {
+		v.frozen = true
+		v.rs = reflect.ValueOf(v.rs.Interface())
+		v.EachValue(func(e dgo.Value) {
+			if f, ok := e.(dgo.Freezable); ok {
+				f.Freeze()
 			}
-		}
-		return t.additional || oc == om.Len()
+		})
 	}
-	return false
 }
 
-func (t *structType) Get(key interface{}) dgo.MapEntry {
-	kv := Value(key)
-	if _, ok := kv.(dgo.Type); !ok {
-		kv = kv.Type()
+func (v *structVal) Frozen() bool {
+	return v.frozen
+}
+
+func (v *structVal) FrozenCopy() dgo.Value {
+	if v.frozen {
+		return v
 	}
-	i := t.keys.IndexOf(kv)
-	if i >= 0 {
-		return StructEntry(kv, t.values.slice[i], t.required[i] != 0)
+
+	// Perform a by-value copy of the struct
+	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v.rs)                          // copy v.rs to the zero value
+
+	for i, n := 0, rs.NumField(); i < n; i++ {
+		ef := rs.Field(i)
+		ev := ValueFromReflected(ef)
+		if f, ok := ev.(dgo.Freezable); ok && !f.Frozen() {
+			ReflectTo(f.FrozenCopy(), ef)
+		}
+	}
+	return &structVal{rs: rs, frozen: true}
+}
+
+func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
+	rv := v.rs
+	rt := rv.Type()
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		e := &mapEntry{&hstring{s: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}
+		if predicate(e) {
+			return e
+		}
 	}
 	return nil
 }
 
-func (t *structType) KeyType() dgo.Type {
-	switch t.keys.Len() {
-	case 0:
-		return DefaultAnyType
-	case 1:
-		return t.keys.Get(0).(dgo.Type)
-	default:
-		return (*allOfType)(&t.keys)
+func stringKey(key interface{}) (string, bool) {
+	if hs, ok := key.(*hstring); ok {
+		return hs.s, true
 	}
-}
-
-func (t *structType) Len() int {
-	return len(t.required)
-}
-
-func (t *structType) Max() int {
-	m := len(t.required)
-	if m == 0 || t.additional {
-		return math.MaxInt64
+	if s, ok := key.(string); ok {
+		return s, true
 	}
-	return m
+	return ``, false
 }
 
-func (t *structType) Min() int {
-	min := 0
-	rs := t.required
-	for i := range rs {
-		if rs[i] != 0 {
-			min++
+func (v *structVal) Get(key interface{}) dgo.Value {
+	if s, ok := stringKey(key); ok {
+		rv := v.rs
+		fv := rv.FieldByName(s)
+		if fv.IsValid() {
+			return ValueFromReflected(fv)
 		}
 	}
-	return min
+	return nil
 }
 
-func (t *structType) ReflectType() reflect.Type {
-	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
+func (v *structVal) Keys() dgo.Array {
+	return arrayFromIterator(v.Len(), v.EachKey)
 }
 
-func (t *structType) Resolve(ap dgo.AliasProvider) {
-	ks := t.keys.slice
-	vs := t.values.slice
-	for i := range ks {
-		ks[i] = ap.Replace(ks[i].(dgo.Type))
-		vs[i] = ap.Replace(vs[i].(dgo.Type))
+func (v *structVal) Len() int {
+	return v.rs.NumField()
+}
+
+func (v *structVal) Map(mapper dgo.EntryMapper) dgo.Map {
+	c := v.toHashMap()
+	for e := c.first; e != nil; e = e.next {
+		e.value = Value(mapper(e))
 	}
+	c.frozen = v.frozen
+	return c
 }
 
-func (t *structType) String() string {
-	return TypeString(t)
+func (v *structVal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.rs.Addr().Interface())
 }
 
-func (t *structType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiStruct
-}
-
-func (t *structType) Unbounded() bool {
-	return len(t.required) == 0 || t.additional && t.Min() == 0
-}
-
-func parameterLabel(key dgo.Value) string {
-	return fmt.Sprintf(`parameter '%s'`, key)
-}
-
-func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
-	var errs []error
-	pm, ok := Value(value).(dgo.Map)
-	if !ok {
-		return []error{errors.New(`value is not a Map`)}
+func (v *structVal) Merge(associations dgo.Map) dgo.Map {
+	if associations.Len() == 0 || v == associations {
+		return v
 	}
+	c := v.toHashMap()
+	c.PutAll(associations)
+	c.frozen = v.frozen && associations.Frozen()
+	return c
+}
 
-	if keyLabel == nil {
-		keyLabel = parameterLabel
+func (v *structVal) Put(key, value interface{}) dgo.Value {
+	if v.frozen {
+		panic(frozenMap(`Put`))
 	}
-	t.Each(func(e dgo.StructEntry) {
-		ek := e.Key().(dgo.ExactType).Value()
-		if v := pm.Get(ek); v != nil {
-			ev := e.Value().(dgo.Type)
-			if !ev.Instance(v) {
-				errs = append(errs, fmt.Errorf(`%s is not an instance of type %s`, keyLabel(ek), ev))
-			}
-		} else if e.Required() {
-			errs = append(errs, fmt.Errorf(`missing required %s`, keyLabel(ek)))
+	if s, ok := stringKey(key); ok {
+		rv := v.rs
+		fv := rv.FieldByName(s)
+		if fv.IsValid() {
+			old := ValueFromReflected(fv)
+			ReflectTo(Value(value), fv)
+			return old
 		}
+	}
+	panic(fmt.Errorf(`%s has no field named '%s'`, v.rs.Type(), key))
+}
+
+func (v *structVal) PutAll(associations dgo.Map) {
+	associations.EachEntry(func(e dgo.MapEntry) { v.Put(e.Key(), e.Value()) })
+}
+
+func (v *structVal) ReflectTo(value reflect.Value) {
+	if value.Kind() == reflect.Ptr {
+		if v.frozen {
+			// Don't expose pointer to frozen struct
+			rs := reflect.New(v.rs.Type()) // create pointer to a zero value
+			rs.Elem().Set(v.rs)            // copy v.rs to the zero value
+			value.Set(rs)
+		} else {
+			value.Set(v.rs.Addr())
+		}
+	} else {
+		// copy struct by value
+		value.Set(v.rs)
+	}
+}
+
+func (v *structVal) Remove(key interface{}) dgo.Value {
+	panic(errors.New(`struct fields cannot be removed`))
+}
+
+func (v *structVal) RemoveAll(keys dgo.Array) {
+	panic(errors.New(`struct fields cannot be removed`))
+}
+
+func (v *structVal) SetType(t interface{}) {
+	panic(errors.New(`struct type is read only`))
+}
+
+func (v *structVal) String() string {
+	return ToStringERP(v)
+}
+
+func (v *structVal) StringKeys() bool {
+	return true
+}
+
+func (v *structVal) Type() dgo.Type {
+	return &exactMapType{v}
+}
+
+func (v *structVal) UnmarshalJSON(data []byte) error {
+	if v.frozen {
+		panic(frozenMap(`UnmarshalJSON`))
+	}
+	return json.Unmarshal(data, v.rs.Addr().Interface())
+}
+
+func (v *structVal) Values() dgo.Array {
+	return arrayFromIterator(v.Len(), v.EachValue)
+}
+
+func (v *structVal) With(key, value interface{}) dgo.Map {
+	c := v.toHashMap()
+	c.Put(key, value)
+	c.frozen = v.frozen
+	return c
+}
+
+func (v *structVal) Without(key interface{}) dgo.Map {
+	if v.Get(key) == nil {
+		return v
+	}
+	c := v.toHashMap()
+	c.Remove(key)
+	c.frozen = v.frozen
+	return c
+}
+
+func (v *structVal) WithoutAll(keys dgo.Array) dgo.Map {
+	c := v.toHashMap()
+	c.RemoveAll(keys)
+	c.frozen = v.frozen
+	return c
+}
+
+func (v *structVal) toHashMap() *hashMap {
+	c := MapWithCapacity(int(float64(v.Len())/loadFactor), nil)
+	v.EachEntry(func(entry dgo.MapEntry) {
+		c.Put(entry.Key(), entry.Value())
 	})
-	pm.EachKey(func(k dgo.Value) {
-		if t.Get(k) == nil {
-			errs = append(errs, fmt.Errorf(`unknown %s`, keyLabel(k)))
-		}
-	})
-	return errs
-}
-
-func (t *structType) ValidateVerbose(value interface{}, out util.Indenter) bool {
-	pm, ok := Value(value).(dgo.Map)
-	if !ok {
-		out.Append(`value is not a Map`)
-		return false
-	}
-
-	inner := out.Indent()
-	t.Each(func(e dgo.StructEntry) {
-		ek := e.Key().(dgo.ExactType).Value()
-		ev := e.Value().(dgo.Type)
-		out.Printf(`Validating '%s' against definition %s`, ek, ev)
-		inner.NewLine()
-		inner.Printf(`'%s' `, ek)
-		if v := pm.Get(ek); v != nil {
-			if ev.Instance(v) {
-				inner.Append(`OK!`)
-			} else {
-				ok = false
-				inner.Append(`FAILED!`)
-				inner.NewLine()
-				inner.Printf(`Reason: expected a value of type %s, got %s`, ev, v.Type())
-			}
-		} else if e.Required() {
-			ok = false
-			inner.Append(`FAILED!`)
-			inner.NewLine()
-			inner.Append(`Reason: required key not found in input`)
-		}
-		out.NewLine()
-	})
-	pm.EachKey(func(k dgo.Value) {
-		if t.Get(k) == nil {
-			ok = false
-			out.Printf(`Validating '%s'`, k)
-			inner.NewLine()
-			inner.Printf(`'%s' FAILED!`, k)
-			inner.NewLine()
-			inner.Append(`Reason: key is not found in definition`)
-			out.NewLine()
-		}
-	})
-	return ok
-}
-
-func (t *structType) ValueType() dgo.Type {
-	switch t.values.Len() {
-	case 0:
-		return DefaultAnyType
-	case 1:
-		return t.values.Get(0).(dgo.Type)
-	default:
-		return (*allOfType)(&t.values)
-	}
-}
-
-// StructEntry returns a new StructEntry initiated with the given parameters
-func StructEntry(key interface{}, value interface{}, required bool) dgo.StructEntry {
-	kv := Value(key)
-	if _, ok := kv.(dgo.Type); !ok {
-		kv = kv.Type()
-	}
-	vv := Value(value)
-	if _, ok := vv.(dgo.Type); !ok {
-		vv = vv.Type()
-	}
-	return &structEntry{mapEntry: mapEntry{key: kv, value: vv}, required: required}
-}
-
-func (t *structEntry) Equals(other interface{}) bool {
-	return equals(nil, t, other)
-}
-
-func (t *structEntry) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if ot, ok := other.(*structEntry); ok {
-		return t.required == ot.required && equals(seen, &t.mapEntry, &ot.mapEntry)
-	}
-	return false
-}
-
-func (t *structEntry) Required() bool {
-	return t.required
+	return c.(*hashMap)
 }

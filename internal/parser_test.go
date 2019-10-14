@@ -34,23 +34,23 @@ func TestParse_exact(t *testing.T) {
 	require.Equal(t, newtype.Tuple(vf.Value("pelle").Type(), vf.Value(3.14).Type(), typ.Boolean), newtype.Parse(`{"pelle", 3.14, bool}`))
 
 	st := newtype.Parse(`{"a":1..5,"b"?:2}`)
-	require.Equal(t, newtype.Struct(false,
-		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5, true), true),
-		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
+	require.Equal(t, newtype.StructMap(false,
+		newtype.StructMapEntry(`a`, newtype.IntegerRange(1, 5, true), true),
+		newtype.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	st = newtype.Parse(`{"a":1..5,"b"?:2,...}`)
-	require.Equal(t, newtype.Struct(true,
-		newtype.StructEntry(`a`, newtype.IntegerRange(1, 5, true), true),
-		newtype.StructEntry(`b`, vf.Value(2).Type(), false)), st)
+	require.Equal(t, newtype.StructMap(true,
+		newtype.StructMapEntry(`a`, newtype.IntegerRange(1, 5, true), true),
+		newtype.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	require.Equal(t, `{"a":1..5,"b"?:2,...}`, st.String())
 
 	st = newtype.Parse(`{}`)
-	require.Equal(t, newtype.Struct(false), st)
+	require.Equal(t, newtype.StructMap(false), st)
 	require.Equal(t, `{}`, st.String())
 
 	st = newtype.Parse(`{...}`)
-	require.Equal(t, newtype.Struct(true), st)
+	require.Equal(t, newtype.StructMap(true), st)
 	require.Equal(t, `{...}`, st.String())
 }
 
@@ -173,7 +173,7 @@ func TestParse_multiAliases(t *testing.T) {
     slug=/^[a-z0-9-]+$/
   },
   x: map[slug]{token:ascii,value:string}
-}`).(dgo.StructType)
+}`).(dgo.StructMapType)
 	require.Equal(t, `map[/^[a-z0-9-]+$/]{"token":1..127,"value":string}`, tp.Get(`x`).Value().String())
 }
 

@@ -7,15 +7,14 @@ import (
 	"github.com/lyraproj/dgo/internal"
 )
 
-// Map creates an immutable dgo.Map from the given arguments.
+// Map creates an immutable dgo.Map from the given slice which must have 0, 1, or an
+// even number of arguments.
 //
-// One argument:
+// Zero arguments: the empty map is returned.
 //
-// must be a go map, a go struct, or an Array with an even number of elements.
+// One argument: must be a go map, a go struct, or an Array with an even number of elements.
 //
-// An even number of arguments:
-//
-// will be considered a flat list of key, value [, key, value, ... ]
+// An even number of arguments: will be considered a flat list of key, value [, key, value, ... ]
 func Map(m ...interface{}) dgo.Map {
 	return internal.Map(m)
 }

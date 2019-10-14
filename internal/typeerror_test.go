@@ -38,7 +38,7 @@ func TestIllegalSize(t *testing.T) {
 }
 
 func TestIllegalMapKey(t *testing.T) {
-	tp := newtype.Parse(`{a:string}`).(dgo.StructType)
+	tp := newtype.Parse(`{a:string}`).(dgo.StructMapType)
 	v := newtype.IllegalMapKey(tp, vf.String(`b`))
 
 	require.Equal(t, v, newtype.IllegalMapKey(tp, vf.String(`b`)))

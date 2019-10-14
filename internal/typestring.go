@@ -46,9 +46,9 @@ func joinX(seen []dgo.Value, v dgo.Iterable, tc func(dgo.Value) dgo.Type, s stri
 	})
 }
 
-func joinStructEntries(seen []dgo.Value, v dgo.StructType, sb *strings.Builder) {
+func joinStructMapEntries(seen []dgo.Value, v dgo.StructMapType, sb *strings.Builder) {
 	first := true
-	v.Each(func(e dgo.StructEntry) {
+	v.Each(func(e dgo.StructMapEntry) {
 		if first {
 			first = false
 		} else {
@@ -175,8 +175,8 @@ func init() {
 		},
 		dgo.TiStruct: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			util.WriteByte(sb, '{')
-			st := typ.(dgo.StructType)
-			joinStructEntries(seen, st, sb)
+			st := typ.(dgo.StructMapType)
+			joinStructMapEntries(seen, st, sb)
 			if st.Additional() {
 				if st.Len() > 0 {
 					util.WriteByte(sb, ',')

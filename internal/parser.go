@@ -222,7 +222,7 @@ func makeTupleType(ar dgo.Array) dgo.TupleType {
 	return &tupleType{slice: as, frozen: true}
 }
 
-func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructType {
+func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructMapType {
 	l := len(as)
 	keys := make([]dgo.Value, l)
 	values := make([]dgo.Value, l)
