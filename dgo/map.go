@@ -17,8 +17,8 @@ type (
 		Value() Value
 	}
 
-	// StructEntry describes a MapEntry
-	StructEntry interface {
+	// StructMapEntry describes a MapEntry
+	StructMapEntry interface {
 		MapEntry
 
 		Required() bool
@@ -154,21 +154,21 @@ type (
 		ValueType() Type
 	}
 
-	// StructType represents maps with explicitly defined typed entries.
-	StructType interface {
+	// StructMapType represent a Map with explicitly defined typed entries.
+	StructMapType interface {
 		MapType
 
 		// Additional returns true if the maps that is described by this type are allowed to
 		// have additional entries.
 		Additional() bool
 
-		// EachEntry iterates over each entry of the StructType
-		Each(actor func(StructEntry))
+		// EachEntry iterates over each entry of the StructMapType
+		Each(actor func(StructMapEntry))
 
 		// Get returns the MapEntry that is identified with the given key
 		Get(key interface{}) MapEntry
 
-		// Len returns the number of StructEntrys in this StructType
+		// Len returns the number of StructEntrys in this StructMapType
 		Len() int
 
 		// Validate checks that the given value represents a Map which is an instance of this struct and returns a

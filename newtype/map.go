@@ -10,18 +10,18 @@ func Map(args ...interface{}) dgo.MapType {
 	return internal.MapType(args...)
 }
 
-// StructEntry returns a new StructEntry initiated with the given parameters
-func StructEntry(key interface{}, value interface{}, required bool) dgo.StructEntry {
-	return internal.StructEntry(key, value, required)
+// StructMapEntry returns a new StructMapEntry initiated with the given parameters
+func StructMapEntry(key interface{}, value interface{}, required bool) dgo.StructMapEntry {
+	return internal.StructMapEntry(key, value, required)
 }
 
-// Struct returns a new Struct type built from the given MapEntryTypes. If
+// StructMap returns a new StructMapType type built from the given MapEntryTypes. If
 // additional is true, the struct will allow additional unconstrained entries
-func Struct(additional bool, entries ...dgo.StructEntry) dgo.StructType {
-	return internal.Struct(additional, entries)
+func StructMap(additional bool, entries ...dgo.StructMapEntry) dgo.StructMapType {
+	return internal.StructMap(additional, entries)
 }
 
-// StructFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
-func StructFromMap(additional bool, entries dgo.Map) dgo.StructType {
-	return internal.StructFromMap(additional, entries)
+// StructMapFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
+func StructMapFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
+	return internal.StructMapFromMap(additional, entries)
 }

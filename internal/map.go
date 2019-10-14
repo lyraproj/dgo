@@ -197,7 +197,14 @@ func (v *mapEntry) copyFreeze() {
 
 var emptyMap = &hashMap{frozen: true}
 
-// Map creates an immutable dgo.Map from the given argument which must be a go map.
+// Map creates an immutable dgo.Map from the given slice which must have 0, 1, or an
+// even number of elements.
+//
+// Zero elements: the empty map is returned.
+//
+// One element: must be a go map, a go struct, or an Array with an even number of elements.
+//
+// An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
 func Map(args []interface{}) dgo.Map {
 	l := len(args)
 	switch {
@@ -286,10 +293,10 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 	return m
 }
 
-// FromReflectedStruct creates a frozen Map from the exported fields of a Struct. It panics if rm's kind is not
+// FromReflectedStruct creates a frozen Map from the exported fields of a go struct. It panics if rm's kind is not
 // reflect.Struct.
-func FromReflectedStruct(rv reflect.Value) dgo.Map {
-	return &structMap{rs: rv, frozen: false}
+func FromReflectedStruct(rv reflect.Value) dgo.Struct {
+	return &structVal{rs: rv, frozen: false}
 }
 
 // MapWithCapacity creates an empty dgo.Map with the given capacity. The map can be optionally constrained
