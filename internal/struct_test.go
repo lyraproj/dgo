@@ -66,9 +66,78 @@ func TestStructType_Get(t *testing.T) {
 
 func TestStructType_Validate(t *testing.T) {
 	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	es := tp.Validate(nil, vf.Map(`a`, 1, `b`, `yes`))
+	require.Equal(t, 0, len(es))
+}
+
+func TestStructType_Validate_valueType(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	es := tp.Validate(nil, vf.Map(`a`, `no`, `b`, `yes`))
+	require.Equal(t, 1, len(es))
+	require.Equal(t, `parameter 'a' is not an instance of type int`, es[0].Error())
+}
+
+func TestStructType_Validate_missingKey(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	es := tp.Validate(nil, vf.Map(`a`, 1))
+	require.Equal(t, 1, len(es))
+	require.Equal(t, `missing required parameter 'b'`, es[0].Error())
+}
+
+func TestStructType_Validate_unknownKey(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	es := tp.Validate(nil, vf.Map(`a`, 1, `b`, `yes`, `c`, `no`))
+	require.Equal(t, 1, len(es))
+	require.Equal(t, `unknown parameter 'c'`, es[0].Error())
+}
+
+func TestStructType_Validate_notMap(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
 	es := tp.Validate(nil, vf.Values(1, 2))
 	require.Equal(t, 1, len(es))
 	require.NotOk(t, `value is not a Map`, es[0])
+}
+
+func TestStructType_ValidateVerbose_valueType(t *testing.T) {
+	tp := newtype.Parse(`{a:int}`).(dgo.StructType)
+	out := util.NewIndenter(`  `)
+	ok := tp.ValidateVerbose(vf.Map(`a`, `no`), out)
+	es := out.String()
+	require.False(t, ok)
+	require.Equal(t, `Validating 'a' against definition int
+  'a' FAILED!
+  Reason: expected a value of type int, got "no"
+`, es)
+}
+
+func TestStructType_ValidateVerbose_missingKey(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	out := util.NewIndenter(`  `)
+	ok := tp.ValidateVerbose(vf.Map(`a`, 1), out)
+	es := out.String()
+	require.False(t, ok)
+	require.Equal(t, `Validating 'a' against definition int
+  'a' OK!
+Validating 'b' against definition string
+  'b' FAILED!
+  Reason: required key not found in input
+`, es)
+}
+
+func TestStructType_ValidateVerbose_unknownKey(t *testing.T) {
+	tp := newtype.Parse(`{a:int,b:string}`).(dgo.StructType)
+	out := util.NewIndenter(`  `)
+	ok := tp.ValidateVerbose(vf.Map(`a`, 1, `b`, `yes`, `c`, `no`), out)
+	es := out.String()
+	require.False(t, ok)
+	require.Equal(t, `Validating 'a' against definition int
+  'a' OK!
+Validating 'b' against definition string
+  'b' OK!
+Validating 'c'
+  'c' FAILED!
+  Reason: key is not found in definition
+`, es)
 }
 
 func TestStructType_ValidateVerbose(t *testing.T) {
@@ -210,5 +279,8 @@ func TestStructFromMap(t *testing.T) {
 	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, true)))
 
 	tp = newtype.StructFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String, `required`, false)))
+	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, false)))
+
+	tp = newtype.StructFromMap(false, vf.Map(`first`, vf.Map(`type`, `string`, `required`, false)))
 	require.Equal(t, tp, newtype.Struct(false, newtype.StructEntry(`first`, typ.String, false)))
 }

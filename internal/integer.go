@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -305,10 +303,6 @@ func (v intVal) GoInt() int64 {
 
 func (v intVal) HashCode() int {
 	return int(v ^ (v >> 32))
-}
-
-func (v intVal) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!int`, Value: v.String()}, nil
 }
 
 func (v intVal) ReflectTo(value reflect.Value) {

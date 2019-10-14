@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -122,10 +121,6 @@ func (v boolean) HashCode() int {
 		return 1231
 	}
 	return 1237
-}
-
-func (v boolean) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!bool`, Value: v.String()}, nil
 }
 
 func (v boolean) ReflectTo(value reflect.Value) {

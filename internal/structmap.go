@@ -9,7 +9,6 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -98,6 +97,10 @@ func (v *structMap) EachValue(actor dgo.Actor) {
 
 func (v *structMap) Equals(other interface{}) bool {
 	return equals(nil, v, other)
+}
+
+func (v *structMap) GoStruct() interface{} {
+	return v.rs.Addr().Interface()
 }
 
 func (v *structMap) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -213,20 +216,6 @@ func (v *structMap) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.rs.Addr().Interface())
 }
 
-func (v *structMap) MarshalYAML() (interface{}, error) {
-	// A bit wasteful but this is currently the only way to create a yaml.Node
-	// from a struct
-	n := &yaml.Node{}
-	b, err := yaml.Marshal(v.rs.Addr().Interface())
-	if err == nil {
-		if err = yaml.Unmarshal(b, n); err == nil {
-			// n is the document node at this point.
-			n = n.Content[0]
-		}
-	}
-	return n, err
-}
-
 func (v *structMap) Merge(associations dgo.Map) dgo.Map {
 	if associations.Len() == 0 || v == associations {
 		return v
@@ -302,13 +291,6 @@ func (v *structMap) UnmarshalJSON(data []byte) error {
 		panic(frozenMap(`UnmarshalJSON`))
 	}
 	return json.Unmarshal(data, v.rs.Addr().Interface())
-}
-
-func (v *structMap) UnmarshalYAML(value *yaml.Node) error {
-	if v.frozen {
-		panic(frozenMap(`UnmarshalYAML`))
-	}
-	return value.Decode(v.rs.Addr().Interface())
 }
 
 func (v *structMap) Values() dgo.Array {

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -43,10 +41,6 @@ func (nilValue) GoNil() interface{} {
 
 func (nilValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
-}
-
-func (nilValue) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!null`, Value: `null`}, nil
 }
 
 func (nilValue) ReflectTo(value reflect.Value) {

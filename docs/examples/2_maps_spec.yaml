@@ -1,8 +1,0 @@
-array_of_strings:
-  type: "[]string[1]"
-  required: true
-map_of_strings:
-  type: map[string]any
-  required: true
-map_with_specific_keynames:
-  type: "{name:string,embedded_array:[]any,must_be_positive:0..,might_exist?:string}"

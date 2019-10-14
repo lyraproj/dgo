@@ -5,8 +5,6 @@ import (
 	"math"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -301,10 +299,6 @@ func (v floatVal) GoFloat() float64 {
 
 func (v floatVal) HashCode() int {
 	return int(v)
-}
-
-func (v floatVal) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!float`, Value: v.String()}, nil
 }
 
 func (v floatVal) ReflectTo(value reflect.Value) {

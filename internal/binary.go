@@ -8,7 +8,6 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -251,10 +250,6 @@ func (v *binary) GoBytes() []byte {
 
 func (v *binary) HashCode() int {
 	return bytesHash(v.bytes)
-}
-
-func (v *binary) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{Kind: yaml.ScalarNode, Tag: `!!binary`, Value: v.String()}, nil
 }
 
 func (v *binary) ReflectTo(value reflect.Value) {

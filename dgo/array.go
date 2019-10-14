@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/lyraproj/dgo/util"
-	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -64,8 +63,6 @@ type (
 		util.Indentable
 		json.Marshaler
 		json.Unmarshaler
-		yaml.Marshaler
-		yaml.Unmarshaler
 
 		// Add adds the given value to the end of this array. It panics if the receiver is frozen.
 		Add(val interface{})

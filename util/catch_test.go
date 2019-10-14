@@ -26,7 +26,16 @@ func ExampleCatch_string() {
 	// Output: overheated
 }
 
-func TestCatch_noError(t *testing.T) {
+func TestCatch_noPanic(t *testing.T) {
+	err := Catch(func() {
+		// nothing
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func TestCatch_notError(t *testing.T) {
 	defer func() {
 		r, ok := recover().(int)
 		if !(ok && r == 32) {
