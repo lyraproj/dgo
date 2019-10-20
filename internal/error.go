@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (
@@ -66,7 +67,7 @@ func (e *errw) Equals(other interface{}) bool {
 }
 
 func (e *errw) HashCode() int {
-	return stringHash(e.error.Error())
+	return util.StringHash(e.error.Error())
 }
 
 func (e *errw) Error() string {

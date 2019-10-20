@@ -137,7 +137,7 @@ func (v *regexpVal) Equals(other interface{}) bool {
 }
 
 func (v *regexpVal) HashCode() int {
-	return stringHash((*regexp.Regexp)(v).String())
+	return util.StringHash((*regexp.Regexp)(v).String())
 }
 
 func (v *regexpVal) ReflectTo(value reflect.Value) {

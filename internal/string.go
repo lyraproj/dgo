@@ -383,7 +383,7 @@ func (t *patternType) Generic() dgo.Type {
 }
 
 func (t *patternType) HashCode() int {
-	return stringHash(t.String())
+	return util.StringHash(t.String())
 }
 
 func (t *patternType) Instance(v interface{}) bool {
@@ -512,14 +512,6 @@ func (t *sizedStringType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
 }
 
-func stringHash(s string) int {
-	h := 1
-	for i := range s {
-		h = 31*h + int(s[i])
-	}
-	return h
-}
-
 func makeHString(s string) *hstring {
 	return &hstring{s: s}
 }
@@ -575,7 +567,7 @@ func (v *hstring) GoString() string {
 
 func (v *hstring) HashCode() int {
 	if v.h == 0 {
-		v.h = stringHash(v.s)
+		v.h = util.StringHash(v.s)
 	}
 	return v.h
 }
