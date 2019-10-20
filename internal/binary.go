@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math"
 	"reflect"
 
@@ -151,6 +153,15 @@ func Binary(bs []byte, frozen bool) dgo.Binary {
 // BinaryFromString creates a new Binary from the base64 encoded string
 func BinaryFromString(s string) dgo.Binary {
 	bs, err := base64.StdEncoding.Strict().DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return &binary{bytes: bs, frozen: true}
+}
+
+// BinaryFromData creates a new frozen Binary based on data read from the given io.Reader.
+func BinaryFromData(data io.Reader) dgo.Binary {
+	bs, err := ioutil.ReadAll(data)
 	if err != nil {
 		panic(err)
 	}

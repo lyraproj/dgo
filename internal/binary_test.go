@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"bytes"
+	"errors"
 	"math"
 	"reflect"
 	"testing"
@@ -60,6 +61,12 @@ func TestBinaryType(t *testing.T) {
 	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
 }
 
+type badReader int
+
+func (badReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New(`oops`)
+}
+
 func TestBinary(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
@@ -75,6 +82,9 @@ func TestBinary(t *testing.T) {
 	bs[1] = 2
 	require.Equal(t, `AQQD`, v.String())
 	require.NotEqual(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
+
+	// Test panic on bad read
+	require.Panic(t, func() { vf.BinaryFromData(badReader(0)) }, `oops`)
 }
 
 func TestBinaryString(t *testing.T) {
