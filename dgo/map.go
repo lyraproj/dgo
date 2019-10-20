@@ -33,11 +33,19 @@ type (
 	// EntryPredicate returns true of false based on the given entry
 	EntryPredicate func(entry MapEntry) bool
 
+	// Keyed is the simples possible interface for a key store.
+	Keyed interface {
+		// Get returns the value for the given key. The method will return nil when the key is not found. A
+		// vf.Nil is returned if the key is found but associated with nil.
+		Get(key interface{}) Value
+	}
+
 	// Map represents an ordered set of key-value associations. The Map preserves the order by which the entries
 	// were added. Associations retain their order even if their value change. When creating a Map from a go map
 	// the associations will be sorted based on the natural order of the keys.
 	Map interface {
 		Iterable
+		Keyed
 		ReflectedValue
 		util.Indentable
 		json.Marshaler
@@ -83,10 +91,6 @@ type (
 
 		// Find returns the first entry for which the entry predicate returns true
 		Find(predicate EntryPredicate) MapEntry
-
-		// Get returns the value for the given key. The method will return nil when the key is not present
-		// in the map. Use NilValue to bind a key to nil
-		Get(key interface{}) Value
 
 		// Keys returns frozen snapshot of all the keys of this map
 		Keys() Array
