@@ -83,6 +83,9 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 			return Nil
 		}
 		isPtr = true
+	case reflect.Func:
+		f := function(vr)
+		return &f
 	}
 	vi := vr.Interface()
 	if v, ok := vi.(dgo.Value); ok {
@@ -100,7 +103,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		}
 	}
 	// Value as unsafe. Immutability is not guaranteed
-	return native(vr)
+	return Native(vr)
 }
 
 // FromValue converts a dgo.Value into a go native value. The given `dest` must be a pointer

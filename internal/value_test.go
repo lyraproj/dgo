@@ -165,7 +165,7 @@ func TestValue_reflected(t *testing.T) {
 	require.True(t, 3.14 == f.GoFloat())
 
 	v = vf.Value(reflect.ValueOf(reflect.ValueOf))
-	_, ok = v.(dgo.Native)
+	_, ok = v.(dgo.Callable)
 	require.True(t, ok)
 
 	v = vf.Value([]interface{}{map[string]interface{}{`a`: 1}})

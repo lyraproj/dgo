@@ -44,9 +44,11 @@ func TestTheTester(t *testing.T) {
 	ensureFailed(t, func(ft *testing.T) {
 		require.Match(ft, 23, `bar`)
 	})
+	require.Match(t, `xyz`, `has xyz in it`)
 	ensureFailed(t, func(ft *testing.T) {
 		require.NoMatch(ft, `bar`, `bar`)
 	})
+	require.NoMatch(t, `abc`, `has xyz in it`)
 	ensureFailed(t, func(ft *testing.T) {
 		require.Ok(ft, errors.New(`nope`))
 	})

@@ -7,15 +7,6 @@ import (
 )
 
 type (
-	// Doer is performs some task on behalf of a caller
-	Doer func()
-
-	// Actor is performs some task with a value on behalf of a caller
-	Actor func(value Value)
-
-	// Mapper maps a value to another value
-	Mapper func(value Value) interface{}
-
 	// DoWithIndex performs some task on behalf of an indexed caller
 	DoWithIndex func(value Value, index int)
 
