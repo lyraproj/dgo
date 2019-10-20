@@ -673,6 +673,13 @@ func TestArray_Copy(t *testing.T) {
 	require.Same(t, c, c.Copy(true))
 }
 
+func TestArray_Flatten(t *testing.T) {
+	a := vf.Values(`a`, `b`, vf.Values(`c`, `d`), vf.Values(`e`, vf.Values(`f`, `g`)))
+	b := vf.Values(`a`, `b`, `c`, `d`, `e`, `f`, `g`)
+	require.Equal(t, b, a.Flatten())
+	require.Same(t, b, b.Flatten())
+}
+
 func TestArray_FromReflected(t *testing.T) {
 	vs := []dgo.Value{vf.Integer(2), vf.String(`b`)}
 	a := internal.ArrayFromReflected(reflect.ValueOf(vs), false).(dgo.Array)

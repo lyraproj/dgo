@@ -101,6 +101,10 @@ type (
 		// the current value is provided in the call.
 		EachWithIndex(actor DoWithIndex)
 
+		// Flatten returns a new Array that is a one-dimensional flattening of this Array (recursively). That is,
+		// for every element that is an array, extract its elements into the new array.
+		Flatten() Array
+
 		// Get returns the value at the given position. A negative position or a position
 		// that is greater or equal to the length of the array will result in a panic.
 		Get(position int) Value

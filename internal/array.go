@@ -975,6 +975,30 @@ func (v *array) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
+func (v *array) Flatten() dgo.Array {
+	a := v.slice
+	for i := range a {
+		if _, ok := a[i].(*array); ok {
+			fs := make([]dgo.Value, i, len(a)*2)
+			copy(fs, a)
+			return &array{slice: flattenElements(a[i:], fs), frozen: v.frozen}
+		}
+	}
+	return v
+}
+
+func flattenElements(elements, receiver []dgo.Value) []dgo.Value {
+	for i := range elements {
+		e := elements[i]
+		if a, ok := e.(*array); ok {
+			receiver = flattenElements(a.slice, receiver)
+		} else {
+			receiver = append(receiver, e)
+		}
+	}
+	return receiver
+}
+
 func (v *array) Freeze() {
 	if v.frozen {
 		return
