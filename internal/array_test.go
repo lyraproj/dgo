@@ -998,6 +998,22 @@ func TestArray_Select(t *testing.T) {
 	}))
 }
 
+func TestArray_Slice(t *testing.T) {
+	a := vf.Values(1, 2, 3, 4)
+	require.Equal(t, a.Slice(0, 3), vf.Values(1, 2, 3))
+	require.Equal(t, a.Slice(1, 3), vf.Values(2, 3))
+	require.Same(t, a.Slice(0, 4), a)
+
+	a = vf.MutableValues(nil, 1, 2, 3, 4)
+	b := a.Slice(0, 4)
+	require.Equal(t, a, b)
+	require.NotSame(t, a, b)
+
+	// Setting a value in b should not affect a
+	b.Set(2, 8)
+	require.Equal(t, a.Get(2), 3)
+}
+
 func TestArray_Sort(t *testing.T) {
 	a := vf.Strings(`some`, `arbitrary`, `unsorted`, `words`)
 	b := a.Sort()

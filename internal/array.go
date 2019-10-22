@@ -1379,6 +1379,18 @@ func (v *array) SetType(ti interface{}) {
 	panic(IllegalAssignment(mt, v))
 }
 
+func (v *array) Slice(i, j int) dgo.Array {
+	if v.frozen && i == 0 && j == len(v.slice) {
+		return v
+	}
+	ss := v.slice[i:j]
+	if !v.frozen {
+		// a copy is needed. Two non frozen arrays cannot share the same slice storage
+		ss = sliceCopy(ss)
+	}
+	return &array{slice: ss, frozen: v.frozen}
+}
+
 func (v *array) Sort() dgo.Array {
 	sa := v.slice
 	if len(sa) < 2 {

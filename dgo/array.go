@@ -163,6 +163,9 @@ type (
 		// to an ArrayType. The Array must be mutable and an instance of the given type
 		SetType(t interface{})
 
+		// Slice returns a slice of this array, starting at position start and ending at position end-1
+		Slice(start, end int) Array
+
 		// Sort returns a new Array with all elements sorted using their natural order. The method
 		// will panic unless all elements implement the Comparable interface
 		Sort() Array
