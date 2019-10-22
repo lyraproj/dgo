@@ -511,8 +511,6 @@ func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
 		tp = p.meta()
 	case `string`:
 		tp = p.string()
-	case `binary`:
-		tp = DefaultBinaryType
 	case `func`:
 		tp = p.funcExpression()
 	default:
