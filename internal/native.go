@@ -166,8 +166,6 @@ func toReflected(value interface{}) (reflect.Value, bool) {
 	switch value := value.(type) {
 	case *native:
 		return reflect.Value(*value), true
-	case *function:
-		return reflect.Value(*value), true
 	case dgo.Value:
 		return reflect.Value{}, false
 	}

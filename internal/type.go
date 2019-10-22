@@ -10,7 +10,7 @@ import (
 
 // CheckAssignableTo checks if the given type t implements the ReverseAssignable interface and if
 // so, returns the value of calling its AssignableTo method with the other type as an
-// argument. Otherwise, this function returns false
+// argument. Otherwise, this goFunc returns false
 func CheckAssignableTo(guard dgo.RecursionGuard, t, other dgo.Type) bool {
 	if lt, ok := t.(dgo.ReverseAssignable); ok {
 		if guard != nil {
@@ -35,10 +35,14 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 		return MapType(TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, math.MaxInt64)
 	case reflect.Ptr:
 		return OneOfType([]dgo.Type{TypeFromReflected(vt.Elem()), DefaultNilType})
+	case reflect.Func:
+		return exactFunctionType{vt}
 	case reflect.Interface:
-		vn := vt.Name()
-		if vn == `` {
+		switch vt.Name() {
+		case ``:
 			return DefaultAnyType
+		case `error`:
+			return DefaultErrorType
 		}
 	default:
 		if pt, ok := primitivePTypes[vt.Kind()]; ok {

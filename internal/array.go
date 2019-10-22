@@ -31,7 +31,10 @@ type (
 	}
 
 	// tupleType represents an array with an exact number of ordered element types.
-	tupleType array
+	tupleType struct {
+		types    []dgo.Value
+		variadic bool
+	}
 
 	// exactArrayType only matches the array that it represents
 	exactArrayType array
@@ -181,14 +184,8 @@ func (t *sizedArrayType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type
 	switch ot := other.(type) {
 	case defaultArrayType:
 		return false // lacks size
-	case *sizedArrayType:
-		return t.min <= ot.min && ot.max <= t.max && t.elementType.Assignable(ot.elementType)
-	case *tupleType:
-		l := len(ot.slice)
-		return t.min <= l && l <= t.max && allAssignable(guard, t.elementType, ot.slice)
-	case *exactArrayType:
-		l := len(ot.slice)
-		return t.min <= l && l <= t.max && t.elementType.Assignable(ot.ElementType())
+	case dgo.ArrayType:
+		return t.min <= ot.Min() && ot.Max() <= t.max && t.elementType.Assignable(ot.ElementType())
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -282,22 +279,16 @@ func (t *exactArrayType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type
 	case *sizedArrayType:
 		l := len(es)
 		return ot.min == l && ot.max == l && assignableToAll(guard, ot.elementType, es)
-	case *tupleType:
-		os := ot.slice
-		l := len(es)
-		if l != len(os) {
-			return false
-		}
-		for i := range es {
-			if !Assignable(guard, es[i].Type(), os[i].(dgo.Type)) {
-				return false
-			}
-		}
-		return true
 	case *exactArrayType:
 		return sliceEquals(nil, es, ot.slice)
+	case dgo.TupleType:
+		return tupleAssignableTuple(guard, t, ot)
 	}
 	return CheckAssignableTo(guard, other, t)
+}
+
+func (t *exactArrayType) Element(index int) dgo.Type {
+	return t.slice[index].Type()
 }
 
 func (t *exactArrayType) ElementType() dgo.Type {
@@ -341,6 +332,10 @@ func (t *exactArrayType) Instance(value interface{}) bool {
 	return false
 }
 
+func (t *exactArrayType) Len() int {
+	return len(t.slice)
+}
+
 func (t *exactArrayType) Max() int {
 	return len(t.slice)
 }
@@ -373,11 +368,33 @@ func (t *exactArrayType) Unbounded() bool {
 	return false
 }
 
-// DefaultTupleType is the unconstrained Tuple type
+func (t *exactArrayType) Variadic() bool {
+	return false
+}
+
+// DefaultTupleType is a tuple constrained to have zero elements. There is no unconstrained Tuple type
 var DefaultTupleType = &tupleType{}
 
 // TupleType creates a new TupleTupe based on the given types
 func TupleType(types []dgo.Type) dgo.TupleType {
+	return newTupleType(types, false)
+}
+
+// VariadicTupleType returns a type that represents an Array value with a variadic number of elements. Each
+// given type determines the type of a corresponding element in an array except for the last one which
+// must be an ArrayType that determines the remaining elements.
+func VariadicTupleType(types []dgo.Type) dgo.TupleType {
+	n := len(types)
+	if n == 0 {
+		panic(errors.New(`a variadic tuple must have at least one element`))
+	}
+	if _, ok := types[n-1].(dgo.ArrayType); !ok {
+		panic(errors.New(`the last element of a variadic tuple must be an ArrayType`))
+	}
+	return newTupleType(types, true)
+}
+
+func newTupleType(types []dgo.Type, variadic bool) dgo.TupleType {
 	l := len(types)
 	if l == 0 {
 		return DefaultTupleType
@@ -386,118 +403,145 @@ func TupleType(types []dgo.Type) dgo.TupleType {
 	for i := range types {
 		es[i] = types[i]
 	}
-	return &tupleType{slice: es, frozen: true}
+	return &tupleType{types: es, variadic: variadic}
 }
 
 func (t *tupleType) Assignable(other dgo.Type) bool {
 	return Assignable(nil, t, other)
 }
 
-func (t *tupleType) deepAssignable1(guard dgo.RecursionGuard, ot *tupleType) bool {
-	es := t.slice
-	os := ot.slice
-	if len(os) != len(es) {
+func (t *tupleType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
+	return tupleAssignable(guard, t, other)
+}
+
+func tupleAssignableTuple(guard dgo.RecursionGuard, t, ot dgo.TupleType) bool {
+	if t.Min() > ot.Min() || ot.Max() > t.Max() {
 		return false
 	}
-	for i := range es {
-		if !Assignable(guard, es[i].(dgo.Type), os[i].(dgo.Type)) {
+
+	var tv, ov dgo.Type
+	tn := t.Len()
+	if t.Variadic() {
+		tn--
+		tv = t.Element(tn).(dgo.ArrayType).ElementType()
+	}
+	on := ot.Len()
+	if ot.Variadic() {
+		on--
+		ov = ot.Element(on).(dgo.ArrayType).ElementType()
+	}
+
+	// n := max(tn, on)
+	n := tn
+	if n < on {
+		n = on
+	}
+
+	for i := 0; i < n; i++ {
+		te := tv
+		if i < tn {
+			te = t.Element(i)
+		}
+
+		oe := ov
+		if i < on {
+			oe = ot.Element(i)
+		}
+		if te == nil || oe == nil || !Assignable(guard, te, oe) {
 			return false
 		}
 	}
 	return true
 }
 
-func (t *tupleType) deepAssignable2(guard dgo.RecursionGuard, ot *exactArrayType) bool {
-	es := t.slice
-	os := ot.slice
-	if len(os) != len(es) {
-		return false
-	}
-	for i := range es {
-		if !Instance(guard, es[i].(dgo.Type), os[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func (t *tupleType) deepAssignable3(guard dgo.RecursionGuard, ot *sizedArrayType) bool {
-	es := t.slice
-	if ot.Min() == len(es) && ot.Max() == len(es) {
+func tupleAssignableArray(guard dgo.RecursionGuard, t dgo.TupleType, ot *sizedArrayType) bool {
+	if t.Min() <= ot.Min() && ot.Max() <= t.Max() {
 		et := ot.ElementType()
-		for i := range es {
-			if !Assignable(guard, es[i].(dgo.Type), et) {
+		n := t.Len()
+		if t.Variadic() {
+			n--
+		}
+		for i := 0; i < n; i++ {
+			if !Assignable(guard, t.Element(i), et) {
 				return false
 			}
 		}
-	}
-	return true
-}
-
-func (t *tupleType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	dflt := len(t.slice) == 0
-	switch ot := other.(type) {
-	case defaultArrayType:
-		return dflt
-	case *tupleType:
-		if dflt {
-			return true
-		}
-		return t.deepAssignable1(guard, ot)
-	case *exactArrayType:
-		if dflt {
-			return true
-		}
-		return t.deepAssignable2(guard, ot)
-	case *sizedArrayType:
-		if dflt {
-			return true
-		}
-		return t.deepAssignable3(guard, ot)
-	}
-	return CheckAssignableTo(guard, other, t)
-}
-
-func (t *tupleType) ElementType() dgo.Type {
-	switch len(t.slice) {
-	case 0:
-		return DefaultAnyType
-	case 1:
-		return t.slice[0].(dgo.Type)
-	default:
-		return (*allOfType)(t)
-	}
-}
-
-func (t *tupleType) ElementTypes() dgo.Array {
-	return (*array)(t)
-}
-
-func (t *tupleType) Equals(other interface{}) bool {
-	if ot, ok := other.(*tupleType); ok {
-		return (*array)(t).Equals((*array)(ot))
+		return !t.Variadic() || Assignable(guard, t.Element(n).(dgo.ArrayType).ElementType(), et)
 	}
 	return false
 }
 
-func (t *tupleType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiTuple)
+func tupleAssignable(guard dgo.RecursionGuard, t dgo.TupleType, other dgo.Type) bool {
+	switch ot := other.(type) {
+	case defaultArrayType:
+		return false
+	case *exactArrayType:
+		return Instance(guard, t, ot.Value())
+	case dgo.TupleType:
+		return tupleAssignableTuple(guard, t, ot)
+	case *sizedArrayType:
+		return tupleAssignableArray(guard, t, ot)
+	}
+	return CheckAssignableTo(guard, other, t)
 }
 
-func (t *tupleType) Instance(value interface{}) bool {
-	return Instance(nil, t, value)
+func (t *tupleType) Element(index int) dgo.Type {
+	return t.types[index].(dgo.Type)
 }
 
-func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
-	if ov, ok := value.(*array); ok {
-		es := t.slice
-		if len(es) == 0 {
-			return true
+func (t *tupleType) ElementType() dgo.Type {
+	return tupleElementType(t)
+}
+
+func tupleElementType(t dgo.TupleType) (et dgo.Type) {
+	switch t.Len() {
+	case 0:
+		et = DefaultAnyType
+	case 1:
+		et = t.Element(0)
+		if t.Variadic() {
+			et = et.(dgo.ArrayType).ElementType()
 		}
-		s := ov.slice
-		if len(s) == len(es) {
-			for i := range es {
-				if !Instance(guard, es[i].(dgo.Type), s[i]) {
+	default:
+		ea := t.ElementTypes()
+		if t.Variadic() {
+			// Replace last position with element type
+			lp := ea.Len()
+			cp := ea.AppendToSlice(make([]dgo.Value, 0, lp))
+			lp--
+			cp[lp] = ea.Get(lp).(dgo.ArrayType).ElementType()
+			ea = &array{slice: cp}
+		}
+		ea = ea.Unique()
+		if ea.Len() == 1 {
+			return ea.Get(0).(dgo.Type)
+		}
+		return (*allOfType)(ea.(*array))
+	}
+	return
+}
+
+func (t *tupleType) ElementTypes() dgo.Array {
+	return &array{slice: t.types, frozen: true}
+}
+
+func (t *tupleType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *tupleType) deepEqual(seen []dgo.Value, other deepEqual) bool {
+	if ot, ok := other.(*tupleType); ok {
+		return t.variadic == ot.variadic && sliceEquals(seen, t.types, ot.types)
+	}
+	return tupleEquals(seen, t, other)
+}
+
+func tupleEquals(seen []dgo.Value, t dgo.TupleType, other interface{}) bool {
+	if ot, ok := other.(dgo.TupleType); ok {
+		n := t.Len()
+		if t.Variadic() == ot.Variadic() && n == ot.Len() {
+			for i := 0; i < n; i++ {
+				if !equals(seen, t.Element(i), ot.Element(i)) {
 					return false
 				}
 			}
@@ -507,15 +551,101 @@ func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bo
 	return false
 }
 
-func (t *tupleType) Max() int {
-	if l := len(t.slice); l > 0 {
-		return l
+func (t *tupleType) HashCode() int {
+	return tupleHashCode(t, nil)
+}
+
+func (t *tupleType) deepHashCode(seen []dgo.Value) int {
+	return tupleHashCode(t, seen)
+}
+
+func tupleHashCode(t dgo.TupleType, seen []dgo.Value) int {
+	h := 1
+	if t.Variadic() {
+		h = 7
 	}
-	return math.MaxInt64
+	l := t.Len()
+	for i := 0; i < l; i++ {
+		h = h*31 + deepHashCode(seen, t.Element(i))
+	}
+	return h
+}
+
+func (t *tupleType) Instance(value interface{}) bool {
+	return Instance(nil, t, value)
+}
+
+func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
+	return tupleInstance(guard, t, value)
+}
+
+func tupleInstance(guard dgo.RecursionGuard, t dgo.TupleType, value interface{}) bool {
+	if ov, ok := value.(*array); ok {
+		s := ov.slice
+		n := len(s)
+		if t.Variadic() {
+			if t.Min() <= n && n <= t.Max() {
+				tn := t.Len() - 1
+				for i := 0; i < tn; i++ {
+					if !Instance(guard, t.Element(i), s[i]) {
+						return false
+					}
+				}
+				vt := t.Element(tn).(dgo.ArrayType).ElementType()
+				for ; tn < n; tn++ {
+					if !Instance(guard, vt, s[tn]) {
+						return false
+					}
+				}
+				return true
+			}
+		} else {
+			if n == t.Len() {
+				for i := range s {
+					if !Instance(guard, t.Element(i), s[i]) {
+						return false
+					}
+				}
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (t *tupleType) Len() int {
+	return len(t.types)
+}
+
+func (t *tupleType) Max() int {
+	return tupleMax(t)
+}
+
+func tupleMax(t dgo.TupleType) int {
+	n := t.Len()
+	if t.Variadic() {
+		n--
+		vn := t.Element(n).(dgo.ArrayType).Max()
+		if vn < math.MaxInt64 {
+			n += vn
+		} else {
+			n = vn
+		}
+	}
+	return n
 }
 
 func (t *tupleType) Min() int {
-	return len(t.slice)
+	return tupleMin(t)
+}
+
+func tupleMin(t dgo.TupleType) int {
+	n := t.Len()
+	if t.Variadic() {
+		n--
+		n += t.Element(n).(dgo.ArrayType).Min()
+	}
+	return n
 }
 
 func (t *tupleType) ReflectType() reflect.Type {
@@ -523,7 +653,7 @@ func (t *tupleType) ReflectType() reflect.Type {
 }
 
 func (t *tupleType) Resolve(ap dgo.AliasProvider) {
-	resolveSlice(t.slice, ap)
+	resolveSlice(t.types, ap)
 }
 
 func (t *tupleType) String() string {
@@ -539,7 +669,11 @@ func (t *tupleType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *tupleType) Unbounded() bool {
-	return len(t.slice) == 0
+	return t.variadic && t.types[len(t.types)-1].(dgo.ArrayType).Unbounded()
+}
+
+func (t *tupleType) Variadic() bool {
+	return t.variadic
 }
 
 // Array returns a frozen dgo.Array that represents a copy of the given value. The value can be
@@ -569,8 +703,8 @@ func Array(value interface{}) dgo.Array {
 	}
 }
 
-// arrayFromIterator creates an array from a size and an iterator function. The
-// iterator function is expected to call its actor exactly size number of times.
+// arrayFromIterator creates an array from a size and an iterator goFunc. The
+// iterator goFunc is expected to call its actor exactly size number of times.
 func arrayFromIterator(size int, each func(dgo.Actor)) *array {
 	arr := make([]dgo.Value, size)
 	i := 0
@@ -667,37 +801,19 @@ func ArrayWithCapacity(capacity int, typ interface{}) dgo.Array {
 // Unset entries in the slice will be replaced by Nil. A type check is performed on the slice unless the type is nil.
 func WrapSlice(typ interface{}, values []dgo.Value) dgo.Array {
 	mt := asArrayType(typ)
-	if mt != nil {
-		l := len(values)
-		if l < mt.Min() {
-			panic(IllegalSize(mt, l))
-		}
-		if l > mt.Max() {
-			panic(IllegalSize(mt, l))
-		}
-		if tt, ok := mt.(*tupleType); ok {
-			es := tt.slice
-			for i := range values {
-				e := values[i]
-				et := es[i].(dgo.Type)
-				if !et.Instance(e) {
-					panic(IllegalAssignment(et, e))
-				}
-			}
-		} else {
-			et := mt.ElementType()
-			if DefaultAnyType != et {
-				for i := range values {
-					e := values[i]
-					if !et.Instance(e) {
-						panic(IllegalAssignment(et, e))
-					}
-				}
-			}
-		}
-	}
 	ReplaceNil(values)
-	return &array{slice: values, typ: mt, frozen: false}
+	a := &array{slice: values, frozen: false}
+	if mt != nil {
+		if !mt.Instance(a) {
+			l := len(values)
+			if l < mt.Min() || l > mt.Max() {
+				panic(IllegalSize(mt, l))
+			}
+			panic(IllegalAssignment(mt, a))
+		}
+		a.typ = mt
+	}
+	return a
 }
 
 // MutableValues returns a frozen dgo.Array that represents the given values
@@ -756,8 +872,17 @@ func (v *array) assertType(e dgo.Value, pos int) {
 			}
 		}
 		var et dgo.Type
-		if tp, ok := t.(*tupleType); ok {
-			et = tp.slice[pos].(dgo.Type)
+		if tp, ok := t.(dgo.TupleType); ok {
+			if tp.Variadic() {
+				lp := tp.Len() - 1
+				if pos < lp {
+					et = tp.Element(pos)
+				} else {
+					et = tp.Element(lp).(dgo.ArrayType).ElementType()
+				}
+			} else {
+				et = tp.Element(pos)
+			}
 		} else {
 			et = t.ElementType()
 		}
@@ -1464,16 +1589,6 @@ func allInstance(guard dgo.RecursionGuard, t dgo.Type, vs []dgo.Value) bool {
 	}
 	for i := range vs {
 		if !Instance(guard, t, vs[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-// allAssignable returns true when all types in the given slice s are assignable to the given type t
-func allAssignable(guard dgo.RecursionGuard, t dgo.Type, s []dgo.Value) bool {
-	for i := range s {
-		if !Assignable(guard, t, s[i].(dgo.Type)) {
 			return false
 		}
 	}

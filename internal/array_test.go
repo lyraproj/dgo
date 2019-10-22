@@ -226,15 +226,16 @@ func TestArrayElementType_multipleElements(t *testing.T) {
 }
 
 func TestTupleType(t *testing.T) {
-	tt := newtype.Tuple()
-	require.Equal(t, typ.Tuple, tt)
-	require.Assignable(t, tt, typ.Array)
-	require.Assignable(t, tt, typ.Tuple)
+	tt := typ.Tuple
+	require.Same(t, tt, newtype.Tuple())
+	require.Assignable(t, tt, newtype.Array(0, 0))
+
+	tt = newtype.Tuple(typ.String, typ.Any, typ.Float)
 	require.Assignable(t, tt, newtype.Tuple(typ.String, typ.Integer, typ.Float))
 	require.Assignable(t, tt, vf.Values(`one`, 2, 3.0).Type())
-	require.Equal(t, 0, tt.Min())
-	require.Equal(t, math.MaxInt64, tt.Max())
-	require.True(t, tt.Unbounded())
+	require.Equal(t, 3, tt.Min())
+	require.Equal(t, 3, tt.Max())
+	require.False(t, tt.Unbounded())
 
 	et := newtype.String(1, 100)
 	tt = newtype.Tuple(et)
@@ -266,7 +267,6 @@ func TestTupleType(t *testing.T) {
 	require.NotAssignable(t, newtype.Array(newtype.AnyOf(typ.String, typ.Integer, typ.Float), 0, 2), tt)
 
 	okv := vf.Values(`hello`, 1, 2.0)
-	require.Instance(t, typ.Tuple, okv)
 	require.Instance(t, tt, okv)
 	require.NotInstance(t, tt, okv.Get(0))
 	require.Assignable(t, tt, okv.Type())
@@ -283,9 +283,8 @@ func TestTupleType(t *testing.T) {
 	require.Panic(t, func() { okm.Set(2, 3) }, newtype.IllegalAssignment(typ.Float, vf.Value(3)))
 	require.Equal(t, `world`, okm.Set(0, `earth`))
 
-	tt = typ.Tuple
-	require.Assignable(t, tt, newtype.Array(typ.String, 2, 2))
 	tt = newtype.Tuple(typ.String, typ.String)
+	require.Assignable(t, tt, newtype.Array(typ.String, 2, 2))
 	require.Equal(t, tt.ReflectType(), newtype.Array(typ.String).ReflectType())
 
 	require.Assignable(t, tt, newtype.Array(typ.String, 2, 2))
@@ -316,6 +315,30 @@ func TestTupleType_selfReference(t *testing.T) {
 	require.Assignable(t, tp, t2)
 
 	require.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
+}
+
+func TestVariadicTupleType(t *testing.T) {
+	tt := newtype.Parse(`{string,...string}`).(dgo.TupleType)
+	require.Instance(t, tt, vf.Values(`one`))
+	require.Instance(t, tt, vf.Values(`one`, `two`))
+	require.NotInstance(t, tt, vf.Values(`one`, 2))
+	require.NotInstance(t, tt, vf.Values(1))
+
+	tt = newtype.VariadicTuple(typ.String, newtype.Array(typ.String, 1, 1))
+	require.NotInstance(t, tt, vf.Values(`one`))
+	require.Instance(t, tt, vf.Values(`one`, `two`))
+	require.NotInstance(t, tt, vf.Values(`one`, `two`, `three`))
+	require.False(t, tt.Unbounded())
+	require.Equal(t, 2, tt.Min())
+	require.Equal(t, 2, tt.Max())
+
+	a := vf.MutableValues(tt, `one`, `two`)
+	require.Panic(t, func() { a.Set(0, 1) }, `cannot be assigned`)
+	require.Panic(t, func() { a.Set(1, 2) }, `cannot be assigned`)
+	require.Panic(t, func() { a.Add(`three`) }, `size constraint violation`)
+
+	require.Panic(t, func() { newtype.VariadicTuple() }, `must have at least one element`)
+	require.Panic(t, func() { newtype.VariadicTuple(typ.String) }, `last element .* must be an ArrayType`)
 }
 
 func TestMutableValues_withoutType(t *testing.T) {

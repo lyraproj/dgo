@@ -17,6 +17,7 @@ const (
 	exListEnd
 	exParamsComma
 	exLeftBracket
+	exLeftParen
 	exRightBracket
 	exRightParen
 	exRightAngle
@@ -62,6 +63,8 @@ func expect(state int) (s string) {
 		s = `one of ',' or ']'`
 	case exLeftBracket:
 		s = `'['`
+	case exLeftParen:
+		s = `'('`
 	case exRightBracket:
 		s = `']'`
 	case exListComma:
@@ -166,28 +169,38 @@ func (p *parser) parse(t *token) {
 	}
 }
 
-func (p *parser) list() {
+func (p *parser) list(endChar tokenType) {
 	szp := len(p.d)
 	ellipsis := false
-	expectEntry := 1
+	expectEntry := 0
+	if endChar == '}' {
+		expectEntry = 1
+	}
 	for {
 		t := p.nextToken()
 		if t.i == dotdotdot {
 			ellipsis = true
 			t = p.nextToken()
-			if t.i == '}' {
+			if t.i == endChar && expectEntry != 0 {
 				break
 			}
-			panic(badSyntax(t, exListEnd))
+			if expectEntry == 2 {
+				panic(badSyntax(t, exListEnd))
+			}
+			expectEntry = 0
+			p.anyOf(t)
+			t = p.nextToken()
+			et := newArrayType(p.popLastType(), 0, math.MaxInt64)
+			p.d = append(p.d, et)
 		}
 
-		if t.i == '}' {
+		if t.i == endChar {
 			// Right bracket instead of element indicates an empty array or an extraneous comma. Both are OK
 			break
 		}
 		expectEntry = p.arrayElement(t, expectEntry)
 		t = p.nextToken()
-		if t.i == '}' {
+		if t.i == endChar {
 			break
 		}
 		if t.i != ',' {
@@ -202,15 +215,19 @@ func (p *parser) list() {
 			tv = makeStructType(as, ellipsis)
 		}
 		if tv == nil {
-			tv = makeTupleType(&array{slice: as})
+			tv = makeTupleType(&array{slice: as}, ellipsis)
 		}
 	} else {
-		tv = makeStructType(nil, ellipsis)
+		if expectEntry == 0 {
+			tv = DefaultTupleType
+		} else {
+			tv = makeStructType(nil, ellipsis)
+		}
 	}
 	p.d = append(p.d[:szp], tv)
 }
 
-func makeTupleType(ar dgo.Array) dgo.TupleType {
+func makeTupleType(ar dgo.Array, variadic bool) dgo.TupleType {
 	// Convert literal values to types and create a tupleType
 	as := sliceCopy(ar.GoSlice())
 	for i := range as {
@@ -219,7 +236,7 @@ func makeTupleType(ar dgo.Array) dgo.TupleType {
 			as[i] = v.Type()
 		}
 	}
-	return &tupleType{slice: as, frozen: true}
+	return &tupleType{types: as, variadic: variadic}
 }
 
 func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructMapType {
@@ -372,7 +389,7 @@ func (p *parser) unary(t *token) {
 		negate = true
 		t = p.nextToken()
 	}
-	if t.i == '^' {
+	if t.i == '~' {
 		ciString = true
 		t = p.nextToken()
 	}
@@ -447,33 +464,57 @@ func (p *parser) string() dgo.Value {
 	return DefaultStringType
 }
 
+func (p *parser) funcExpression() dgo.Value {
+	t := p.nextToken()
+	if t.i != '(' {
+		panic(badSyntax(t, exLeftParen))
+	}
+	p.list(')')
+	args := p.popLastType().(dgo.TupleType)
+	var returns dgo.TupleType = DefaultTupleType
+	t = p.peekToken()
+	switch t.i {
+	case end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.':
+		break
+	case '(':
+		p.nextToken()
+		p.list(')')
+		returns = p.popLastType().(dgo.TupleType)
+	default:
+		p.anyOf(p.nextToken())
+		returns = newTupleType([]dgo.Type{p.popLastType()}, false)
+	}
+	return FunctionType(args, returns)
+}
+
+var identifierToTypeMap = map[string]dgo.Value{
+	`any`:    DefaultAnyType,
+	`bool`:   DefaultBooleanType,
+	`int`:    DefaultIntegerType,
+	`float`:  DefaultFloatType,
+	`dgo`:    DefaultDgoStringType,
+	`binary`: DefaultBinaryType,
+	`true`:   True,
+	`false`:  False,
+	`nil`:    Nil,
+}
+
 func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
-	var tp dgo.Value
+	tp, ok := identifierToTypeMap[t.s]
+	if ok {
+		return tp
+	}
 	switch t.s {
 	case `map`:
 		tp = p.mapExpression()
 	case `type`:
 		tp = p.meta()
-	case `any`:
-		tp = DefaultAnyType
-	case `bool`:
-		tp = DefaultBooleanType
-	case `int`:
-		tp = DefaultIntegerType
-	case `float`:
-		tp = DefaultFloatType
-	case `dgo`:
-		tp = DefaultDgoStringType
 	case `string`:
 		tp = p.string()
 	case `binary`:
 		tp = DefaultBinaryType
-	case `true`:
-		tp = True
-	case `false`:
-		tp = False
-	case `nil`:
-		tp = Nil
+	case `func`:
+		tp = p.funcExpression()
 	default:
 		if returnUnknown {
 			tp = &unknownIdentifier{hstring: hstring{s: t.s}}
@@ -586,7 +627,7 @@ func (p *parser) typeExpression(t *token) {
 	var tp dgo.Value
 	switch t.i {
 	case '{':
-		p.list()
+		p.list('}')
 		return
 	case '(':
 		p.anyOf(p.nextToken())

@@ -54,10 +54,22 @@ func TestParse_exact(t *testing.T) {
 	require.Equal(t, `{...}`, st.String())
 }
 
+func TestParse_func(t *testing.T) {
+	tt := newtype.Parse(`func(string,...any) (string, bool)`)
+	require.Equal(t, newtype.Function(
+		newtype.VariadicTuple(typ.String, newtype.Array(typ.Any)),
+		newtype.Tuple(typ.String, typ.Boolean)), tt)
+}
+
+func TestParse_tuple(t *testing.T) {
+	tt := newtype.Parse(`{string,...string[10]}`)
+	require.Equal(t, newtype.VariadicTuple(typ.String, newtype.Array(newtype.String(10))), tt)
+}
+
 func TestParse_ciEnum(t *testing.T) {
-	st := newtype.Parse(`^"foo"|^"fee"`)
+	st := newtype.Parse(`~"foo"|~"fee"`)
 	require.Equal(t, newtype.CiEnum(`foo`, `fee`), st)
-	require.Panic(t, func() { newtype.Parse(`^32`) }, `expected a literal string, got 32`)
+	require.Panic(t, func() { newtype.Parse(`~32`) }, `expected a literal string, got 32`)
 }
 
 func TestParse_sized(t *testing.T) {
@@ -207,6 +219,7 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`{4, a:32}`) }, `mix of elements and map entries`)
 	require.Panic(t, func() { newtype.Parse(`{4, "a":32}`) }, `mix of elements and map entries`)
 	require.Panic(t, func() { newtype.Parse(`{4, a}`) }, `reference to unresolved type 'a'`)
+	require.Panic(t, func() { newtype.Parse(`{func, 3}`) }, `expected '\(', got ','`)
 }
 
 func TestParseFile_errors(t *testing.T) {

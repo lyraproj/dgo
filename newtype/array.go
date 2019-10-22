@@ -14,3 +14,10 @@ func Array(args ...interface{}) dgo.ArrayType {
 func Tuple(types ...dgo.Type) dgo.TupleType {
 	return internal.TupleType(types)
 }
+
+// VariadicTuple returns a type that represents an Array value with a variadic number of elements. Each
+// given type determines the type of a corresponding element in an array except for the last one which
+// must be an ArrayType that determines the remaining elements.
+func VariadicTuple(types ...dgo.Type) dgo.TupleType {
+	return internal.VariadicTupleType(types)
+}

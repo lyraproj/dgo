@@ -160,5 +160,5 @@ func TestCiEnum(t *testing.T) {
 	require.NotAssignable(t, newtype.Pattern(regexp.MustCompile(`f`)), tp)
 	require.Assignable(t, tp, newtype.Enum(`f`, `foo`, `foobar`))
 
-	require.Equal(t, `^"f"|^"foo"|^"foobar"`, tp.String())
+	require.Equal(t, `~"f"|~"foo"|~"foobar"`, tp.String())
 }

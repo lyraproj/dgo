@@ -92,6 +92,9 @@ const (
 	TiTime
 	// TiTimeExact is the type identifier for the exact Time type
 	TiTimeExact
+
+	// TiFunction is the type identifier for for the Function type
+	TiFunction
 )
 
 var tiLabels = map[TypeIdentifier]string{
@@ -133,6 +136,7 @@ var tiLabels = map[TypeIdentifier]string{
 	TiError:         `error`,
 	TiDgoString:     `dgo`,
 	TiSensitive:     `sensitive`,
+	TiFunction:      `function`,
 }
 
 func (ti TypeIdentifier) String() string {

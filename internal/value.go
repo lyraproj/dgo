@@ -14,9 +14,9 @@ var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
 func Value(v interface{}) dgo.Value {
-	// This function is kept very small to enable inlining so this
+	// This goFunc is kept very small to enable inlining so this
 	// if statement should not be baked in to the grand switch
-	// in the value function
+	// in the value goFunc
 	if gv, ok := v.(dgo.Value); ok {
 		return gv
 	}
@@ -84,8 +84,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		}
 		isPtr = true
 	case reflect.Func:
-		f := function(vr)
-		return &f
+		return (*goFunc)(&vr)
 	}
 	vi := vr.Interface()
 	if v, ok := vi.(dgo.Value); ok {

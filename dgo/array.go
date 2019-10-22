@@ -203,7 +203,21 @@ type (
 	TupleType interface {
 		ArrayType
 
-		// ElementTypes returns the types of the elements for instances of this type
+		// Len returns the number of types in this tuple.
+		Len() int
+
+		// Element returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
+		Element(int) Type
+
+		// ElementTypes returns the types of the elements for instances of this type.
 		ElementTypes() Array
+
+		// Variadic means that the tuple can hold a variable number of elements.
+		//
+		// A non variadic Tuple will always have t.Min() == t.Max().
+		//
+		// The type of the last element of a variadic Tuple is always an ArrayType with an element type that describes
+		// the type for indexes >= t.Len() - 1.
+		Variadic() bool
 	}
 )

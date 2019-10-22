@@ -99,6 +99,33 @@ func writeFloatRange(min, max float64, inclusive bool, sb *strings.Builder) {
 	}
 }
 
+func writeTupleArgs(seen []dgo.Value, tt dgo.TupleType, leftSep, rightSep byte, sb *strings.Builder) {
+	es := tt.ElementTypes()
+	if tt.Variadic() {
+		n := es.Len() - 1
+		sep := leftSep
+		for i := 0; i < n; i++ {
+			util.WriteByte(sb, sep)
+			sep = ','
+			buildTypeString(seen, es.Get(i).(dgo.Type), commaPrio, sb)
+		}
+		util.WriteByte(sb, sep)
+		util.WriteString(sb, `...`)
+		vt := es.Get(n).(dgo.ArrayType)
+		buildTypeString(seen, vt.ElementType(), commaPrio, sb)
+		util.WriteByte(sb, rightSep)
+		if !vt.Unbounded() {
+			util.WriteByte(sb, '[')
+			writeSizeBoundaries(int64(tt.Min()), int64(tt.Max()), sb)
+			util.WriteByte(sb, ']')
+		}
+	} else {
+		util.WriteByte(sb, leftSep)
+		joinTypes(seen, es, `,`, commaPrio, sb)
+		util.WriteByte(sb, rightSep)
+	}
+}
+
 func writeTernary(seen []dgo.Value, typ dgo.Type, tc func(dgo.Value) dgo.Type, prio int, op string, opPrio int, sb *strings.Builder) {
 	if prio >= orPrio {
 		util.WriteByte(sb, '(')
@@ -153,9 +180,7 @@ func init() {
 			}
 		},
 		dgo.TiTuple: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			util.WriteByte(sb, '{')
-			joinTypes(seen, typ.(dgo.TupleType).ElementTypes(), `,`, commaPrio, sb)
-			util.WriteByte(sb, '}')
+			writeTupleArgs(seen, typ.(dgo.TupleType), '{', '}', sb)
 		},
 		dgo.TiMap: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
 			at := typ.(dgo.MapType)
@@ -241,7 +266,7 @@ func init() {
 			}
 		},
 		dgo.TiCiString: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
-			util.WriteByte(sb, '^')
+			util.WriteByte(sb, '~')
 			util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().(fmt.Stringer).String()))
 		},
 		dgo.TiNot: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
@@ -269,6 +294,20 @@ func init() {
 					buildTypeString(seen, op, prio, sb)
 					util.WriteByte(sb, ']')
 				}
+			}
+		},
+		dgo.TiFunction: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			ft := typ.(dgo.FunctionType)
+			util.WriteString(sb, `func`)
+			writeTupleArgs(seen, ft.In(), '(', ')', sb)
+			switch ft.Out().Max() {
+			case 0:
+			case 1:
+				buildTypeString(seen, ft.Out().Element(0), prio, sb)
+			default:
+				util.WriteByte(sb, '(')
+				joinTypes(seen, ft.Out().ElementTypes(), `,`, commaPrio, sb)
+				util.WriteByte(sb, ')')
 			}
 		},
 	}
