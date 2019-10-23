@@ -80,6 +80,13 @@ func TestFunction_Call_variadic_panic(t *testing.T) {
 	require.Panic(t, func() { f.Call(vf.Values()) }, `illegal number of arguments. Expected at least 1, got 0`)
 }
 
+func TestFunction_GoFunc(t *testing.T) {
+	f, ok := vf.Value(testC).(dgo.GoFunction)
+	require.True(t, ok)
+	_, ok = f.GoFunc().(func(fn func(string, ...int) string, vs ...int) string)
+	require.True(t, ok)
+}
+
 func TestFunctionType(t *testing.T) {
 	ft := newtype.Function(nil, nil)
 	require.Equal(t, newtype.Parse(`func()`), ft)

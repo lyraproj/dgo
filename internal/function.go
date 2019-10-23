@@ -330,6 +330,10 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 	return convertReturn(m.Call(rr))
 }
 
+func (f *goFunc) GoFunc() interface{} {
+	return (*reflect.Value)(f).Interface()
+}
+
 func (f *goFunc) String() string {
 	return (*reflect.Value)(f).String()
 }

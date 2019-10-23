@@ -1,11 +1,11 @@
 package dgo
 
 type (
-	// Doer is performs some task on behalf of a caller
+	// Doer is performs some task
 	Doer func()
 
-	// Actor is performs some task with a value on behalf of a caller
-	Actor func(value Value)
+	// Consumer is performs some task with a value
+	Consumer func(value Value)
 
 	// Mapper maps a value to another value
 	Mapper func(value Value) interface{}
@@ -22,6 +22,15 @@ type (
 		// If the function has no return value, the result will be the empty slice to indicate zero
 		// returned values.
 		Call(args Array) []Value
+	}
+
+	// GoFunction is a Function specialization that wraps a go function
+	GoFunction interface {
+		Function
+
+		// GoFunc returns a value that can be cast to the actual go function that this GoFunction
+		// represents.
+		GoFunc() interface{}
 	}
 
 	// FunctionType describes a Function
