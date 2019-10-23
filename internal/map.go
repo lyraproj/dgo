@@ -418,7 +418,7 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 	return c
 }
 
-func (g *hashMap) Each(actor dgo.Actor) {
+func (g *hashMap) Each(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e)
 	}
@@ -430,13 +430,13 @@ func (g *hashMap) EachEntry(actor dgo.EntryActor) {
 	}
 }
 
-func (g *hashMap) EachKey(actor dgo.Actor) {
+func (g *hashMap) EachKey(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e.key)
 	}
 }
 
-func (g *hashMap) EachValue(actor dgo.Actor) {
+func (g *hashMap) EachValue(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e.value)
 	}

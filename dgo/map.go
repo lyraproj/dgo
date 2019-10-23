@@ -84,10 +84,10 @@ type (
 		EachEntry(actor EntryActor)
 
 		// EachKey calls the given actor with each key of this Map
-		EachKey(actor Actor)
+		EachKey(actor Consumer)
 
 		// EachValue calls the given actor with each value of this Map
-		EachValue(actor Actor)
+		EachValue(actor Consumer)
 
 		// Find returns the first entry for which the entry predicate returns true
 		Find(predicate EntryPredicate) MapEntry

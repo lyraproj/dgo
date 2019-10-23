@@ -705,7 +705,7 @@ func Array(value interface{}) dgo.Array {
 
 // arrayFromIterator creates an array from a size and an iterator goFunc. The
 // iterator goFunc is expected to call its actor exactly size number of times.
-func arrayFromIterator(size int, each func(dgo.Actor)) *array {
+func arrayFromIterator(size int, each func(dgo.Consumer)) *array {
 	arr := make([]dgo.Value, size)
 	i := 0
 	each(func(e dgo.Value) {
@@ -1075,7 +1075,7 @@ func (v *array) ContainsAll(other dgo.Iterable) bool {
 	return true
 }
 
-func (v *array) Each(actor dgo.Actor) {
+func (v *array) Each(actor dgo.Consumer) {
 	a := v.slice
 	for i := range a {
 		actor(a[i])

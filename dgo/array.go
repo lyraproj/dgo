@@ -39,7 +39,7 @@ type (
 		Value
 
 		// Each calls the given function once for each value of this Iterable.
-		Each(actor Actor)
+		Each(actor Consumer)
 
 		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
 		Len() int

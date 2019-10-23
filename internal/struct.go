@@ -79,7 +79,7 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 	return &structVal{rs: rs, frozen: false}
 }
 
-func (v *structVal) Each(actor dgo.Actor) {
+func (v *structVal) Each(actor dgo.Consumer) {
 	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
@@ -87,11 +87,11 @@ func (v *structVal) EachEntry(actor dgo.EntryActor) {
 	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
-func (v *structVal) EachKey(actor dgo.Actor) {
+func (v *structVal) EachKey(actor dgo.Consumer) {
 	v.AllKeys(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
-func (v *structVal) EachValue(actor dgo.Actor) {
+func (v *structVal) EachValue(actor dgo.Consumer) {
 	v.AllValues(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
