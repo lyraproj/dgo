@@ -46,7 +46,7 @@ func (d *dataDecoder) decode(v dgo.Value) dgo.Value {
 			mv := m.Get(dl.ValueKey())
 			switch {
 			case mv == nil:
-				v = dl.ParseType(ts.(dgo.String))
+				v = dl.ParseType(nil, ts.(dgo.String))
 			case ts.Equals(dl.MapTypeName()):
 				nm := mv.(dgo.Array).ToMap()
 				// Replace all occurrences of v in the new map recursively with the new map as it
@@ -65,7 +65,7 @@ func (d *dataDecoder) decode(v dgo.Value) dgo.Value {
 				v = vf.Time(ts)
 			case ts.Equals(dl.AliasTypeName()):
 				ad := mv.(dgo.Array)
-				v = dl.ParseType(ad.Get(1).(dgo.String))
+				v = dl.ParseType(nil, ad.Get(1).(dgo.String))
 				if d.aliasMap != nil {
 					d.aliasMap.Add(v.(dgo.Type), ad.Get(0).(dgo.String))
 				}

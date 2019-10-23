@@ -31,5 +31,5 @@ func TestDgoDialect_names(t *testing.T) {
 }
 
 func TestDgoDialect_ParseType(t *testing.T) {
-	require.Equal(t, newtype.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(vf.String(`[3,8]string`)))
+	require.Equal(t, newtype.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
 }
