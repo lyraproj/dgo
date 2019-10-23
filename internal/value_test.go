@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/typ"
+
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/vf"
@@ -185,4 +187,8 @@ func TestFromValue_notPointer(t *testing.T) {
 	v := vf.Integer(32)
 	var vc int
 	require.Panic(t, func() { vf.FromValue(v, vc) }, `not a pointer`)
+}
+
+func TestNew(t *testing.T) {
+	require.Panic(t, func() { vf.New(typ.String, vf.Values(3)) }, `implement me`)
 }

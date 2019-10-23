@@ -7,6 +7,11 @@ import (
 	"github.com/lyraproj/dgo/internal"
 )
 
+// New creates an instance of the given type from the given arguments
+func New(typ dgo.Type, arguments dgo.Array) dgo.Value {
+	return internal.New(typ, arguments)
+}
+
 // Value returns the dgo.Value representation of its argument. If the argument type
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
