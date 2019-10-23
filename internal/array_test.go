@@ -760,6 +760,21 @@ func TestArray_EachWithIndex(t *testing.T) {
 	require.Equal(t, 3, ni)
 }
 
+func TestArray_Find(t *testing.T) {
+	v := vf.Values(`a`, `b`, 3, `d`).Find(func(v dgo.Value) interface{} {
+		if v.Equals(3) {
+			return `three`
+		}
+		return nil
+	})
+	require.Equal(t, v, `three`)
+}
+
+func TestArray_Find_notFound(t *testing.T) {
+	v := vf.Values(`a`, `b`, `d`).Find(func(v dgo.Value) interface{} { return nil })
+	require.True(t, v == nil)
+}
+
 func TestArray_Freeze(t *testing.T) {
 	a := vf.MutableValues(nil, `a`, `b`, vf.MutableValues(nil, `c`))
 	require.False(t, a.Frozen())

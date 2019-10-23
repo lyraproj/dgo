@@ -88,6 +88,10 @@ type (
 		// overflow panic.
 		Copy(frozen bool) Array
 
+		// Find calls the Mapper function for each value of this Array. The first call that returns
+		// a non nil value will terminate the iteration. The value of the last call is returned.
+		Find(Mapper) interface{}
+
 		// EachWithIndex calls the given function once for each value of this Array. The index of
 		// the current value is provided in the call.
 		EachWithIndex(actor DoWithIndex)

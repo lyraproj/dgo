@@ -1100,6 +1100,16 @@ func (v *array) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
+func (v *array) Find(finder dgo.Mapper) interface{} {
+	a := v.slice
+	for i := range a {
+		if fv := finder(a[i]); fv != nil {
+			return fv
+		}
+	}
+	return nil
+}
+
 func (v *array) Flatten() dgo.Array {
 	a := v.slice
 	for i := range a {
