@@ -43,6 +43,10 @@ func testD(vs ...int) string {
 	return fmt.Sprintf(`%v`, vs)
 }
 
+func testNil() []string {
+	return nil
+}
+
 func TestFunction_Call(t *testing.T) {
 	f, ok := vf.Value(testA).(dgo.Function)
 	require.True(t, ok)
@@ -53,6 +57,15 @@ func TestFunction_Call(t *testing.T) {
 	require.Equal(t, 2, len(rs))
 	require.Equal(t, s, rs[0])
 	require.Equal(t, err, rs[1])
+}
+
+func TestFunction_Call_nil(t *testing.T) {
+	f, ok := vf.Value(testNil).(dgo.Function)
+	require.True(t, ok)
+
+	rs := f.Call(vf.Values())
+	require.Equal(t, 1, len(rs))
+	require.True(t, nil == rs[0])
 }
 
 func TestFunction_Call_panic(t *testing.T) {

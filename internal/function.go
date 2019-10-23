@@ -287,7 +287,15 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 	convertReturn := func(rr []reflect.Value) []dgo.Value {
 		vr := make([]dgo.Value, len(rr))
 		for i := range rr {
-			vr[i] = ValueFromReflected(rr[i])
+			re := rr[i]
+			v := ValueFromReflected(re)
+			if v == Nil {
+				_, ok := re.Interface().(dgo.Value)
+				if !ok {
+					v = nil
+				}
+			}
+			vr[i] = v
 		}
 		return vr
 	}
