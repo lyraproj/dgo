@@ -1,8 +1,6 @@
 package dgo
 
 import (
-	"encoding/json"
-
 	"github.com/lyraproj/dgo/util"
 )
 
@@ -52,8 +50,6 @@ type (
 		Comparable
 		ReflectedValue
 		util.Indentable
-		json.Marshaler
-		json.Unmarshaler
 
 		// Add adds the given value to the end of this array. It panics if the receiver is frozen.
 		Add(val interface{})

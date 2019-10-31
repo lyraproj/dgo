@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -557,41 +555,6 @@ func (g *hashMap) Map(mapper dgo.EntryMapper) dgo.Map {
 		e.value = Value(mapper(e))
 	}
 	return c
-}
-
-func (g *hashMap) MarshalJSON() ([]byte, error) {
-	// JSON is the default Indentable string format, so this one is easy
-	return []byte(ToStringERP(g)), nil
-}
-
-func (g *hashMap) UnmarshalJSON(b []byte) error {
-	if g.frozen {
-		panic(frozenMap(`UnmarshalJSON`))
-	}
-	dec := json.NewDecoder(bytes.NewReader(b))
-	dec.UseNumber()
-	t, err := dec.Token()
-	if err == nil {
-		if delim, ok := t.(json.Delim); !ok || delim != '{' {
-			return errors.New("expecting data to be a map")
-		}
-		var m *hashMap
-		m, err = jsonDecodeMap(dec)
-		if err == nil {
-			g.assignFrom(m)
-		}
-	}
-	return err
-}
-
-func (g *hashMap) assignFrom(m *hashMap) {
-	if g.typ != nil {
-		*g = hashMap{typ: g.typ}
-		g.PutAll(m)
-		g.frozen = m.frozen
-	} else {
-		*g = *m
-	}
 }
 
 func (g *hashMap) Merge(associations dgo.Map) dgo.Map {

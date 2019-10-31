@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"reflect"
 	"regexp"
 	"time"
@@ -52,6 +53,8 @@ func value(v interface{}) dgo.Value {
 		dv = (*timeVal)(&v)
 	case error:
 		dv = &errw{v}
+	case json.Number:
+		dv = valueFromJSONNumber(v)
 	case reflect.Value:
 		dv = ValueFromReflected(v)
 	}
@@ -64,6 +67,17 @@ func value(v interface{}) dgo.Value {
 		}
 	}
 	return dv
+}
+
+func valueFromJSONNumber(v json.Number) dgo.Value {
+	if i, err := v.Int64(); err == nil {
+		return Integer(i)
+	}
+	f, err := v.Float64()
+	if err != nil {
+		panic(err)
+	}
+	return Float(f)
 }
 
 // ValueFromReflected converts the given reflected value into an immutable dgo.Value

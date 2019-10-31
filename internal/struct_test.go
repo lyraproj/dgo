@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -266,18 +265,6 @@ func Test_structMap_Map(t *testing.T) {
 	}))
 }
 
-func Test_structMap_MarshalJSON(t *testing.T) {
-	type structA struct {
-		A string `json:"a"`
-		B int    `json:"b"`
-	}
-	s := structA{A: `Alpha`, B: 32}
-	m := vf.Map(&s)
-	j, err := m.MarshalJSON()
-	require.Ok(t, err)
-	require.Equal(t, `{"a":"Alpha","b":32}`, string(j))
-}
-
 func Test_structMap_Merge(t *testing.T) {
 	type structA struct {
 		First  int
@@ -430,21 +417,6 @@ func Test_structMap_Type(t *testing.T) {
 	tp := m.Type()
 	require.Assignable(t, tp, tp)
 	require.Instance(t, tp, m)
-}
-
-func Test_structMap_UnmarshalJSON(t *testing.T) {
-	type structA struct {
-		A string `json:"a"`
-		B int    `json:"b"`
-	}
-	s := structA{}
-	m := vf.Map(&s)
-	require.Ok(t, m.UnmarshalJSON([]byte(`{"a":"Adam","b":38}`)))
-	require.Equal(t, s.A, `Adam`)
-	require.Equal(t, s.B, 38)
-
-	m.Freeze()
-	require.Panic(t, func() { _ = json.Unmarshal([]byte(`{"b":"two"}`), m) }, `UnmarshalJSON .* frozen`)
 }
 
 func Test_structMap_Values(t *testing.T) {

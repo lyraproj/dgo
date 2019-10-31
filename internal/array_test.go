@@ -1080,7 +1080,7 @@ func TestArray_ToMapFromEntries(t *testing.T) {
 }
 
 func TestArray_String(t *testing.T) {
-	require.Equal(t, `[1,"two",3.1,true,null]`, vf.Values(1, "two", 3.1, true, nil).String())
+	require.Equal(t, `{1,"two",3.1,true,nil}`, vf.Values(1, "two", 3.1, true, nil).String())
 }
 
 func TestArray_Unique(t *testing.T) {

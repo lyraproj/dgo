@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -212,10 +211,6 @@ func (v *structVal) Map(mapper dgo.EntryMapper) dgo.Map {
 	return c
 }
 
-func (v *structVal) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.rs.Addr().Interface())
-}
-
 func (v *structVal) Merge(associations dgo.Map) dgo.Map {
 	if associations.Len() == 0 || v == associations {
 		return v
@@ -284,13 +279,6 @@ func (v *structVal) StringKeys() bool {
 
 func (v *structVal) Type() dgo.Type {
 	return &exactMapType{v}
-}
-
-func (v *structVal) UnmarshalJSON(data []byte) error {
-	if v.frozen {
-		panic(frozenMap(`UnmarshalJSON`))
-	}
-	return json.Unmarshal(data, v.rs.Addr().Interface())
 }
 
 func (v *structVal) Values() dgo.Array {

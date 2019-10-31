@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -964,7 +962,7 @@ func (v *array) Any(predicate dgo.Predicate) bool {
 }
 
 func (v *array) AppendTo(w util.Indenter) {
-	w.AppendRune('[')
+	w.AppendRune('{')
 	ew := w.Indent()
 	a := v.slice
 	for i := range a {
@@ -975,7 +973,7 @@ func (v *array) AppendTo(w util.Indenter) {
 		ew.AppendValue(v.slice[i])
 	}
 	w.NewLine()
-	w.AppendRune(']')
+	w.AppendRune('}')
 }
 
 func (v *array) AppendToSlice(slice []dgo.Value) []dgo.Value {
@@ -1532,10 +1530,6 @@ nextVal:
 	return &array{slice: u[:ui], typ: v.typ, frozen: v.frozen}
 }
 
-func (v *array) MarshalJSON() ([]byte, error) {
-	return []byte(ToStringERP(v)), nil
-}
-
 func (v *array) Pop() (dgo.Value, bool) {
 	if v.frozen {
 		panic(frozenArray(`Pop`))
@@ -1545,26 +1539,6 @@ func (v *array) Pop() (dgo.Value, bool) {
 		return v.removePos(p), true
 	}
 	return nil, false
-}
-
-func (v *array) UnmarshalJSON(b []byte) error {
-	if v.frozen {
-		panic(frozenArray(`UnmarshalJSON`))
-	}
-	dec := json.NewDecoder(bytes.NewReader(b))
-	dec.UseNumber()
-	t, err := dec.Token()
-	if err == nil {
-		if delim, ok := t.(json.Delim); !ok || delim != '[' {
-			return errors.New("expecting data to be an array")
-		}
-		var a *array
-		a, err = jsonDecodeArray(dec)
-		if err == nil {
-			*v = *a
-		}
-	}
-	return err
 }
 
 func (v *array) With(vi interface{}) dgo.Array {

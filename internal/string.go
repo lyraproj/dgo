@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -570,10 +569,6 @@ func (v *hstring) HashCode() int {
 		v.h = util.StringHash(v.s)
 	}
 	return v.h
-}
-
-func (v *hstring) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.s)
 }
 
 func (v *hstring) ReflectTo(value reflect.Value) {

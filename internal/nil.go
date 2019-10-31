@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"reflect"
 
 	"github.com/lyraproj/dgo/util"
@@ -17,7 +16,7 @@ type (
 )
 
 func (nilValue) AppendTo(w util.Indenter) {
-	w.Append(`null`)
+	w.Append(`nil`)
 }
 
 func (nilValue) CompareTo(other interface{}) (int, bool) {
@@ -37,10 +36,6 @@ func (nilValue) Equals(other interface{}) bool {
 
 func (nilValue) GoNil() interface{} {
 	return nil
-}
-
-func (nilValue) MarshalJSON() ([]byte, error) {
-	return json.Marshal(nil)
 }
 
 func (nilValue) ReflectTo(value reflect.Value) {

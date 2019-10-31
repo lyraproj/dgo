@@ -9,18 +9,18 @@ import (
 
 func ExampleValues() {
 	fmt.Println(vf.Values(`hello`, 1, 2.3, true, []byte{1, 2, 3}))
-	// Output: ["hello",1,2.3,true,AQID]
+	// Output: {"hello",1,2.3,true,AQID}
 }
 
 func ExampleStrings() {
 	fmt.Println(vf.Strings(`one`, `two`))
-	// Output: ["one","two"]
+	// Output: {"one","two"}
 }
 
 func ExampleMutableValues() {
 	a := vf.MutableValues(`[]0..0x7f`, 32)
 	fmt.Println(a)
-	// Output: [32]
+	// Output: {32}
 }
 
 func ExampleMutableValues_illegalAssignment() {

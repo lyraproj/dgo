@@ -1,8 +1,6 @@
 package dgo
 
 import (
-	"encoding/json"
-
 	"github.com/lyraproj/dgo/util"
 )
 
@@ -48,8 +46,6 @@ type (
 		Keyed
 		ReflectedValue
 		util.Indentable
-		json.Marshaler
-		json.Unmarshaler
 
 		// All returns true if the predicate returns true for all entries of this Map.
 		All(predicate EntryPredicate) bool
