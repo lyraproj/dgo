@@ -310,6 +310,12 @@ func init() {
 				util.WriteByte(sb, ')')
 			}
 		},
+		dgo.TiNamed: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			util.WriteString(sb, typ.(dgo.NamedType).Name())
+		},
+		dgo.TiNamedExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb *strings.Builder) {
+			util.WriteString(sb, typ.(dgo.ExactType).Value().String())
+		},
 	}
 }
 

@@ -95,6 +95,12 @@ const (
 
 	// TiFunction is the type identifier for for the Function type
 	TiFunction
+
+	// TiNamed is the type identifier for for named types
+	TiNamed
+
+	// TiNamedExact is the type identifier for for exact Named types
+	TiNamedExact
 )
 
 var tiLabels = map[TypeIdentifier]string{
@@ -137,6 +143,7 @@ var tiLabels = map[TypeIdentifier]string{
 	TiDgoString:     `dgo`,
 	TiSensitive:     `sensitive`,
 	TiFunction:      `function`,
+	TiNamed:         `named`,
 }
 
 func (ti TypeIdentifier) String() string {

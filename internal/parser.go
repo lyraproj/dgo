@@ -517,7 +517,22 @@ func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
 		if returnUnknown {
 			tp = &unknownIdentifier{hstring: hstring{s: t.s}}
 		} else {
-			tp = p.aliasReference(t)
+			tp = p.namedType(t)
+		}
+	}
+	return tp
+}
+
+func (p *parser) namedType(t *token) dgo.Value {
+	tp := p.aliasReference(t)
+	if nt, ok := tp.(dgo.NamedType); ok {
+		t = p.peekToken()
+		switch t.i {
+		case end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.':
+			break
+		default:
+			p.anyOf(p.nextToken())
+			tp = nt.New(p.popLast())
 		}
 	}
 	return tp
@@ -597,6 +612,9 @@ func (p *parser) aliasReference(t *token) dgo.Value {
 	if t.i != identifier {
 		panic(badSyntax(t, exAliasRef))
 	}
+	if tp := NamedType(t.s); tp != nil {
+		return tp
+	}
 	if tp := p.sc.GetType(String(t.s)); tp != nil {
 		return tp
 	}
@@ -608,7 +626,7 @@ func (p *parser) aliasDeclaration(t *token) dgo.Value {
 	tp := p.identifier(t, true)
 	if un, ok := tp.(*unknownIdentifier); ok {
 		n := un.s
-		if p.sc.GetType(String(n)) == nil {
+		if NamedType(n) == nil && p.sc.GetType(String(n)) == nil {
 			s := String(n)
 			p.nextToken() // skip '='
 			p.sc.Add(&alias{exactStringType: exactStringType{s: n}}, s)

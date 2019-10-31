@@ -154,7 +154,7 @@ func NotOk(t *testing.T, msg interface{}, err error) {
 // Nil will fail unless v is nil
 func Nil(t *testing.T, v interface{}) {
 	t.Helper()
-	if v != internal.Nil && v != nil {
+	if !(internal.Nil == v || v == nil) {
 		t.Errorf(`%v is not nil`, internal.Value(v))
 	}
 }
