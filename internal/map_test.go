@@ -248,7 +248,7 @@ func TestMap_EntryType(t *testing.T) {
 		vm := vt.Type()
 		require.Instance(t, vm, vt)
 
-		require.Same(t, typ.Any, vt.(dgo.ExactType).Generic())
+		require.Same(t, typ.Any, typ.Generic(vt))
 
 		require.True(t, reflect.ValueOf(v).Type().AssignableTo(vt.ReflectType()))
 	})

@@ -316,7 +316,7 @@ func (t *exactArrayType) Equals(other interface{}) bool {
 }
 
 func (t *exactArrayType) Generic() dgo.Type {
-	return &sizedArrayType{elementType: t.ElementType().(dgo.ExactType).Generic(), min: 0, max: math.MaxInt64}
+	return &sizedArrayType{elementType: Generic(t.ElementType()), min: 0, max: math.MaxInt64}
 }
 
 func (t *exactArrayType) HashCode() int {
@@ -549,6 +549,10 @@ func tupleEquals(seen []dgo.Value, t dgo.TupleType, other interface{}) bool {
 	return false
 }
 
+func (t *tupleType) Generic() dgo.Type {
+	return newArrayType(Generic(t.ElementType()), 0, math.MaxInt64)
+}
+
 func (t *tupleType) HashCode() int {
 	return tupleHashCode(t, nil)
 }
@@ -668,6 +672,17 @@ func (t *tupleType) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *tupleType) Unbounded() bool {
 	return t.variadic && t.types[len(t.types)-1].(dgo.ArrayType).Unbounded()
+}
+
+func (t *tupleType) Value() dgo.Value {
+	a := sliceCopy(t.types)
+	for i := range a {
+		e := a[i]
+		if et, ok := e.(dgo.ExactType); ok {
+			a[i] = et.Value()
+		}
+	}
+	return &array{slice: a, frozen: true}
 }
 
 func (t *tupleType) Variadic() bool {

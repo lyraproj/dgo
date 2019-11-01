@@ -532,7 +532,7 @@ func (p *parser) namedType(t *token) dgo.Value {
 			break
 		default:
 			p.anyOf(p.nextToken())
-			tp = nt.New(p.popLast())
+			tp = nt.New(ExactValue(p.popLast()))
 		}
 	}
 	return tp

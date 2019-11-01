@@ -1240,8 +1240,8 @@ func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bo
 
 func (t *exactMapType) Generic() dgo.Type {
 	return &sizedMapType{
-		keyType:   t.KeyType().(dgo.ExactType).Generic(),
-		valueType: t.ValueType().(dgo.ExactType).Generic(),
+		keyType:   Generic(t.KeyType()),
+		valueType: Generic(t.ValueType()),
 		min:       0,
 		max:       math.MaxInt64}
 }

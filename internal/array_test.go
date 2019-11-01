@@ -296,12 +296,23 @@ func TestTupleType(t *testing.T) {
 	require.Equal(t, typ.Any, typ.Tuple.ElementType())
 	require.Equal(t, newtype.AllOf(typ.String, typ.Integer), tt.ElementType())
 	require.Equal(t, vf.Values(typ.String, typ.Integer), tt.ElementTypes())
+	require.Equal(t, typ.Array, typ.Generic(tt))
 
 	require.Instance(t, tt.Type(), tt)
 	require.Equal(t, `{string,int}`, tt.String())
 
 	require.NotEqual(t, 0, tt.HashCode())
 	require.Equal(t, tt.HashCode(), tt.HashCode())
+
+	tt = newtype.Tuple(typ.String, typ.String)
+	require.Equal(t, newtype.Array(typ.String), typ.Generic(tt))
+	require.Equal(t, vf.Values(typ.String, typ.String), typ.ExactValue(tt))
+
+	te := newtype.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type())
+	require.Assignable(t, tt, te)
+	require.NotAssignable(t, te, tt)
+	require.Equal(t, newtype.Array(typ.String), typ.Generic(te))
+	require.Equal(t, vf.Strings(`a`, `b`), typ.ExactValue(te))
 }
 
 func TestTupleType_selfReference(t *testing.T) {

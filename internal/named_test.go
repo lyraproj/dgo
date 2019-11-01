@@ -140,7 +140,7 @@ func TestNamedType_exact(t *testing.T) {
 
 	v := tp.New(vf.Integer(3))
 	et := v.Type()
-	require.Same(t, tp, et.(dgo.ExactType).Generic())
+	require.Same(t, tp, typ.Generic(et))
 	require.Assignable(t, tp, et)
 	require.NotAssignable(t, et, tp)
 	require.NotAssignable(t, et, tp.New(vf.Integer(4)).Type())

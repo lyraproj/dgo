@@ -175,6 +175,8 @@ func TestStructType(t *testing.T) {
 		newtype.StructMapEntry(`a`, typ.Integer, true),
 		newtype.StructMapEntry(`b`, typ.String, false))
 
+	require.Equal(t, newtype.Map(typ.String, typ.Any), typ.Generic(tp))
+
 	require.Equal(t, tp, tp)
 	require.Equal(t, tp, newtype.Parse(`{a:int,b?:string}`))
 	require.Equal(t, tp.KeyType(), newtype.Parse(`"a"&"b"`))

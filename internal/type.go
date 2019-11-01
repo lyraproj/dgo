@@ -52,12 +52,21 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 	return &nativeType{vt}
 }
 
+// ExactValue returns the "exact value" that a value represents. If the given value is a dgo.ExactType, then the value
+// that it represents is the exact value. For all other cases, the exact value is the value itself.
+func ExactValue(value dgo.Value) dgo.Value {
+	if et, ok := value.(dgo.ExactType); ok {
+		value = et.Value()
+	}
+	return value
+}
+
 // Generic returns the generic form of the given type. All non exact types are considered generic
 // and will be returned directly. Exact types will loose information about what instance they represent
 // and also range and size information. Nested types will return a generic version of the contained
 // types as well.
 func Generic(t dgo.Type) dgo.Type {
-	if et, ok := t.(dgo.ExactType); ok {
+	if et, ok := t.(dgo.GenericType); ok {
 		return et.Generic()
 	}
 	return t

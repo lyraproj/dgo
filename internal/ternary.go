@@ -80,6 +80,10 @@ func (t *allOfType) Equals(other interface{}) bool {
 	return false
 }
 
+func (t *allOfType) Generic() dgo.Type {
+	return commonGeneric(t.slice, typeAsType)
+}
+
 func (t *allOfType) HashCode() int {
 	return (*array)(t).HashCode()*7 + int(dgo.TiAllOf)
 }

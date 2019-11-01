@@ -191,6 +191,10 @@ func (t *structType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
+func (t *structType) Generic() dgo.Type {
+	return newMapType(Generic(t.KeyType()), Generic(t.ValueType()), 0, math.MaxInt64)
+}
+
 func (t *structType) HashCode() int {
 	return deepHashCode(nil, t)
 }
@@ -380,6 +384,16 @@ func (t *structType) ValidateVerbose(value interface{}, out util.Indenter) bool 
 		}
 	})
 	return ok
+}
+
+func (t *structType) Value() dgo.Value {
+	ks := t.keys.slice
+	vs := t.values.slice
+	m := MapWithCapacity(len(ks), nil)
+	for i := range ks {
+		m.Put(ExactValue(ks[i]), ExactValue(vs[i]))
+	}
+	return m
 }
 
 func (t *structType) ValueType() dgo.Type {

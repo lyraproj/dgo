@@ -117,13 +117,17 @@ type (
 		Add(t Type, name String)
 	}
 
-	// ExactType is implemented by types that match exactly one value
-	ExactType interface {
+	GenericType interface {
 		Type
 
 		// Generic returns the generic type that this exact type represents stripped
 		// from range and size constraints
 		Generic() Type
+	}
+
+	// ExactType is implemented by types that match exactly one value
+	ExactType interface {
+		Type
 
 		Value() Value
 	}
