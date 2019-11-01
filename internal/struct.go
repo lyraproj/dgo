@@ -310,7 +310,7 @@ func (v *structVal) WithoutAll(keys dgo.Array) dgo.Map {
 }
 
 func (v *structVal) toHashMap() *hashMap {
-	c := MapWithCapacity(int(float64(v.Len())/loadFactor), nil)
+	c := MapWithCapacity(v.Len(), nil)
 	v.EachEntry(func(entry dgo.MapEntry) {
 		c.Put(entry.Key(), entry.Value())
 	})

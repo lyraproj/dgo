@@ -25,8 +25,8 @@ func MutableMap(typ interface{}) dgo.Map {
 	return internal.MapWithCapacity(0, typ)
 }
 
-// MapWithCapacity creates an empty dgo.Map with the given capacity. The map can be optionally constrained
-// by the given type which can be nil, the zero value of a go map, or a dgo.MapType
+// MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries. The map can be optionally
+// constrained by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MapWithCapacity(capacity int, typ interface{}) dgo.Map {
 	return internal.MapWithCapacity(capacity, typ)
 }

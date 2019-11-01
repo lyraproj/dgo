@@ -297,12 +297,13 @@ func FromReflectedStruct(rv reflect.Value) dgo.Struct {
 	return &structVal{rs: rv, frozen: false}
 }
 
-// MapWithCapacity creates an empty dgo.Map with the given capacity. The map can be optionally constrained
-// by the given type which can be nil, the zero value of a go map, or a dgo.MapType
+// MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries. The map can be optionally
+// constrained by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MapWithCapacity(capacity int, typ interface{}) dgo.Map {
 	if capacity <= 0 {
 		capacity = initialCapacity
 	}
+	capacity = int(float64(capacity) / loadFactor)
 
 	parseMapType := func(s string) dgo.MapType {
 		if t, ok := Parse(s).(dgo.MapType); ok {

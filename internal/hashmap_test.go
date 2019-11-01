@@ -40,8 +40,7 @@ func BenchmarkHashMapStrings(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	ks := buildStringKeys(sz)
 	k := make([]dgo.Value, sz)
-	c := float64(sz) / loadFactor
-	m := MapWithCapacity(int(c), nil)
+	m := MapWithCapacity(sz, nil)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
 		m.Put(key, intVal(i))
@@ -62,8 +61,7 @@ func BenchmarkHashMapStringsNoHashCache(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	ks := buildStringKeys(sz)
 	k := make([]*hstring, sz)
-	c := float64(sz) / loadFactor
-	m := MapWithCapacity(int(c), nil)
+	m := MapWithCapacity(sz, nil)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
 		m.Put(key, intVal(i))
@@ -83,8 +81,7 @@ func BenchmarkHashMapStringsNoHashCache(b *testing.B) {
 func BenchmarkHashMapIntegers(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	k := make([]dgo.Value, sz)
-	c := float64(sz) / loadFactor
-	m := MapWithCapacity(int(c), nil)
+	m := MapWithCapacity(sz, nil)
 	for i := 0; i < sz; i++ {
 		key := intVal(rand.Intn(sz * rndFactor))
 		m.Put(key, intVal(i))
@@ -101,8 +98,7 @@ func BenchmarkHashMapIntegers(b *testing.B) {
 
 func BenchmarkMapStringKeys(b *testing.B) {
 	sz := b.N + lookupsPerOp
-	c := float64(sz) / loadFactor
-	m := make(map[string]dgo.Value, int(c))
+	m := make(map[string]dgo.Value, sz)
 
 	k := buildStringKeys(sz)
 	for i := 0; i < sz; i++ {
@@ -120,8 +116,7 @@ func BenchmarkMapStringKeys(b *testing.B) {
 func BenchmarkMapIntKeys(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	k := make([]int, sz)
-	c := float64(sz) / loadFactor
-	m := make(map[int]int, int(c))
+	m := make(map[int]int, sz)
 
 	for i := 0; i < sz; i++ {
 		key := rand.Intn(sz * rndFactor)
@@ -140,8 +135,7 @@ func BenchmarkMapIntKeys(b *testing.B) {
 func BenchmarkMapGenericKeysString(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	k := buildStringKeys(sz)
-	c := float64(sz) / loadFactor
-	m := make(map[interface{}]int, int(c))
+	m := make(map[interface{}]int, sz)
 
 	for i := 0; i < sz; i++ {
 		m[k[i]] = i
@@ -158,8 +152,7 @@ func BenchmarkMapGenericKeysString(b *testing.B) {
 func BenchmarkMapGenericKeysInteger(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	k := make([]int, sz)
-	c := float64(sz) / loadFactor
-	m := make(map[interface{}]int, int(c))
+	m := make(map[interface{}]int, sz)
 
 	for i := 0; i < sz; i++ {
 		key := rand.Intn(sz * rndFactor)
