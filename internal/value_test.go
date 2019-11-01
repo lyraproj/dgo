@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"encoding/json"
 	"math"
 	"reflect"
 	"regexp"
@@ -87,6 +88,8 @@ func TestValue(t *testing.T) {
 
 	v = vf.Value(struct{ A int }{10})
 	require.Equal(t, struct{ A int }{10}, v)
+
+	require.Panic(t, func() { vf.Value(json.Number(`not a float`)) }, `invalid`)
 }
 
 func TestValue_reflected(t *testing.T) {
