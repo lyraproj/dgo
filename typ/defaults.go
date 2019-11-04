@@ -4,6 +4,7 @@ package typ
 import (
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
+	"github.com/lyraproj/dgo/loader"
 )
 
 // AllOf is the default AllOf type. Since it contains no types, everything is
@@ -78,3 +79,12 @@ var Sensitive dgo.UnaryType = internal.DefaultSensitiveType
 
 // Type is a type that represents all types
 var Type dgo.Type = internal.DefaultMetaType
+
+// Loader represents all Loaders
+var Loader dgo.Type = loader.Type
+
+// DefiningLoader represents all Loaders capable of defining new entries
+var DefiningLoader dgo.Type = loader.MutableType
+
+// ParentedLoader represents all Loaders capable of defining new entries
+var ParentedLoader dgo.Type = loader.ChildType
