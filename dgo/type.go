@@ -117,10 +117,12 @@ type (
 		Add(t Type, name String)
 	}
 
+	// GenericType is implemented by types that represent themselves stripped from
+	// range and size constraints.
 	GenericType interface {
 		Type
 
-		// Generic returns the generic type that this exact type represents stripped
+		// Generic returns the generic type that this type represents stripped
 		// from range and size constraints
 		Generic() Type
 	}
