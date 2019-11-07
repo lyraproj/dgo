@@ -335,7 +335,7 @@ func PatternType(pattern *regexp.Regexp) dgo.Type {
 //
 // The method can also be called with one string parameter. The returned type will then match that exact
 // string and nothing else.
-func StringType(args ...interface{}) dgo.StringType {
+func StringType(args []interface{}) dgo.StringType {
 	switch len(args) {
 	case 0:
 		return DefaultStringType

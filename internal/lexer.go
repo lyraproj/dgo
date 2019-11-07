@@ -29,6 +29,7 @@ const (
 	letter
 	idCharStart
 	idChar
+	exprEnd
 )
 
 var charTypes = [128]uint8{}
@@ -52,6 +53,9 @@ func init() {
 	}
 	for i = 'g'; i <= 'z'; i++ {
 		charTypes[i] = letter | idCharStart | idChar
+	}
+	for _, i := range []int{end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.'} {
+		charTypes[i] = exprEnd
 	}
 }
 
@@ -159,6 +163,10 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 			return
 		}
 	}
+}
+
+func isExpressionEnd(r rune) bool {
+	return r < 128 && (charTypes[r]&exprEnd) != 0
 }
 
 func isDigit(r rune) bool {

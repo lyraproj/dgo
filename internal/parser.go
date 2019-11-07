@@ -459,9 +459,24 @@ func (p *parser) string() dgo.Value {
 		p.nextToken()
 		p.params()
 		szc := p.popLast().(*array)
-		return StringType(sliceToInterfaces(szc)...)
+		return StringType(sliceToInterfaces(szc))
 	}
 	return DefaultStringType
+}
+
+func (p *parser) sensitive() dgo.Value {
+	tt := p.peekToken().i
+	if tt == '[' {
+		p.nextToken()
+		p.params()
+		szc := p.popLast().(*array)
+		return SensitiveType(sliceToInterfaces(szc))
+	}
+	if !isExpressionEnd(rune(tt)) {
+		p.anyOf(p.nextToken())
+		return Sensitive(ExactValue(p.popLast()))
+	}
+	return DefaultSensitiveType
 }
 
 func (p *parser) funcExpression() dgo.Value {
@@ -473,13 +488,13 @@ func (p *parser) funcExpression() dgo.Value {
 	args := p.popLastType().(dgo.TupleType)
 	var returns dgo.TupleType = DefaultTupleType
 	t = p.peekToken()
-	switch t.i {
-	case end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.':
-		break
-	case '(':
+	switch {
+	case t.i == '(':
 		p.nextToken()
 		p.list(')')
 		returns = p.popLastType().(dgo.TupleType)
+	case isExpressionEnd(rune(t.i)):
+		break
 	default:
 		p.anyOf(p.nextToken())
 		returns = newTupleType([]dgo.Type{p.popLastType()}, false)
@@ -511,6 +526,8 @@ func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
 		tp = p.meta()
 	case `string`:
 		tp = p.string()
+	case `sensitive`:
+		tp = p.sensitive()
 	case `func`:
 		tp = p.funcExpression()
 	default:
@@ -526,11 +543,7 @@ func (p *parser) identifier(t *token, returnUnknown bool) dgo.Value {
 func (p *parser) namedType(t *token) dgo.Value {
 	tp := p.aliasReference(t)
 	if nt, ok := tp.(dgo.NamedType); ok {
-		t = p.peekToken()
-		switch t.i {
-		case end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.':
-			break
-		default:
+		if !isExpressionEnd(rune(p.peekToken().i)) {
 			p.anyOf(p.nextToken())
 			tp = nt.New(ExactValue(p.popLast()))
 		}

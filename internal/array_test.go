@@ -39,7 +39,7 @@ func TestArray_explicit_unbounded(t *testing.T) {
 }
 
 func TestArray_badOneArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Array(`bad`) }, `illegal argument 1`)
+	require.Panic(t, func() { newtype.Array(`bad`) }, `illegal argument`)
 }
 
 func TestArray_badTwoArg(t *testing.T) {

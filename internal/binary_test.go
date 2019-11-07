@@ -52,7 +52,7 @@ func TestBinaryType(t *testing.T) {
 
 	require.Instance(t, tp.Type(), tp)
 
-	require.Panic(t, func() { newtype.Binary(`blue`) }, `illegal argument 1`)
+	require.Panic(t, func() { newtype.Binary(`blue`) }, `illegal argument`)
 	require.Panic(t, func() { newtype.Binary(`blue`, 1) }, `illegal argument 1`)
 	require.Panic(t, func() { newtype.Binary(1, `blue`) }, `illegal argument 2`)
 	require.Panic(t, func() { newtype.Binary(1, 2, 3) }, `illegal number of arguments`)

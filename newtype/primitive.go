@@ -14,7 +14,7 @@ import (
 // The method can also be called with one string parameter. The returned type will then match that exact
 // string and nothing else.
 func String(args ...interface{}) dgo.StringType {
-	return internal.StringType(args...)
+	return internal.StringType(args)
 }
 
 // Pattern returns a StringType that is constrained to strings that match the given

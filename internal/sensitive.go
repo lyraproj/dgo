@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -20,8 +21,17 @@ type (
 var DefaultSensitiveType = &sensitiveType{wrapped: DefaultAnyType}
 
 // SensitiveType returns a Sensitive dgo.Type that wraps the given dgo.Type
-func SensitiveType(wrappedType dgo.Type) dgo.Type {
-	return &sensitiveType{wrapped: wrappedType}
+func SensitiveType(args []interface{}) dgo.Type {
+	switch len(args) {
+	case 0:
+		return DefaultSensitiveType
+	case 1:
+		if st, ok := Value(args[0]).(dgo.Type); ok {
+			return &sensitiveType{wrapped: st}
+		}
+		panic(illegalArgument(`SensitiveType`, `Type`, args, 0))
+	}
+	panic(fmt.Errorf(`illegal number of arguments for SensitiveType. Expected 0 or 1, got %d`, len(args)))
 }
 
 func (t *sensitiveType) Assignable(other dgo.Type) bool {

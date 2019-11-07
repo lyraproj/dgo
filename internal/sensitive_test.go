@@ -41,6 +41,13 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
 	require.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
 	require.Equal(t, `sensitive[int]`, s.Type().String())
+
+	require.Equal(t, newtype.Sensitive(), newtype.Parse(`sensitive`))
+	require.Equal(t, newtype.Sensitive(typ.Integer), newtype.Parse(`sensitive[int]`))
+	require.Equal(t, vf.Sensitive(typ.Integer).Type(), newtype.Parse(`sensitive int`))
+	require.Equal(t, vf.Sensitive(34).Type(), newtype.Parse(`sensitive 34`))
+	require.Panic(t, func() { newtype.Parse(`sensitive[34]`) }, `illegal argument`)
+	require.Panic(t, func() { newtype.Parse(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 
 func TestSensitive(t *testing.T) {

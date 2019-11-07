@@ -131,7 +131,7 @@ func TestCiString(t *testing.T) {
 }
 
 func TestString_badOneArg(t *testing.T) {
-	require.Panic(t, func() { newtype.String(true) }, `illegal argument 1`)
+	require.Panic(t, func() { newtype.String(true) }, `illegal argument`)
 }
 
 func TestString_badTwoArg(t *testing.T) {

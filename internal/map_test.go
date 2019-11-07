@@ -289,7 +289,7 @@ func TestNewMapType_explicit_unbounded(t *testing.T) {
 }
 
 func TestNewMapType_badOneArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(`bad`) }, `illegal argument 1`)
+	require.Panic(t, func() { newtype.Map(`bad`) }, `illegal argument`)
 }
 
 func TestNewMapType_badTwoArg(t *testing.T) {
