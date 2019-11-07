@@ -85,7 +85,7 @@ func ToString(ia Indentable) string {
 // ToIndentedString will produce a string from an Indentable using an indenter initialized
 // with a two space indentation.
 func ToIndentedString(ia Indentable) string {
-	i := NewIndenter(` `)
+	i := NewIndenter(`  `)
 	ia.AppendTo(i)
 	return i.String()
 }

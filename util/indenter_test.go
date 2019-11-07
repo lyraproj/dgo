@@ -22,10 +22,10 @@ func ExampleToIndentedString() {
 	fmt.Println(util.ToIndentedString(v))
 	// Output:
 	// {
-	//  "a",
-	//  {
-	//   "b": 3
-	//  }
+	//   "a",
+	//   {
+	//     "b": 3
+	//   }
 	// }
 }
 
