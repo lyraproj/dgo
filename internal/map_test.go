@@ -489,6 +489,11 @@ func TestMap_AnyValue(t *testing.T) {
 	}))
 }
 
+func TestMap_ContainsKey(t *testing.T) {
+	require.True(t, vf.Map(`a`, `the a`).ContainsKey(`a`))
+	require.False(t, vf.Map(`a`, `the a`).ContainsKey(`b`))
+}
+
 func TestMap_EachKey(t *testing.T) {
 	m := vf.Map(
 		`first`, 1,

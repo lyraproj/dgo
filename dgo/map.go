@@ -65,6 +65,9 @@ type (
 		// AnyValue returns true if the predicate returns true for any value of this Map.
 		AnyValue(actor Predicate) bool
 
+		// ContainsKey returns true if the map contains the give key
+		ContainsKey(key interface{}) bool
+
 		// Copy returns a copy of the Map. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Map
 		// is a no-op that returns the receiver

@@ -65,6 +65,13 @@ func (v *structVal) AnyValue(predicate dgo.Predicate) bool {
 	return !v.AllValues(func(entry dgo.Value) bool { return !predicate(entry) })
 }
 
+func (v *structVal) ContainsKey(key interface{}) bool {
+	if s, ok := stringKey(key); ok {
+		return v.rs.FieldByName(s).IsValid()
+	}
+	return false
+}
+
 func (v *structVal) Copy(frozen bool) dgo.Map {
 	if frozen && v.frozen {
 		return v

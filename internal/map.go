@@ -402,6 +402,10 @@ func appendMapTo(m dgo.Map, w util.Indenter) {
 	w.AppendRune('}')
 }
 
+func (g *hashMap) ContainsKey(key interface{}) bool {
+	return g.Get(key) != nil
+}
+
 func (g *hashMap) Copy(frozen bool) dgo.Map {
 	if frozen && g.frozen {
 		return g

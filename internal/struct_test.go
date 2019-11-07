@@ -70,6 +70,17 @@ func Test_structMap_AnyValue(t *testing.T) {
 	}))
 }
 
+func Test_structMap_ContainsKey(t *testing.T) {
+	type structA struct {
+		First  int
+		Second float64
+	}
+	m := vf.Map(&structA{})
+	require.True(t, m.ContainsKey(`First`))
+	require.False(t, m.ContainsKey(`Third`))
+	require.False(t, m.ContainsKey(1))
+}
+
 func Test_structMap_Copy(t *testing.T) {
 	type structA struct {
 		A string
