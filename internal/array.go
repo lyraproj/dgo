@@ -747,19 +747,23 @@ func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 		return Nil
 	}
 
-	ix := vr.Interface()
-	if bs, ok := ix.([]byte); ok {
-		return Binary(bs, frozen)
+	var arr []dgo.Value
+	if vr.CanInterface() {
+		ix := vr.Interface()
+		if bs, ok := ix.([]byte); ok {
+			return Binary(bs, frozen)
+		}
+
+		if vs, ok := ix.([]dgo.Value); ok {
+			arr = vs
+			if frozen {
+				arr = sliceCopy(arr)
+			}
+		}
 	}
 
-	top := vr.Len()
-	var arr []dgo.Value
-	if vs, ok := ix.([]dgo.Value); ok {
-		arr = vs
-		if frozen {
-			arr = sliceCopy(arr)
-		}
-	} else {
+	if arr == nil {
+		top := vr.Len()
 		arr = make([]dgo.Value, top)
 		for i := 0; i < top; i++ {
 			arr[i] = ValueFromReflected(vr.Index(i))

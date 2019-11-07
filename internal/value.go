@@ -11,8 +11,8 @@ import (
 
 var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 
-// New creates an instance of the given type from the given arguments
-func New(typ dgo.Type, arguments dgo.Array) dgo.Value {
+// New creates an instance of the given type from the given argument
+func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 	panic(`implement me`)
 }
 
@@ -105,13 +105,17 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 	case reflect.Func:
 		return (*goFunc)(&vr)
 	}
-	vi := vr.Interface()
-	if v, ok := vi.(dgo.Value); ok {
-		return v
+
+	if vr.CanInterface() {
+		vi := vr.Interface()
+		if v, ok := vi.(dgo.Value); ok {
+			return v
+		}
+		if v := value(vi); v != nil {
+			return v
+		}
 	}
-	if v := value(vi); v != nil {
-		return v
-	}
+
 	if isPtr {
 		er := vr.Elem()
 		// Pointer to struct should have been handled at this point or it is a pointer to

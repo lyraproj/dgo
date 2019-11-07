@@ -175,8 +175,6 @@ func TestValue_reflected(t *testing.T) {
 
 	v = vf.Value([]interface{}{map[string]interface{}{`a`: 1}})
 	require.Equal(t, []map[string]int{{`a`: 1}}, v)
-
-	require.Panic(t, func() { vf.Value(reflect.ValueOf(struct{ bar int }{bar: 1}).Field(0)) }, `field or method`)
 }
 
 func TestFromValue(t *testing.T) {
