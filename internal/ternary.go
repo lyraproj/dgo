@@ -115,7 +115,10 @@ func (t *allOfType) ReflectType() reflect.Type {
 }
 
 func (t *allOfType) Resolve(ap dgo.AliasProvider) {
-	resolveSlice(t.slice, ap)
+	s := t.slice
+	t.slice = nil
+	resolveSlice(s, ap)
+	t.slice = s
 }
 
 func (t *allOfType) String() string {
@@ -305,7 +308,10 @@ func (t *anyOfType) ReflectType() reflect.Type {
 }
 
 func (t *anyOfType) Resolve(ap dgo.AliasProvider) {
-	resolveSlice(t.slice, ap)
+	s := t.slice
+	t.slice = nil
+	resolveSlice(s, ap)
+	t.slice = s
 }
 
 func (t *anyOfType) String() string {
@@ -417,7 +423,10 @@ func (t *oneOfType) ReflectType() reflect.Type {
 }
 
 func (t *oneOfType) Resolve(ap dgo.AliasProvider) {
-	resolveSlice(t.slice, ap)
+	s := t.slice
+	t.slice = nil
+	resolveSlice(s, ap)
+	t.slice = s
 }
 
 func (t *oneOfType) String() string {

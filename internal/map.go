@@ -1138,8 +1138,14 @@ func (t *sizedMapType) ReflectType() reflect.Type {
 }
 
 func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
-	t.keyType = ap.Replace(t.keyType)
-	t.valueType = ap.Replace(t.valueType)
+	kt := t.keyType
+	vt := t.valueType
+	t.keyType = DefaultAnyType
+	t.valueType = DefaultAnyType
+	kt = ap.Replace(kt)
+	vt = ap.Replace(vt)
+	t.keyType = kt
+	t.valueType = vt
 }
 
 func (t *sizedMapType) String() string {

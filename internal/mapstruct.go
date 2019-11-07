@@ -286,10 +286,14 @@ func (t *structType) ReflectType() reflect.Type {
 func (t *structType) Resolve(ap dgo.AliasProvider) {
 	ks := t.keys.slice
 	vs := t.values.slice
+	t.keys.slice = []dgo.Value{}
+	t.values.slice = []dgo.Value{}
 	for i := range ks {
 		ks[i] = ap.Replace(ks[i].(dgo.Type))
 		vs[i] = ap.Replace(vs[i].(dgo.Type))
 	}
+	t.keys.slice = ks
+	t.values.slice = vs
 }
 
 func (t *structType) String() string {

@@ -242,7 +242,9 @@ func (t *sizedArrayType) Min() int {
 }
 
 func (t *sizedArrayType) Resolve(ap dgo.AliasProvider) {
-	t.elementType = ap.Replace(t.elementType)
+	te := t.elementType
+	t.elementType = DefaultAnyType
+	t.elementType = ap.Replace(te)
 }
 
 func (t *sizedArrayType) ReflectType() reflect.Type {
@@ -655,7 +657,10 @@ func (t *tupleType) ReflectType() reflect.Type {
 }
 
 func (t *tupleType) Resolve(ap dgo.AliasProvider) {
-	resolveSlice(t.types, ap)
+	s := t.types
+	t.types = nil
+	resolveSlice(s, ap)
+	t.types = s
 }
 
 func (t *tupleType) String() string {

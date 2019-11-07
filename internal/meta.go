@@ -73,7 +73,9 @@ func (t *metaType) ReflectType() reflect.Type {
 }
 
 func (t *metaType) Resolve(ap dgo.AliasProvider) {
-	t.tp = ap.Replace(t.tp)
+	tp := t.tp
+	t.tp = DefaultAnyType
+	t.tp = ap.Replace(tp)
 }
 
 func (t *metaType) String() string {
