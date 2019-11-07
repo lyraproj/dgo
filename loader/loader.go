@@ -3,6 +3,7 @@ package loader
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -11,64 +12,13 @@ import (
 )
 
 type (
-	// Finder is a function that is called when a loader is asked to deliver a value that it doesn't
-	// have. It's the finders responsibility to obtain the value. The finder must return nil when the
-	// value could not be found.
-	//
-	// The key sent to the finder will never be a multi part name. It will reflect a single name that is
-	// relative to the loader that the Finder is configured for.
-	Finder func(l Loader, key string) interface{}
-
-	// NsCreator is called when a namespace is requested that does not exist. It is the NsCreator's
-	// responsibility to create the Loader that represents the new namespace. The creator must return
-	// nil when no such namespace can be created.
-	//
-	// The name sent to the creator will never be a multi part name. It will reflect a single name that is
-	// relative to the loader that the Finder is configured for.
-	NsCreator func(l Loader, name string) Loader
-
-	// A Loader loads named values on demand. Loaders for nested namespaces can be obtained using the Namespace
-	// method.
-	//
-	// Implementors of Loader must ensure that all methods are safe to use from concurrent go routines.
-	//
-	// As a convenience, the Loader also implements the Keyed interface. The Get method of that interface will
-	// simply dispatch to the Load method.
-	Loader interface {
-		dgo.Value
-		dgo.Keyed
-
-		// AbsoluteName returns the absolute name of this loader, i.e. the absolute name of the parent
-		// namespace + '/' + this loaders name or, if this loader has no parent namespace, just this
-		// loaders name.
-		AbsoluteName() string
-
-		// Load loads value for the given name and returns it, or nil if the value could not be
-		// found. A loaded value is cached. The name must not contain the separator character '/'. A
-		// load involving a nested name must use Namespace to obtain the correct namespace.
-		Load(name string) dgo.Value
-
-		// Name returns this loaders name relative to its parent namespace.
-		Name() string
-
-		// Namespace returns the Loader that represents the  given namespace from this loader or nil no such
-		// loader exists.
-		//
-		// The name must not contain the separator character '/'. Nested namespaces must be
-		// obtained using multiple calls.
-		Namespace(name string) Loader
-
-		// NewChild creates a new loader that is parented by this loader.
-		NewChild(finder Finder, nsCreator NsCreator) Loader
-
-		// ParentNamespace returns this loaders parent namespace, or nil, if this loader is in the
-		// root namespace.
-		ParentNamespace() Loader
+	multipleEntries struct {
+		dgo.Map
 	}
 
 	mapLoader struct {
 		name     string
-		parentNs Loader
+		parentNs dgo.Loader
 		entries  dgo.Map
 	}
 
@@ -76,18 +26,39 @@ type (
 		mapLoader
 		lock       sync.RWMutex
 		namespaces dgo.Map
-		finder     Finder
-		nsCreator  NsCreator
+		finder     dgo.Finder
+		nsCreator  dgo.NsCreator
 	}
 
 	childLoader struct {
-		Loader
-		parent Loader
+		dgo.Loader
+		parent dgo.Loader
 	}
 )
 
+// Multiple creates an value that holds multiple loader entries. The function is used by a finder that
+// wishes to return more than the one entry that was requested. The requested element must be one of the
+// entries.
+//
+// See vf.Map() for description of possible arguments
+func Multiple(kvPairs ...interface{}) dgo.Value {
+	return multipleEntries{vf.Map(kvPairs...)}
+}
+
+func load(l dgo.Loader, name string) dgo.Value {
+	parts := strings.Split(name, `/`)
+	last := len(parts) - 1
+	for i := 0; i < last; i++ {
+		l = l.Namespace(parts[i])
+		if l == nil {
+			return nil
+		}
+	}
+	return l.Get(parts[last])
+}
+
 // New returns a new Loader instance
-func New(parentNs Loader, name string, entries dgo.Map, finder Finder, nsCreator NsCreator) Loader {
+func New(parentNs dgo.Loader, name string, entries dgo.Map, finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {
 	if entries == nil {
 		entries = vf.Map()
 	}
@@ -120,7 +91,7 @@ var Type = newtype.NewNamed(`mapLoader`,
 		return v.(*mapLoader).initMap()
 	},
 	reflect.TypeOf(&mapLoader{}),
-	reflect.TypeOf((*Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
 
 func (l *mapLoader) init(im dgo.Map) {
 	l.name = im.Get(`name`).String()
@@ -157,33 +128,34 @@ func (l *mapLoader) Get(key interface{}) dgo.Value {
 	return l.entries.Get(key)
 }
 
-func (l *mapLoader) Load(key string) dgo.Value {
-	return l.entries.Get(key)
+func (l *mapLoader) Load(name string) dgo.Value {
+	return load(l, name)
 }
 
 func (l *mapLoader) AbsoluteName() string {
+	myPart := `/` + l.name
 	if l.parentNs != nil {
-		return l.parentNs.AbsoluteName() + `/` + l.name
+		return l.parentNs.AbsoluteName() + myPart
 	}
-	return l.name
+	return myPart
 }
 
 func (l *mapLoader) Name() string {
 	return l.name
 }
 
-func (l *mapLoader) Namespace(name string) Loader {
+func (l *mapLoader) Namespace(name string) dgo.Loader {
 	if name == `` {
 		return l
 	}
 	return nil
 }
 
-func (l *mapLoader) NewChild(finder Finder, nsCreator NsCreator) Loader {
+func (l *mapLoader) NewChild(finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {
 	return loaderWithParent(l, finder, nsCreator)
 }
 
-func (l *mapLoader) ParentNamespace() Loader {
+func (l *mapLoader) ParentNamespace() dgo.Loader {
 	return l.parentNs
 }
 
@@ -198,7 +170,7 @@ var MutableType = newtype.NewNamed(`loader`,
 		return v.(*loader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
 
 func (l *loader) init(im dgo.Map) {
 	l.mapLoader.init(im)
@@ -211,17 +183,28 @@ func (l *loader) initMap() dgo.Map {
 	return m
 }
 
-func (l *loader) add(key string, vi interface{}) {
-	value := vf.Value(vi)
-	var old dgo.Value
+func (l *loader) add(key, value dgo.Value) dgo.Value {
 	l.lock.Lock()
-	if old = l.entries.Get(key); old == nil {
-		l.entries.Put(key, value)
+	defer l.lock.Unlock()
+
+	addEntry := func(key, value dgo.Value) {
+		if old := l.entries.Get(key); old == nil {
+			l.entries.Put(key, value)
+		} else if !old.Equals(value) {
+			panic(fmt.Errorf(`attempt to override entry %q`, key))
+		}
 	}
-	l.lock.Unlock()
-	if !(nil == old || old.Equals(value)) {
-		panic(fmt.Errorf(`attempt to override entry %q`, key))
+
+	if m, ok := value.(multipleEntries); ok {
+		value = m.Get(key)
+		if value == nil {
+			panic(fmt.Errorf(`map returned from finder doesn't contain original key %q`, key))
+		}
+		m.EachEntry(func(e dgo.MapEntry) { addEntry(e.Key(), e.Value()) })
+	} else {
+		addEntry(key, value)
 	}
+	return value
 }
 
 func (l *loader) Equals(other interface{}) bool {
@@ -236,33 +219,34 @@ func (l *loader) HashCode() int {
 }
 
 func (l *loader) Get(ki interface{}) dgo.Value {
-	if key, ok := vf.Value(ki).(dgo.String); ok {
-		return l.Load(key.GoString())
+	key, ok := vf.Value(ki).(dgo.String)
+	if !ok {
+		return nil
 	}
-	return nil
-}
-
-func (l *loader) Load(k string) dgo.Value {
-	key := vf.String(k)
 	l.lock.RLock()
 	v := l.entries.Get(key)
 	l.lock.RUnlock()
-	if v != nil || l.finder == nil {
-		return v
+	if v == nil && l.finder != nil {
+		v = vf.Value(l.finder(l, key.String()))
+		v = l.add(key, v)
 	}
-	if v = vf.Value(l.finder(l, k)); v != nil {
-		l.add(k, v)
+	if vf.Nil == v {
+		v = nil
 	}
 	return v
 }
 
-func (l *loader) Namespace(name string) Loader {
+func (l *loader) Load(name string) dgo.Value {
+	return load(l, name)
+}
+
+func (l *loader) Namespace(name string) dgo.Loader {
 	if name == `` {
 		return l
 	}
 
 	l.lock.RLock()
-	ns, ok := l.namespaces.Get(name).(Loader)
+	ns, ok := l.namespaces.Get(name).(dgo.Loader)
 	l.lock.RUnlock()
 
 	if ok || l.nsCreator == nil {
@@ -286,13 +270,13 @@ func (l *loader) Namespace(name string) Loader {
 			}
 
 			// Get rid of the duplicate
-			ns = old.(Loader)
+			ns = old.(dgo.Loader)
 		}
 	}
 	return ns
 }
 
-func (l *loader) NewChild(finder Finder, nsCreator NsCreator) Loader {
+func (l *loader) NewChild(finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {
 	return loaderWithParent(l, finder, nsCreator)
 }
 
@@ -315,11 +299,11 @@ var ChildType = newtype.NewNamed(`childLoader`,
 		return v.(*childLoader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
 
 func (l *childLoader) init(im dgo.Map) {
-	l.Loader = im.Get(`loader`).(Loader)
-	l.parent = im.Get(`parent`).(Loader)
+	l.Loader = im.Get(`loader`).(dgo.Loader)
+	l.parent = im.Get(`parent`).(dgo.Loader)
 }
 
 func (l *childLoader) initMap() dgo.Map {
@@ -348,7 +332,11 @@ func (l *childLoader) HashCode() int {
 	return l.Loader.HashCode()*31 + l.parent.HashCode()
 }
 
-func (l *childLoader) Namespace(name string) Loader {
+func (l *childLoader) Load(name string) dgo.Value {
+	return load(l, name)
+}
+
+func (l *childLoader) Namespace(name string) dgo.Loader {
 	if name == `` {
 		return l
 	}
@@ -364,7 +352,7 @@ func (l *childLoader) Namespace(name string) Loader {
 	return v
 }
 
-func (l *childLoader) NewChild(finder Finder, nsCreator NsCreator) Loader {
+func (l *childLoader) NewChild(finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {
 	return loaderWithParent(l, finder, nsCreator)
 }
 
@@ -376,6 +364,6 @@ func (l *childLoader) Type() dgo.Type {
 	return newtype.ExactNamed(ChildType, l)
 }
 
-func loaderWithParent(parent Loader, finder Finder, nsCreator NsCreator) Loader {
+func loaderWithParent(parent dgo.Loader, finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {
 	return &childLoader{Loader: New(parent.ParentNamespace(), parent.Name(), vf.Map(), finder, nsCreator), parent: parent}
 }
