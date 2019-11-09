@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"regexp"
 	"time"
@@ -13,7 +14,19 @@ var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 
 // New creates an instance of the given type from the given argument
 func New(typ dgo.Type, argument dgo.Value) dgo.Value {
-	panic(`implement me`)
+	if nt, ok := typ.(dgo.Factory); ok {
+		return nt.New(argument)
+	}
+	if args, ok := argument.(dgo.Arguments); ok {
+		if args.Len() != 1 {
+			panic(fmt.Errorf(`unable to create a %s from arguments %s`, typ, args))
+		}
+		argument = args.Get(0)
+	}
+	if typ.Instance(argument) {
+		return argument
+	}
+	panic(fmt.Errorf(`unable to create a %s from %s`, typ, argument))
 }
 
 // Value returns the dgo.Value representation of its argument. If the argument type

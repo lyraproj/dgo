@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/dgo/typ"
-
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -191,5 +191,8 @@ func TestFromValue_notPointer(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	require.Panic(t, func() { vf.New(typ.String, vf.Values(3)) }, `implement me`)
+	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Nil))
+	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Arguments(vf.Nil)))
+	require.Panic(t, func() { vf.New(typ.Any, vf.Arguments(vf.Nil, vf.Nil)) }, `unable to create`)
+	require.Panic(t, func() { vf.New(newtype.Not(typ.Nil), vf.Nil) }, `unable to create`)
 }

@@ -120,8 +120,6 @@ type (
 	// GenericType is implemented by types that represent themselves stripped from
 	// range and size constraints.
 	GenericType interface {
-		Type
-
 		// Generic returns the generic type that this type represents stripped
 		// from range and size constraints
 		Generic() Type
@@ -132,6 +130,12 @@ type (
 		Type
 
 		Value() Value
+	}
+
+	// Factory provides the New method that types use to create new instances
+	Factory interface {
+		// New creates instances of this type.
+		New(Value) Value
 	}
 
 	// Named is implemented by named types such as the StructMap
