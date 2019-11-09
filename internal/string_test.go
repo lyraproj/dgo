@@ -14,7 +14,7 @@ import (
 )
 
 func TestPattern(t *testing.T) {
-	tp := newtype.Pattern(regexp.MustCompile(`^doh$`))
+	tp := newtype.Pattern(regexp.MustCompile(`^doh$`)).(dgo.StringType)
 	require.Instance(t, tp, `doh`)
 	require.Instance(t, tp, vf.Value(`doh`))
 	require.NotInstance(t, tp, `dog`)
@@ -25,6 +25,10 @@ func TestPattern(t *testing.T) {
 	require.NotAssignable(t, newtype.String(3, 3), tp)
 	require.NotAssignable(t, newtype.Enum(`doh`), tp)
 	require.NotAssignable(t, newtype.Pattern(regexp.MustCompile(`doh`)), tp)
+
+	require.True(t, tp.Unbounded())
+	require.Equal(t, 0, tp.Min())
+	require.Equal(t, math.MaxInt64, tp.Max())
 
 	require.Equal(t, tp, newtype.Pattern(regexp.MustCompile(`^doh$`)))
 	require.NotEqual(t, tp, typ.String)
@@ -196,6 +200,19 @@ func TestStringType(t *testing.T) {
 
 	require.Equal(t, `string[3,5]`, tp.String())
 	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
+}
+
+func TestStringType_New(t *testing.T) {
+	require.Equal(t, `0xc`, vf.New(typ.String, vf.Arguments(12, `%#x`)))
+	require.Equal(t, `23`, vf.New(typ.String, vf.Arguments(23)))
+
+	require.Equal(t, `a`, vf.New(newtype.CiString(`a`), vf.String(`a`)))
+	require.Equal(t, `A`, vf.New(newtype.CiString(`a`), vf.String(`A`)))
+	require.Equal(t, `string`, vf.New(typ.DgoString, vf.String(`string`)))
+	require.Panic(t, func() { vf.New(newtype.CiString(`a`), vf.String(`b`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(vf.String(`a`).Type(), vf.String(`b`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(newtype.Pattern(regexp.MustCompile(`a`)), vf.String(`d`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(newtype.String(2, 3), vf.String(`d`)) }, `cannot be assigned`)
 }
 
 func TestDgoStringType(t *testing.T) {

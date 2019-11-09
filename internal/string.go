@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"regexp"
@@ -43,6 +44,35 @@ type (
 		h int
 	}
 )
+
+var formatPattern = PatternType(regexp.MustCompile(`\A%([\s\[+#0{<(|-]*)([1-9][0-9]*)?(?:\.([0-9]+))?([a-zA-Z])\z`))
+
+func newString(t dgo.StringType, arg dgo.Value) dgo.String {
+	var s dgo.String
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`string`, 1, 2)
+		if args.Len() == 2 {
+			var v interface{}
+			FromValue(args.Get(0), &v)
+			s = String(fmt.Sprintf(args.Arg(`string`, 1, formatPattern).(dgo.String).GoString(), v))
+		} else {
+			arg = args.Get(0)
+		}
+	}
+
+	if s == nil {
+		var ok bool
+		s, ok = arg.(dgo.String)
+		if !ok {
+			s = String(arg.String())
+		}
+	}
+
+	if !t.Instance(s) {
+		panic(IllegalAssignment(t, s))
+	}
+	return s
+}
 
 func (t defaultDgoStringType) String() string {
 	return TypeString(t)
@@ -91,6 +121,10 @@ func (t defaultDgoStringType) Instance(value interface{}) (ok bool) {
 		}
 	}
 	return
+}
+
+func (t defaultDgoStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t defaultDgoStringType) ReflectType() reflect.Type {
@@ -191,6 +225,10 @@ func (t defaultStringType) Min() int {
 	return 0
 }
 
+func (t defaultStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
+}
+
 func (t defaultStringType) String() string {
 	return TypeString(t)
 }
@@ -249,6 +287,10 @@ func (t *exactStringType) Max() int {
 
 func (t *exactStringType) Min() int {
 	return len(t.s)
+}
+
+func (t *exactStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *exactStringType) String() string {
@@ -312,6 +354,10 @@ func (t *ciStringType) Instance(v interface{}) bool {
 		return strings.EqualFold(t.s, ov)
 	}
 	return false
+}
+
+func (t *ciStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *ciStringType) Type() dgo.Type {
@@ -397,6 +443,18 @@ func (t *patternType) IsInstance(v string) bool {
 	return t.MatchString(v)
 }
 
+func (t *patternType) Max() int {
+	return math.MaxInt64
+}
+
+func (t *patternType) Min() int {
+	return 0
+}
+
+func (t *patternType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
+}
+
 func (t *patternType) ReflectType() reflect.Type {
 	return reflectStringType
 }
@@ -411,6 +469,10 @@ func (t *patternType) String() string {
 
 func (t *patternType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiStringPattern
+}
+
+func (t *patternType) Unbounded() bool {
+	return true
 }
 
 func (t *patternType) Value() dgo.Value {
@@ -487,6 +549,10 @@ func (t *sizedStringType) Max() int {
 
 func (t *sizedStringType) Min() int {
 	return t.min
+}
+
+func (t *sizedStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *sizedStringType) ReflectType() reflect.Type {
