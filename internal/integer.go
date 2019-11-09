@@ -135,6 +135,10 @@ func (t *integerRange) Min() int64 {
 	return t.min
 }
 
+func (t *integerRange) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
+}
+
 func (t *integerRange) ReflectType() reflect.Type {
 	return reflectIntegerType
 }
@@ -189,6 +193,10 @@ func (t exactIntegerType) Max() int64 {
 
 func (t exactIntegerType) Min() int64 {
 	return int64(t)
+}
+
+func (t exactIntegerType) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
 }
 
 func (t exactIntegerType) ReflectType() reflect.Type {
@@ -250,6 +258,10 @@ func (t integerType) Max() int64 {
 
 func (t integerType) Min() int64 {
 	return math.MinInt64
+}
+
+func (t integerType) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
 }
 
 func (t integerType) ReflectType() reflect.Type {
@@ -423,4 +435,44 @@ func ToInt(value interface{}) (v int64, ok bool) {
 		ok = false
 	}
 	return
+}
+
+var radixType = IntEnumType([]int{2, 8, 10, 16})
+
+func newInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`integer`, 1, 2)
+		if args.Len() == 2 {
+			i = Integer(intFromConvertible(args.Get(0), int(args.Arg(`integer`, 1, radixType).(dgo.Integer).GoInt())))
+		} else {
+			i = Integer(intFromConvertible(args.Get(0), 10))
+		}
+	} else {
+		i = Integer(intFromConvertible(arg, 10))
+	}
+	if !t.Instance(i) {
+		panic(IllegalAssignment(t, i))
+	}
+	return i
+}
+
+func intFromConvertible(from dgo.Value, radix int) int64 {
+	switch from := from.(type) {
+	case dgo.Integer:
+		return from.GoInt()
+	case dgo.Float:
+		return int64(from.GoFloat())
+	case *timeVal:
+		return from.GoTime().Unix()
+	case dgo.Boolean:
+		if from.GoBool() {
+			return 1
+		}
+		return 0
+	case dgo.String:
+		if i, err := strconv.ParseInt(from.GoString(), radix, 64); err == nil {
+			return i
+		}
+	}
+	panic(fmt.Errorf(`the value '%s' cannot be converted to an Integer`, from))
 }

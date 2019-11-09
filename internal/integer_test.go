@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -96,6 +97,20 @@ func TestIntegerRange(t *testing.T) {
 	require.Panic(t, func() { newtype.IntegerRange(4, 4, false) }, `cannot have equal min and max`)
 
 	require.Same(t, tp.ReflectType(), typ.Integer.ReflectType())
+}
+
+func TestIntegerType_New(t *testing.T) {
+	require.Equal(t, 17, vf.New(typ.Integer, vf.Arguments(`11`, 16)))
+	require.Equal(t, 17, vf.New(typ.Integer, vf.Float(17)))
+	require.Equal(t, 0, vf.New(typ.Integer, vf.False))
+	require.Equal(t, 1, vf.New(typ.Integer, vf.True))
+
+	now := time.Now()
+	require.Equal(t, now.Unix(), vf.New(typ.Integer, vf.Arguments(vf.Time(now))))
+
+	require.Panic(t, func() { vf.New(typ.Integer, vf.String(`true`)) }, `cannot be converted`)
+	require.Panic(t, func() { vf.New(vf.Integer(4).Type(), vf.Integer(5)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(newtype.IntegerRange(1, 4, true), vf.Integer(5)) }, `cannot be assigned`)
 }
 
 func TestInteger_CompareTo(t *testing.T) {
