@@ -46,6 +46,11 @@ func IntegerRange(min, max int64, inclusive bool) dgo.IntegerRangeType {
 	return internal.IntegerRangeType(min, max, inclusive)
 }
 
+// IntEnum returns a Type that represents any of the given integers
+func IntEnum(ints ...int) dgo.Type {
+	return internal.IntEnumType(ints)
+}
+
 // FloatRange returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
 func FloatRange(min, max float64, inclusive bool) dgo.FloatRangeType {

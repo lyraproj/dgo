@@ -162,3 +162,20 @@ func TestCiEnum(t *testing.T) {
 
 	require.Equal(t, `~"f"|~"foo"|~"foobar"`, tp.String())
 }
+
+func TestIntEnum(t *testing.T) {
+	tp := newtype.IntEnum()
+	require.Equal(t, tp, newtype.Not(typ.Any))
+
+	tp = newtype.IntEnum(2, 4, 8)
+	require.Instance(t, tp, 4)
+	require.NotInstance(t, tp, 5)
+	require.Assignable(t, typ.Integer, tp)
+	require.NotAssignable(t, newtype.IntegerRange(3, 3, true), tp)
+	require.Assignable(t, newtype.IntegerRange(2, 8, true), tp)
+	require.Assignable(t, tp, newtype.IntEnum(8))
+	require.Assignable(t, tp, newtype.IntEnum(2, 4))
+	require.Assignable(t, tp, newtype.IntEnum(8, 2, 4))
+
+	require.Equal(t, `2|4|8`, tp.String())
+}

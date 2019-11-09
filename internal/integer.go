@@ -49,6 +49,21 @@ func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerRangeType {
 	return &integerRange{min: min, max: max, inclusive: inclusive}
 }
 
+// IntEnumType returns a Type that represents any of the given integers
+func IntEnumType(ints []int) dgo.Type {
+	switch len(ints) {
+	case 0:
+		return &notType{DefaultAnyType}
+	case 1:
+		return exactIntegerType(ints[0])
+	}
+	ts := make([]dgo.Value, len(ints))
+	for i := range ints {
+		ts[i] = exactIntegerType(ints[i])
+	}
+	return &anyOfType{slice: ts, frozen: true}
+}
+
 func (t *integerRange) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case exactIntegerType:
@@ -201,7 +216,7 @@ func (t integerType) Assignable(other dgo.Type) bool {
 	case integerType, exactIntegerType, *integerRange:
 		return true
 	}
-	return false
+	return CheckAssignableTo(nil, other, t)
 }
 
 func (t integerType) Equals(other interface{}) bool {
