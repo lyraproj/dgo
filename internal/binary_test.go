@@ -61,6 +61,40 @@ func TestBinaryType(t *testing.T) {
 	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
 }
 
+func TestBinaryType_New(t *testing.T) {
+	b := vf.New(typ.Binary, vf.Arguments(vf.Values(1, 2, 3)))
+	require.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
+}
+
+func TestBinaryType_New_passThrough(t *testing.T) {
+	b := vf.Binary([]byte{1, 2, 3}, true)
+	require.Same(t, b, vf.New(typ.Binary, b))
+}
+
+func TestBinaryType_New_stringRaw(t *testing.T) {
+	require.Equal(t, vf.Binary([]byte(`hello`), true), vf.New(typ.Binary, vf.Arguments(vf.String(`hello`), `%r`)))
+}
+
+func TestBinaryType_New_badCount(t *testing.T) {
+	require.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(1, 2, 3)) }, `illegal number of arguments`)
+}
+
+func TestBinaryType_New_badArg(t *testing.T) {
+	require.Panic(t, func() { vf.New(typ.Binary, vf.Integer(3)) }, `illegal argument for binary`)
+}
+
+func TestBinaryType_New_badType(t *testing.T) {
+	require.Panic(t, func() { vf.New(newtype.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) }, `cannot be assigned`)
+}
+
+func TestBinaryType_New_badBytes(t *testing.T) {
+	require.Panic(t, func() { vf.New(typ.Binary, vf.Values(1, 311, 3)) }, `the value 311 cannot be assigned to a variable of type 0..255`)
+}
+
+func TestBinaryType_New_badFormat(t *testing.T) {
+	require.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(`hello`, `%x`)) }, `illegal argument`)
+}
+
 type badReader int
 
 func (badReader) Read(p []byte) (n int, err error) {
@@ -93,6 +127,27 @@ func TestBinaryString(t *testing.T) {
 	require.True(t, bytes.Equal(bs, v.GoBytes()))
 
 	require.Panic(t, func() { vf.BinaryFromString(`----`) }, `illegal base64`)
+}
+
+func TestBinaryFromEncoded(t *testing.T) {
+	bs := []byte(`hello`)
+	notStrict := `aGVsbG9=`
+	v := vf.BinaryFromEncoded(notStrict, `%b`)
+	require.True(t, bytes.Equal(bs, v.GoBytes()))
+	require.Panic(t, func() { vf.BinaryFromEncoded(notStrict, `%B`) }, `illegal base64 data at input byte 7`)
+
+	bs = []byte{'r', 0x82, 0xff}
+	notUtf8 := string(bs)
+	v = vf.BinaryFromEncoded(notUtf8, `%r`)
+	require.True(t, bytes.Equal(bs, v.GoBytes()))
+	require.Panic(t, func() { vf.BinaryFromEncoded(notUtf8, `%s`) }, `Expected valid utf8 string`)
+
+	bs = []byte{3, 240, 126}
+	require.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A/B+`, `%B`).GoBytes()))
+	require.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A_B-`, `%u`).GoBytes()))
+	require.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%u`) }, `illegal base64 data at input byte 1`)
+
+	require.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%x`) }, `Expected one of the supported format specifiers`)
 }
 
 func TestBinary_CompareTo(t *testing.T) {

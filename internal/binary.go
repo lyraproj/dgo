@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"reflect"
+	"unicode/utf8"
 
 	"github.com/lyraproj/dgo/dgo"
 )
@@ -115,6 +116,10 @@ func (t *binaryType) Min() int {
 	return t.min
 }
 
+func (t *binaryType) New(arg dgo.Value) dgo.Value {
+	return newBinary(t, arg)
+}
+
 var reflectBinaryType = reflect.TypeOf([]byte{})
 
 func (t *binaryType) ReflectType() reflect.Type {
@@ -137,6 +142,43 @@ func (t *binaryType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
 }
 
+var encType = EnumType([]string{`%B`, `%b`, `%u`, `%s`, `%r`})
+
+func newBinary(t dgo.Type, arg dgo.Value) (b dgo.Value) {
+	enc := `%B`
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`binary`, 1, 2)
+		if args.Len() == 2 {
+			arg = args.Arg(`binary`, 0, DefaultStringType)
+			enc = args.Arg(`binary`, 1, encType).(dgo.String).GoString()
+		} else {
+			arg = args.Get(0)
+		}
+	}
+	switch arg := arg.(type) {
+	case dgo.Binary:
+		b = arg
+	case dgo.Array:
+		bs := make([]byte, arg.Len())
+		bt := primitivePTypes[reflect.Uint8]
+		arg.EachWithIndex(func(v dgo.Value, i int) {
+			if !bt.Instance(v) {
+				panic(IllegalAssignment(bt, v))
+			}
+			bs[i] = byte(v.(intVal))
+		})
+		b = Binary(bs, true)
+	case dgo.String:
+		b = BinaryFromEncoded(arg.GoString(), enc)
+	default:
+		panic(illegalArgument(`binary`, `binary, string, or array`, []interface{}{arg}, 0))
+	}
+	if !t.Instance(b) {
+		panic(IllegalAssignment(t, b))
+	}
+	return
+}
+
 // Binary creates a new Binary based on the given slice. If frozen is true, the
 // binary will be immutable and contain a copy of the slice, otherwise the slice
 // is simply wrapped and modifications to its elements will also modify the binary.
@@ -149,9 +191,38 @@ func Binary(bs []byte, frozen bool) dgo.Binary {
 	return &binary{bytes: bs, frozen: frozen}
 }
 
-// BinaryFromString creates a new Binary from the base64 encoded string
-func BinaryFromString(s string) dgo.Binary {
-	bs, err := base64.StdEncoding.Strict().DecodeString(s)
+// BinaryFromEncoded creates a new Binary from the given string and encoding. Enocding can be one of:
+//
+// `%b`: base64.StdEncoding
+//
+// `%u`: base64.URLEncoding
+//
+// `%B`: base64.StdEncoding.Strict()
+//
+// `%s`: check using utf8.ValidString(str), then cast to []byte
+//
+// `%r`: cast to []byte
+func BinaryFromEncoded(str, enc string) dgo.Binary {
+	var bs []byte
+	var err error
+
+	switch enc {
+	case `%b`:
+		bs, err = base64.StdEncoding.DecodeString(str)
+	case `%u`:
+		bs, err = base64.URLEncoding.DecodeString(str)
+	case `%B`:
+		bs, err = base64.StdEncoding.Strict().DecodeString(str)
+	case `%s`:
+		if !utf8.ValidString(str) {
+			panic(illegalArgument(`binary`, `valid utf8 string`, []interface{}{str, enc}, 0))
+		}
+		bs = []byte(str)
+	case `%r`:
+		bs = []byte(str)
+	default:
+		panic(illegalArgument(`binary`, `one of the supported format specifiers %B, %b, %s, %r, %u`, []interface{}{str, enc}, 1))
+	}
 	if err != nil {
 		panic(err)
 	}

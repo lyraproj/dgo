@@ -14,9 +14,24 @@ func Binary(bs []byte, frozen bool) dgo.Binary {
 	return internal.Binary(bs, frozen)
 }
 
-// BinaryFromString creates a new Binary from the base64 encoded string
-func BinaryFromString(base64 string) dgo.Binary {
-	return internal.BinaryFromString(base64)
+// BinaryFromString creates a new Binary from the given string using strict UTF8 encoding
+func BinaryFromString(s string) dgo.Binary {
+	return internal.BinaryFromEncoded(s, `%B`)
+}
+
+// BinaryFromEncoded creates a new Binary from the given string and encoding. Enocding can be one of:
+//
+// `%b`: base64.StdEncoding
+//
+// `%u`: base64.URLEncoding
+//
+// `%B`: base64.StdEncoding.Strict()
+//
+// `%s`: check using utf8.ValidString(str), then cast to []byte
+//
+// `%r`: cast to []byte
+func BinaryFromEncoded(s, enc string) dgo.Binary {
+	return internal.BinaryFromEncoded(s, enc)
 }
 
 // BinaryFromData creates a new frozen Binary based on data read from the given io.Reader.

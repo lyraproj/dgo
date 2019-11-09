@@ -4,6 +4,7 @@ type (
 	// BinaryType is the type that represents a Binary value
 	BinaryType interface {
 		SizedType
+		Factory
 
 		IsInstance([]byte) bool
 	}
