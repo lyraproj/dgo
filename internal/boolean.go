@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -55,6 +56,29 @@ func (t booleanType) Instance(v interface{}) bool {
 
 func (t booleanType) IsInstance(v bool) bool {
 	return t < 0 || (t == 1) == v
+}
+
+var boolStringType = CiEnumType([]string{`true`, `false`, `yes`, `no`, `y`, `n`})
+var trueStringType = CiEnumType([]string{`true`, `yes`, `y`})
+
+func (t booleanType) New(arg dgo.Value) dgo.Value {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`bool`, 1, 1)
+		arg = args.Get(0)
+	}
+	switch arg := arg.(type) {
+	case boolean:
+		return arg
+	case intVal:
+		return boolean(arg != 0)
+	case floatVal:
+		return boolean(arg != 0)
+	default:
+		if boolStringType.Instance(arg) {
+			return boolean(trueStringType.Instance(arg))
+		}
+		panic(fmt.Errorf(`unable to create a bool from %s`, arg))
+	}
 }
 
 var reflectBooleanType = reflect.TypeOf(true)

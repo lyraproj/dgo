@@ -63,6 +63,25 @@ func TestBooleanType(t *testing.T) {
 	require.Equal(t, reflect.TypeOf(false), typ.True.ReflectType())
 }
 
+func TestNew_bool(t *testing.T) {
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.String(`y`)))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.String(`Yes`)))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.String(`TRUE`)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.String(`N`)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.String(`no`)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.String(`False`)))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.Float(1)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.Float(0)))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.Float(1)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.Integer(0)))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.Integer(1)))
+	require.Equal(t, vf.False, vf.New(typ.Boolean, vf.False))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.True))
+	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.Arguments(vf.True)))
+	require.Panic(t, func() { vf.New(typ.Boolean, vf.String(`unhappy`)) }, `unable to create a bool from unhappy`)
+	require.Panic(t, func() { vf.New(typ.Boolean, vf.Arguments(vf.True, vf.True)) }, `illegal number of arguments`)
+}
+
 func TestBoolean(t *testing.T) {
 	require.Equal(t, vf.True, vf.Boolean(true))
 	require.Equal(t, vf.False, vf.Boolean(false))
