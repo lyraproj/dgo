@@ -1,16 +1,14 @@
 package internal
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/lyraproj/dgo/util"
-
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (
@@ -357,7 +355,7 @@ func StringType(args []interface{}) dgo.StringType {
 		}
 		panic(illegalArgument(`StringType`, `Integer`, args, 0))
 	}
-	panic(fmt.Errorf(`illegal number of arguments for StringType. Expected 0 - 2, got %d`, len(args)))
+	panic(illegalArgumentCount(`StringType`, 0, 2, len(args)))
 }
 
 func (t *patternType) Assignable(other dgo.Type) bool {

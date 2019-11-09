@@ -95,7 +95,7 @@ func ArrayType(args ...interface{}) dgo.ArrayType {
 	case 3:
 		return arrayTypeThree(args)
 	default:
-		panic(fmt.Errorf(`illegal number of arguments for Array. Expected 0 - 3, got %d`, len(args)))
+		panic(illegalArgumentCount(`Array`, 0, 3, len(args)))
 	}
 }
 

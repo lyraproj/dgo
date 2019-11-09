@@ -1026,7 +1026,7 @@ func MapType(args ...interface{}) dgo.MapType {
 	case 4:
 		return mapTypeFour(args)
 	default:
-		panic(fmt.Errorf(`illegal number of arguments for MapType. Expected 0 - 4, got %d`, len(args)))
+		panic(illegalArgumentCount(`MapType`, 0, 4, len(args)))
 	}
 }
 

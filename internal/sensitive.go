@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -31,7 +30,7 @@ func SensitiveType(args []interface{}) dgo.Type {
 		}
 		panic(illegalArgument(`SensitiveType`, `Type`, args, 0))
 	}
-	panic(fmt.Errorf(`illegal number of arguments for SensitiveType. Expected 0 or 1, got %d`, len(args)))
+	panic(illegalArgumentCount(`SensitiveType`, 0, 1, len(args)))
 }
 
 func (t *sensitiveType) Assignable(other dgo.Type) bool {

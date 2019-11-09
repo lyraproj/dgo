@@ -44,3 +44,8 @@ func Strings(values ...string) dgo.Array {
 func Integers(values ...int) dgo.Array {
 	return internal.Integers(values)
 }
+
+// Arguments returns an immutable Arguments instance that represents the given values
+func Arguments(values ...interface{}) dgo.Arguments {
+	return internal.Arguments(values)
+}

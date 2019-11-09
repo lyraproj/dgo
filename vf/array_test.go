@@ -3,6 +3,9 @@ package vf_test
 import (
 	"fmt"
 
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/typ"
+
 	"github.com/lyraproj/dgo/util"
 	"github.com/lyraproj/dgo/vf"
 )
@@ -29,4 +32,11 @@ func ExampleMutableValues_illegalAssignment() {
 		fmt.Println(err)
 	}
 	// Output: the value 132 cannot be assigned to a variable of type 0..127
+}
+
+func ExampleArguments() {
+	args := vf.Arguments(`first`, 2)
+	a0 := args.Arg(`myFunc`, 0, typ.String).(dgo.String)
+	fmt.Println(a0)
+	// Output: first
 }

@@ -194,6 +194,20 @@ type (
 		WithValues(values ...interface{}) Array
 	}
 
+	// Arguments is a special form of an Array that enables differentiation between one argument that is an Array and
+	// several arguments in the form of an array.
+	Arguments interface {
+		Array
+
+		// Arg is like Get, but it will an illegal argument error unless the value at the given position is not
+		// of the correct type or if the given position is beyond the size of the array
+		Arg(funcName string, n int, typ Type) Value
+
+		// AssertSize will panic with an illegal argument error unless the size of the receiver is within
+		// the given min and max inclusive range.
+		AssertSize(funcName string, min, max int)
+	}
+
 	// ArrayType is implemented by types representing implementations of the Array value
 	ArrayType interface {
 		SizedType

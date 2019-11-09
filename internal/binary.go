@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"math"
@@ -48,7 +47,7 @@ func BinaryType(args ...interface{}) dgo.BinaryType {
 		}
 		panic(illegalArgument(`BinaryType`, `Integer`, args, 0))
 	}
-	panic(fmt.Errorf(`illegal number of arguments for BinaryType. Expected 0 - 2, got %d`, len(args)))
+	panic(illegalArgumentCount(`BinaryType`, 0, 2, len(args)))
 }
 
 // SizedBinaryType returns a BinaryType that is constrained to binaries whose size is within the

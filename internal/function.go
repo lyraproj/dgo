@@ -2,7 +2,7 @@ package internal
 
 import (
 	"errors"
-	"fmt"
+	"math"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -306,7 +306,7 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 	if t.IsVariadic() {
 		nv := t.NumIn() - 1 // number of non variadic
 		if mx < nv {
-			panic(fmt.Errorf(`illegal number of arguments. Expected at least %d, got %d`, nv, mx))
+			panic(illegalArgumentCount(t.Name(), nv, math.MaxInt64, mx))
 		}
 		rr := make([]reflect.Value, nv+1)
 		for i := 0; i < nv; i++ {
@@ -327,7 +327,7 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 	}
 
 	if mx != t.NumIn() {
-		panic(fmt.Errorf(`illegal number of arguments. Expected %d, got %d`, t.NumIn(), mx))
+		panic(illegalArgumentCount(t.Name(), t.NumIn(), t.NumIn(), mx))
 	}
 
 	rr := make([]reflect.Value, mx)

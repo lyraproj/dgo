@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 
 	"github.com/lyraproj/dgo/dgo"
 )
@@ -85,6 +86,24 @@ func illegalArgument(name, expected string, args []interface{}, argno int) error
 		return fmt.Errorf(`illegal argument for %s. Expected %s, got %s`, name, expected, Value(args[argno]))
 	}
 	return fmt.Errorf(`illegal argument %d for %s with %d arguments. Expected %s, got %s`, argno+1, name, len(args), expected, Value(args[argno]))
+}
+
+func illegalArgumentCount(name string, min, max, actual int) error {
+	var exp string
+	switch {
+	case max == math.MaxInt64:
+		exp = fmt.Sprintf(`at least %d`, min)
+	case min == max:
+		exp = strconv.Itoa(min)
+	case max-min == 1:
+		exp = fmt.Sprintf(`%d or %d`, min, max)
+	default:
+		exp = fmt.Sprintf(`%d to %d`, min, max)
+	}
+	if name != `` {
+		name = ` for ` + name
+	}
+	return fmt.Errorf(`illegal number of arguments%s. Expected %s, got %d`, name, exp, actual)
 }
 
 var primitivePTypes = map[reflect.Kind]dgo.Type{
