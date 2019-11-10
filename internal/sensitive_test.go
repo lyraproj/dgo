@@ -50,6 +50,16 @@ func TestSensitiveType(t *testing.T) {
 	require.Panic(t, func() { newtype.Parse(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 
+func TestSensitiveType_New(t *testing.T) {
+	s := vf.Sensitive(`hide me`)
+	require.Equal(t, s, vf.New(typ.Sensitive, vf.Arguments(`hide me`)))
+	require.Equal(t, s, vf.New(typ.Sensitive, vf.String(`hide me`)))
+	require.Same(t, s, vf.New(typ.Sensitive, vf.Arguments(s)))
+	require.Same(t, s, vf.New(typ.Sensitive, s))
+
+	require.Panic(t, func() { vf.New(typ.Sensitive, vf.Arguments(`hide me`, `and me`)) }, `illegal number of arguments`)
+}
+
 func TestSensitive(t *testing.T) {
 	s := vf.Sensitive(vf.String(`a`))
 	require.Equal(t, s, s)

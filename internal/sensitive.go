@@ -84,6 +84,17 @@ func (t *sensitiveType) Operator() dgo.TypeOp {
 	return dgo.OpSensitive
 }
 
+func (t *sensitiveType) New(arg dgo.Value) dgo.Value {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`sensitive`, 1, 1)
+		arg = args.Get(0)
+	}
+	if s, ok := arg.(dgo.Sensitive); ok {
+		return s
+	}
+	return Sensitive(arg)
+}
+
 func (t *sensitiveType) String() string {
 	return TypeString(t)
 }
