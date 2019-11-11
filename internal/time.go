@@ -141,6 +141,19 @@ func (v *timeVal) Equals(other interface{}) bool {
 	return false
 }
 
+func (v *timeVal) SecondsWithFraction() float64 {
+	t := (*time.Time)(v)
+	y := t.Year()
+	// Timestamps that represent a date before the year 1678 or after 2262 can
+	// be represented as nanoseconds in an int64.
+	if 1678 < y && y < 2262 {
+		return float64(float64(t.UnixNano()) / 1000000000.0)
+	}
+	// Fall back to microsecond precision
+	us := t.Unix()*1000000 + int64(t.Nanosecond())/1000
+	return float64(us) / 1000000.0
+}
+
 func (v *timeVal) GoTime() time.Time {
 	return *(*time.Time)(v)
 }

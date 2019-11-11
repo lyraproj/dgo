@@ -69,6 +69,13 @@ func TestTime(t *testing.T) {
 	require.NotEqual(t, v, ot)
 	require.NotEqual(t, v, `2019-10-06:16:15:00-01:00`)
 	require.Equal(t, v, v.GoTime())
+
+	ts, _ = time.Parse(time.RFC3339, `1628-08-10T17:15:00.123456-07:00`)
+	ot = ts.AddDate(400, 0, 0)
+	v = vf.Time(ts)
+	v2 := vf.Time(ot)
+	dv := ot.Unix() - ts.Unix()
+	require.Equal(t, float64(dv), v2.SecondsWithFraction()-v.SecondsWithFraction())
 }
 
 func TestTimeFromString(t *testing.T) {
