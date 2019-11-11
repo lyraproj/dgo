@@ -219,6 +219,23 @@ func MutableMap(args []interface{}) dgo.Map {
 	return mapFromArgs(args, false)
 }
 
+func newMap(t dgo.MapType, arg dgo.Value) dgo.Map {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`map`, 1, 1)
+		arg = args.Get(0)
+	}
+	m, ok := arg.(dgo.Map)
+	if ok {
+		m = m.FrozenCopy().(dgo.Map)
+	} else {
+		m = mapFromArgs([]interface{}{arg}, true)
+	}
+	if !t.Instance(m) {
+		panic(IllegalAssignment(t, m))
+	}
+	return m
+}
+
 func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 	l := len(args)
 	switch {
@@ -229,7 +246,7 @@ func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 		return MapWithCapacity(0, nil)
 	case l == 1:
 		a0 := args[0]
-		if ar, ok := a0.(*array); ok && ar.Len()%2 == 0 {
+		if ar, ok := a0.(dgo.Array); ok && ar.Len()%2 == 0 {
 			if frozen {
 				return ar.FrozenCopy().(dgo.Array).ToMap()
 			}
@@ -1147,6 +1164,10 @@ func (t *sizedMapType) Min() int {
 	return t.min
 }
 
+func (t *sizedMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
+}
+
 func (t *sizedMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
@@ -1216,6 +1237,10 @@ func (t defaultMapType) Max() int {
 
 func (t defaultMapType) Min() int {
 	return 0
+}
+
+func (t defaultMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
 }
 
 func (t defaultMapType) ReflectType() reflect.Type {
@@ -1294,6 +1319,10 @@ func (t *exactMapType) Max() int {
 
 func (t *exactMapType) Min() int {
 	return t.value.Len()
+}
+
+func (t *exactMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
 }
 
 func (t *exactMapType) ReflectType() reflect.Type {

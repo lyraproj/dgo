@@ -29,6 +29,19 @@ func TestTyped(t *testing.T) {
 	require.Panic(t, func() { m.Put(`third`, 2) }, internal.IllegalSize(mt, 3))
 }
 
+func TestMapType_New(t *testing.T) {
+	mt := newtype.Map(typ.String, typ.Integer)
+	m := vf.Map(`first`, 1, `second`, 2)
+	require.Same(t, m, vf.New(typ.Map, m))
+	require.Same(t, m, vf.New(mt, m))
+	require.Same(t, m, vf.New(m.Type(), m))
+	require.Same(t, m, vf.New(newtype.StructMapFromMap(false, vf.Map(`first`, typ.Integer, `second`, typ.Integer)), m))
+	require.Same(t, m, vf.New(mt, vf.Arguments(m)))
+	require.Equal(t, m, vf.New(mt, vf.Values(`first`, 1, `second`, 2)))
+
+	require.Panic(t, func() { vf.New(mt, vf.Values(`first`, 1, `second`, `two`)) }, `cannot be assigned`)
+}
+
 func TestMap_ValueType(t *testing.T) {
 	m1 := vf.Map(
 		`first`, 1,

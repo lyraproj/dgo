@@ -279,6 +279,10 @@ func (t *structType) Min() int {
 	return min
 }
 
+func (t *structType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
+}
+
 func (t *structType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
