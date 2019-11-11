@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -100,6 +101,21 @@ func TestFloatRange(t *testing.T) {
 	require.Panic(t, func() { newtype.FloatRange(3.1, 3.1, false) }, `cannot have equal min and max`)
 
 	require.Same(t, tp.ReflectType(), typ.Float.ReflectType())
+}
+
+func TestFloatType_New(t *testing.T) {
+	require.Equal(t, 17.3, vf.New(typ.Float, vf.Float(17.3)))
+	require.Equal(t, 17.3, vf.New(typ.Float, vf.String(`17.3`)))
+	require.Equal(t, 17.0, vf.New(typ.Float, vf.Integer(17)))
+	require.Equal(t, 0.0, vf.New(typ.Float, vf.False))
+	require.Equal(t, 1.0, vf.New(typ.Float, vf.True))
+
+	now := time.Now()
+	require.Equal(t, vf.New(typ.Float, vf.Time(now)), vf.New(typ.Float, vf.Arguments(vf.Time(now))))
+
+	require.Panic(t, func() { vf.New(typ.Float, vf.String(`true`)) }, `cannot be converted`)
+	require.Panic(t, func() { vf.New(vf.Float(4).Type(), vf.Float(5)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(newtype.FloatRange(1, 4, true), vf.Float(5)) }, `cannot be assigned`)
 }
 
 func TestNumber(t *testing.T) {

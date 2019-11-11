@@ -441,9 +441,9 @@ var radixType = IntEnumType([]int{2, 8, 10, 16})
 
 func newInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
 	if args, ok := arg.(dgo.Arguments); ok {
-		args.AssertSize(`integer`, 1, 2)
+		args.AssertSize(`int`, 1, 2)
 		if args.Len() == 2 {
-			i = Integer(intFromConvertible(args.Get(0), int(args.Arg(`integer`, 1, radixType).(dgo.Integer).GoInt())))
+			i = Integer(intFromConvertible(args.Get(0), int(args.Arg(`int`, 1, radixType).(dgo.Integer).GoInt())))
 		} else {
 			i = Integer(intFromConvertible(args.Get(0), 10))
 		}
@@ -474,5 +474,5 @@ func intFromConvertible(from dgo.Value, radix int) int64 {
 			return i
 		}
 	}
-	panic(fmt.Errorf(`the value '%s' cannot be converted to an Integer`, from))
+	panic(fmt.Errorf(`the value '%s' cannot be converted to an int`, from))
 }

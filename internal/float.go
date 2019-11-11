@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 
 	"github.com/lyraproj/dgo/util"
 
@@ -114,6 +115,10 @@ func (t *floatRangeType) Min() float64 {
 	return t.min
 }
 
+func (t *floatRangeType) New(arg dgo.Value) dgo.Value {
+	return newFloat(t, arg)
+}
+
 func (t *floatRangeType) String() string {
 	return TypeString(t)
 }
@@ -168,6 +173,10 @@ func (t exactFloatType) Max() float64 {
 
 func (t exactFloatType) Min() float64 {
 	return float64(t)
+}
+
+func (t exactFloatType) New(arg dgo.Value) dgo.Value {
+	return newFloat(t, arg)
 }
 
 func (t exactFloatType) ReflectType() reflect.Type {
@@ -226,6 +235,10 @@ func (t floatType) Max() float64 {
 
 func (t floatType) Min() float64 {
 	return -math.MaxFloat64
+}
+
+func (t floatType) New(arg dgo.Value) dgo.Value {
+	return newFloat(t, arg)
 }
 
 func (t floatType) ReflectType() reflect.Type {
@@ -345,4 +358,37 @@ func ToFloat(value interface{}) (v float64, ok bool) {
 		ok = false
 	}
 	return
+}
+
+func newFloat(t dgo.Type, arg dgo.Value) (f dgo.Float) {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`float`, 1, 1)
+		arg = args.Get(0)
+	}
+	f = Float(floatFromConvertible(arg))
+	if !t.Instance(f) {
+		panic(IllegalAssignment(t, f))
+	}
+	return f
+}
+
+func floatFromConvertible(from dgo.Value) float64 {
+	switch from := from.(type) {
+	case dgo.Float:
+		return from.GoFloat()
+	case dgo.Integer:
+		return float64(from.GoInt())
+	case *timeVal:
+		return from.SecondsWithFraction()
+	case dgo.Boolean:
+		if from.GoBool() {
+			return 1
+		}
+		return 0
+	case dgo.String:
+		if i, err := strconv.ParseFloat(from.GoString(), 64); err == nil {
+			return i
+		}
+	}
+	panic(fmt.Errorf(`the value '%s' cannot be converted to a float`, from))
 }
