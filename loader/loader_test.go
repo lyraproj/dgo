@@ -104,9 +104,9 @@ func TestLoader_Load_nil(t *testing.T) {
 
 func TestLoader_Load_multiple(t *testing.T) {
 	l := loader.New(nil, ``, nil, func(l dgo.Loader, name string) interface{} {
-		return loader.Multiple(
+		return loader.Multiple(vf.Map(
 			`a`, `the a`,
-			`b`, `the b`)
+			`b`, `the b`))
 	}, nil)
 	require.Equal(t, `the a`, l.Load(`a`))
 	require.Equal(t, `the b`, l.Load(`b`))
@@ -114,9 +114,9 @@ func TestLoader_Load_multiple(t *testing.T) {
 
 func TestLoader_Load_multipleNotRequested(t *testing.T) {
 	l := loader.New(nil, ``, nil, func(l dgo.Loader, name string) interface{} {
-		return loader.Multiple(
+		return loader.Multiple(vf.Map(
 			`c`, `the c`,
-			`b`, `the b`)
+			`b`, `the b`))
 	}, nil)
 	require.Panic(t, func() { l.Load(`a`) }, `map returned from finder doesn't contain original key "a"`)
 }

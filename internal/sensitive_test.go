@@ -68,7 +68,7 @@ func TestSensitive(t *testing.T) {
 	require.NotEqual(t, s, vf.Strings(`a`))
 
 	require.True(t, s.Frozen())
-	a := vf.MutableValues(nil, `a`)
+	a := vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	require.False(t, s.Frozen())
 	s.Freeze()
@@ -76,7 +76,7 @@ func TestSensitive(t *testing.T) {
 	require.True(t, a.Frozen())
 	require.Same(t, s.Unwrap(), a)
 
-	a = vf.MutableValues(nil, `a`)
+	a = vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	c := s.FrozenCopy().(dgo.Sensitive)
 	require.False(t, s.Frozen())

@@ -18,7 +18,8 @@ func TestTyped(t *testing.T) {
 	// value type for the map
 	mt := newtype.Map(typ.String, newtype.AnyOf(typ.String, newtype.IntegerRange(0, 15, true)), 0, 2)
 
-	m := vf.MutableMap(mt)
+	m := vf.MutableMap()
+	m.SetType(mt)
 	m.PutAll(vf.Map(map[string]interface{}{
 		`first`:  1,
 		`second`: `two`,
@@ -253,8 +254,8 @@ func TestMap_EntryType(t *testing.T) {
 		require.True(t, reflect.ValueOf(v).Type().AssignableTo(vt.ReflectType()))
 	})
 
-	m := vf.MutableMap(nil)
-	m.Put(`a`, vf.MutableValues(nil, 1, 2))
+	m := vf.MutableMap()
+	m.Put(`a`, vf.MutableValues(1, 2))
 	m.EachEntry(func(v dgo.MapEntry) {
 		require.False(t, v.Frozen())
 		require.NotSame(t, v, v.FrozenCopy())
@@ -381,15 +382,19 @@ func TestMap_immutable(t *testing.T) {
 }
 
 func TestMutableMap(t *testing.T) {
-	m := vf.MutableMap(map[string]string{})
+	m := vf.MutableMap()
+	m.SetType(map[string]string{})
+	mt := m.Type()
+	require.Equal(t, 0, m.Len())
+	require.Equal(t, newtype.Map(typ.String, typ.String), mt)
+
+	m = vf.MutableMap()
+	m.SetType(mt)
 	require.Equal(t, 0, m.Len())
 	require.Equal(t, newtype.Map(typ.String, typ.String), m.Type())
 
-	m = vf.MutableMap(m.Type())
-	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.String), m.Type())
-
-	m = vf.MutableMap(`map[string]int`)
+	m = vf.MutableMap()
+	m.SetType(`map[string]int`)
 	require.Equal(t, 0, m.Len())
 	require.Equal(t, newtype.Map(typ.String, typ.Integer), m.Type())
 
@@ -397,7 +402,7 @@ func TestMutableMap(t *testing.T) {
 	require.Equal(t, 0, m.Len())
 	require.Equal(t, newtype.Map(typ.String, typ.Integer), m.Type())
 
-	require.Panic(t, func() { vf.MutableMap(`[]int`) }, `does not evaluate to a map type`)
+	require.Panic(t, func() { vf.MutableMap().SetType(`[]int`) }, `does not evaluate to a map type`)
 }
 
 func TestMapFromReflected(t *testing.T) {
@@ -542,8 +547,7 @@ func TestMap_Find(t *testing.T) {
 }
 
 func TestMap_Put(t *testing.T) {
-	m := vf.MutableMap(nil)
-	m.Put(1, `hello`)
+	m := vf.MutableMap(vf.Values(1, `hello`))
 	require.Equal(t, m, map[int]string{1: `hello`})
 
 	m.Put(1, `hello`)
@@ -554,10 +558,9 @@ func TestMap_Put(t *testing.T) {
 }
 
 func TestMap_PutAll(t *testing.T) {
-	m := vf.MutableMap(nil)
-	m.PutAll(vf.Map(
+	m := vf.MutableMap(
 		`first`, 1,
-		`second`, 2))
+		`second`, 2)
 	require.Equal(t, m, map[string]int{
 		`first`:  1,
 		`second`: 2,
@@ -586,13 +589,14 @@ func TestMap_StringKeys(t *testing.T) {
 	require.True(t, m.StringKeys())
 	m = vf.Map(`a`, 1, 2, `b`)
 	require.False(t, m.StringKeys())
-	m = vf.MutableMap(newtype.Map(typ.String, typ.String))
+	m = vf.MutableMap()
+	m.SetType(newtype.Map(typ.String, typ.String))
 	require.True(t, m.StringKeys())
 }
 
 func TestMap_Freeze_recursive(t *testing.T) {
-	m := vf.MutableMap(nil)
-	mr := vf.MutableMap(nil)
+	m := vf.MutableMap()
+	mr := vf.MutableMap()
 	mr.Put(`hello`, `world`)
 	m.Put(1, mr)
 	m.Freeze()
@@ -600,14 +604,14 @@ func TestMap_Freeze_recursive(t *testing.T) {
 }
 
 func TestMap_Copy_freeze_recursive(t *testing.T) {
-	m := vf.MutableMap(nil)
-	mr := vf.MutableMap(nil)
-	k := vf.MutableValues(nil, `the`, `key`)
+	m := vf.MutableMap()
+	mr := vf.MutableMap()
+	k := vf.MutableValues(`the`, `key`)
 	mr.Put(1.0, `world`)
 	m.Put(k, mr)
 	m.Put(1, `one`)
 	m.Put(2, vf.Values(`x`, `y`))
-	m.Put(vf.Values(`a`, `b`), vf.MutableValues(nil, `x`, `y`))
+	m.Put(vf.Values(`a`, `b`), vf.MutableValues(`x`, `y`))
 
 	require.True(t, vf.Array(m).All(func(v dgo.Value) bool {
 		return v.(dgo.MapEntry).Frozen()
@@ -640,7 +644,7 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 
 func TestMap_selfReference(t *testing.T) {
 	tp := newtype.Parse(`x=map[string](string|x)`)
-	d := vf.MutableMap(nil)
+	d := vf.MutableMap()
 	d.Put(`hello`, `world`)
 	d.Put(`deep`, d)
 	require.Instance(t, tp, d)
@@ -775,7 +779,7 @@ func TestMap_SetType(t *testing.T) {
 		`cannot be assigned`)
 
 	require.Panic(t, func() { m.SetType(vf.String(`float|string`)) },
-		`Map.SetType: argument does not evaluate to a MapType`)
+		`Map.SetType: argument does not evaluate to a map type`)
 
 	m.SetType(nil)
 	require.Assignable(t, newtype.Parse(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
@@ -892,7 +896,8 @@ func TestMap_HashCode(t *testing.T) {
 	require.Equal(t, m.HashCode(), m2.HashCode())
 
 	// Self containing map
-	m = vf.MutableMap(map[string]interface{}{})
+	m = vf.MutableMap()
+	m.SetType(map[string]interface{}{})
 	m.Put(`first`, 1)
 	m.Put(`self`, m)
 
@@ -912,19 +917,22 @@ func TestMap_Equal(t *testing.T) {
 		`third`, `three`)
 	require.Equal(t, m1, m2)
 
-	m1 = vf.MutableMap(map[string]interface{}{})
+	m1 = vf.MutableMap()
+	m1.SetType(map[string]interface{}{})
 	m1.Put(`first`, 1)
 	m1.Put(`self`, m1)
 
 	require.NotEqual(t, m1, vf.Values(`first`, `self`))
 
-	m2 = vf.MutableMap(map[string]interface{}{})
+	m2 = vf.MutableMap()
+	m2.SetType(map[string]interface{}{})
 	m2.Put(`first`, 1)
 	m2.Put(`self`, m2)
 
 	require.Equal(t, m1, m2)
 
-	m3 := vf.MutableMap(map[string]interface{}{})
+	m3 := vf.MutableMap()
+	m3.SetType(map[string]interface{}{})
 	m3.Put(`second`, 1)
 	m3.Put(`self`, m3)
 	require.NotEqual(t, m1, m3)
@@ -965,7 +973,7 @@ func TestMapEntry_Frozen(t *testing.T) {
 	e := internal.NewMapEntry(`a`, 1)
 	require.Same(t, e, e.FrozenCopy())
 
-	e = internal.NewMapEntry(`a`, vf.MutableValues(nil, `a`))
+	e = internal.NewMapEntry(`a`, vf.MutableValues(`a`))
 	require.NotSame(t, e, e.FrozenCopy())
 }
 

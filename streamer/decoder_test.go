@@ -48,9 +48,9 @@ func TestDataDecoder_bad_type(t *testing.T) {
 }
 
 func TestDataDecoder_selfref(t *testing.T) {
-	m := vf.MutableMap(nil)
+	m := vf.MutableMap()
 	m.Put(typ.Integer, vf.Values(`a`, `b`))
-	m.Put(typ.String, vf.MutableValues(nil, vf.Sensitive(m)))
+	m.Put(typ.String, vf.MutableValues(vf.Sensitive(m)))
 
 	// Transform rich data to plain data
 	c := streamer.DataCollector()

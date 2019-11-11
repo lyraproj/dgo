@@ -39,10 +39,8 @@ type (
 // Multiple creates an value that holds multiple loader entries. The function is used by a finder that
 // wishes to return more than the one entry that was requested. The requested element must be one of the
 // entries.
-//
-// See vf.Map() for description of possible arguments
-func Multiple(kvPairs ...interface{}) dgo.Value {
-	return multipleEntries{vf.Map(kvPairs...)}
+func Multiple(m dgo.Map) dgo.Value {
+	return multipleEntries{m}
 }
 
 func load(l dgo.Loader, name string) dgo.Value {
@@ -71,7 +69,7 @@ func New(parentNs dgo.Loader, name string, entries dgo.Map, finder dgo.Finder, n
 	if nsCreator == nil {
 		namespaces = vf.Map()
 	} else {
-		namespaces = vf.MutableMap(nil)
+		namespaces = vf.MutableMap()
 	}
 	return &loader{
 		mapLoader:  mapLoader{parentNs: parentNs, name: name, entries: entries.Copy(finder == nil)},
@@ -133,11 +131,13 @@ func (l *mapLoader) Load(name string) dgo.Value {
 }
 
 func (l *mapLoader) AbsoluteName() string {
-	myPart := `/` + l.name
+	an := `/` + l.name
 	if l.parentNs != nil {
-		return l.parentNs.AbsoluteName() + myPart
+		if pn := l.parentNs.AbsoluteName(); pn != `/` {
+			an = pn + an
+		}
 	}
-	return myPart
+	return an
 }
 
 func (l *mapLoader) Name() string {

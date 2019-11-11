@@ -21,13 +21,16 @@ func ExampleStrings() {
 }
 
 func ExampleMutableValues() {
-	a := vf.MutableValues(`[]0..0x7f`, 32)
+	a := vf.MutableValues()
+	a.SetType(`[]0..0x7f`)
+	a.Add(32)
 	fmt.Println(a)
 	// Output: {32}
 }
 
 func ExampleMutableValues_illegalAssignment() {
-	a := vf.MutableValues(`[]0..0x7f`, 32)
+	a := vf.MutableValues()
+	a.SetType(`[]0..0x7f`)
 	if err := util.Catch(func() { a.Add(132) }); err != nil {
 		fmt.Println(err)
 	}

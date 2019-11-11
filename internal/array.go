@@ -794,7 +794,7 @@ func asArrayType(typ interface{}) dgo.ArrayType {
 		if t, ok := Parse(s).(dgo.ArrayType); ok {
 			return t
 		}
-		panic(fmt.Errorf("expression '%s' does not evaluate to a slice type", s))
+		panic(fmt.Errorf("expression '%s' does not evaluate to an array type", s))
 	}
 
 	var mt dgo.ArrayType
@@ -818,29 +818,19 @@ func ArrayWithCapacity(capacity int, typ interface{}) dgo.Array {
 	return &array{slice: make([]dgo.Value, 0, capacity), typ: mt, frozen: false}
 }
 
-// WrapSlice wraps the given slice in an array. The type can be nil, the zero value of a go slice, a dgo.ArrayType,
-// or a dgo string that parses to a dgo.ArrayType.
-// Unset entries in the slice will be replaced by Nil. A type check is performed on the slice unless the type is nil.
-func WrapSlice(typ interface{}, values []dgo.Value) dgo.Array {
-	mt := asArrayType(typ)
+// WrapSlice wraps the given slice in an array. Unset entries in the slice will be replaced by Nil.
+func WrapSlice(values []dgo.Value) dgo.Array {
 	ReplaceNil(values)
-	a := &array{slice: values, frozen: false}
-	if mt != nil {
-		if !mt.Instance(a) {
-			l := len(values)
-			if l < mt.Min() || l > mt.Max() {
-				panic(IllegalSize(mt, l))
-			}
-			panic(IllegalAssignment(mt, a))
-		}
-		a.typ = mt
-	}
-	return a
+	return &array{slice: values, frozen: false}
 }
 
 // MutableValues returns a frozen dgo.Array that represents the given values
-func MutableValues(typ interface{}, values []interface{}) dgo.Array {
-	return WrapSlice(typ, valueSlice(values, false))
+func MutableValues(values []interface{}) dgo.Array {
+	cp := make([]dgo.Value, len(values))
+	for i := range values {
+		cp[i] = Value(values[i])
+	}
+	return &array{slice: cp, frozen: false}
 }
 
 func valueSlice(values []interface{}, frozen bool) []dgo.Value {
@@ -1386,24 +1376,7 @@ func (v *array) SetType(ti interface{}) {
 	if v.frozen {
 		panic(frozenArray(`SetType`))
 	}
-
-	var mt dgo.ArrayType
-	ok := false
-	switch ti := ti.(type) {
-	case dgo.Type:
-		mt, ok = ti.(dgo.ArrayType)
-	case dgo.String:
-		mt, ok = Parse(ti.String()).(dgo.ArrayType)
-	case string:
-		mt, ok = Parse(ti).(dgo.ArrayType)
-	case nil:
-		ok = true
-	}
-
-	if !ok {
-		panic(errors.New(`Array.SetType: argument does not evaluate to an ArrayType`))
-	}
-
+	mt := asArrayType(ti)
 	if mt == nil || mt.Instance(v) {
 		v.typ = mt
 		return

@@ -24,9 +24,9 @@ func NewCollector() Collector {
 
 // Init initializes the internal stack and reference storage
 func (c *BasicCollector) Init() {
-	c.Values = vf.MutableValues(nil)
+	c.Values = vf.MutableValues()
 	c.Stack = make([]dgo.Array, 1, 8)
-	c.Stack[0] = vf.MutableValues(nil)
+	c.Stack[0] = vf.MutableValues()
 }
 
 // AddArray initializes and adds a new array and then calls the function with is supposed to
@@ -43,7 +43,7 @@ func (c *BasicCollector) AddArray(cap int, doer dgo.Doer) {
 // AddMap initializes and adds a new map and then calls the function with is supposed to
 // add an even number of elements as a sequence of key, value, [key, value, ...]
 func (c *BasicCollector) AddMap(cap int, doer dgo.Doer) {
-	h := vf.MutableMap(nil)
+	h := vf.MutableMap()
 	c.Add(h)
 	a := vf.ArrayWithCapacity(nil, cap*2)
 	top := len(c.Stack)

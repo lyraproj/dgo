@@ -88,7 +88,7 @@ func Test_structMap_Copy(t *testing.T) {
 	}
 	s := structA{A: `Alpha`}
 	m := vf.Map(&s)
-	m.Put(`E`, vf.MutableValues(nil, `Echo`, `Foxtrot`))
+	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.Copy(true).(dgo.Map)
 	require.False(t, m.Frozen())
@@ -212,7 +212,7 @@ func Test_structMap_FrozenCopy(t *testing.T) {
 	}
 	s := structA{A: `Alpha`}
 	m := vf.Map(&s)
-	m.Put(`E`, vf.MutableValues(nil, `Echo`, `Foxtrot`))
+	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.FrozenCopy().(dgo.Map)
 	require.False(t, m.Frozen())

@@ -204,19 +204,43 @@ var emptyMap = &hashMap{frozen: true}
 //
 // An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
 func Map(args []interface{}) dgo.Map {
+	return mapFromArgs(args, true)
+}
+
+// MutableMap creates a mutable dgo.Map from the given slice which must have 0, 1, or an
+// even number of elements.
+//
+// Zero elements: the empty map is returned.
+//
+// One element: must be a go map, a go struct, or an Array with an even number of elements.
+//
+// An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
+func MutableMap(args []interface{}) dgo.Map {
+	return mapFromArgs(args, false)
+}
+
+func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 	l := len(args)
 	switch {
 	case l == 0:
-		return emptyMap
+		if frozen {
+			return emptyMap
+		}
+		return MapWithCapacity(0, nil)
 	case l == 1:
 		a0 := args[0]
 		if ar, ok := a0.(*array); ok && ar.Len()%2 == 0 {
-			return ar.ToMap()
+			if frozen {
+				return ar.FrozenCopy().(dgo.Array).ToMap()
+			}
+			m := ar.ToMap().(*hashMap)
+			m.frozen = false
+			return m
 		}
 		rm := reflect.ValueOf(a0)
 		switch rm.Kind() {
 		case reflect.Map:
-			return FromReflectedMap(rm, true).(dgo.Map)
+			return FromReflectedMap(rm, frozen).(dgo.Map)
 		case reflect.Ptr:
 			re := rm.Elem()
 			if re.Kind() == reflect.Struct {
@@ -227,7 +251,10 @@ func Map(args []interface{}) dgo.Map {
 		}
 		panic(fmt.Errorf(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
-		return Values(args).ToMap()
+		if frozen {
+			return Values(args).ToMap()
+		}
+		return MutableValues(args).ToMap()
 	default:
 		panic(fmt.Errorf(`the number of arguments to Map must be 1 or an even number, got: %d`, l))
 	}
@@ -304,27 +331,27 @@ func MapWithCapacity(capacity int, typ interface{}) dgo.Map {
 		capacity = initialCapacity
 	}
 	capacity = int(float64(capacity) / loadFactor)
+	return &hashMap{table: make([]*hashNode, tableSizeFor(capacity)), len: 0, typ: asMapType(typ), frozen: false}
+}
 
-	parseMapType := func(s string) dgo.MapType {
-		if t, ok := Parse(s).(dgo.MapType); ok {
-			return t
-		}
-		panic(fmt.Errorf("expression '%s' does not evaluate to a map type", s))
+func asMapType(ti interface{}) (mt dgo.MapType) {
+	ok := false
+	switch ti := ti.(type) {
+	case dgo.Type:
+		mt, ok = ti.(dgo.MapType)
+	case dgo.String:
+		mt, ok = Parse(ti.GoString()).(dgo.MapType)
+	case string:
+		mt, ok = Parse(ti).(dgo.MapType)
+	case nil:
+		ok = true
+	default:
+		mt, ok = TypeFromReflected(reflect.TypeOf(ti)).(dgo.MapType)
 	}
-	var mt dgo.MapType
-	if typ != nil {
-		switch typ := typ.(type) {
-		case dgo.MapType:
-			mt = typ
-		case string:
-			mt = parseMapType(typ)
-		case dgo.String:
-			mt = parseMapType(typ.GoString())
-		default:
-			mt = TypeFromReflected(reflect.TypeOf(typ)).(dgo.MapType)
-		}
+	if !ok {
+		panic(errors.New(`Map.SetType: argument does not evaluate to a map type`))
 	}
-	return &hashMap{table: make([]*hashNode, tableSizeFor(capacity)), len: 0, typ: mt, frozen: false}
+	return
 }
 
 func (g *hashMap) All(predicate dgo.EntryPredicate) bool {
@@ -764,24 +791,7 @@ func (g *hashMap) SetType(ti interface{}) {
 	if g.frozen {
 		panic(frozenMap(`SetType`))
 	}
-
-	var mt dgo.MapType
-	ok := false
-	switch ti := ti.(type) {
-	case dgo.Type:
-		mt, ok = ti.(dgo.MapType)
-	case dgo.String:
-		mt, ok = Parse(ti.String()).(dgo.MapType)
-	case string:
-		mt, ok = Parse(ti).(dgo.MapType)
-	case nil:
-		ok = true
-	}
-
-	if !ok {
-		panic(errors.New(`Map.SetType: argument does not evaluate to a MapType`))
-	}
-
+	mt := asMapType(ti)
 	if mt == nil || mt.Instance(g) {
 		g.typ = mt
 		return

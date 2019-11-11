@@ -21,14 +21,16 @@ func ExampleMap_goMap() {
 }
 
 func ExampleMutableMap() {
-	m := vf.MutableMap(`map[string]0..0x7f`)
+	m := vf.MutableMap()
+	m.SetType(`map[string]0..0x7f`)
 	m.Put(`a`, 32)
 	fmt.Println(m)
 	// Output: {"a":32}
 }
 
 func ExampleMutableMap_illegalAssignment() {
-	m := vf.MutableMap(`map[string]0..0x7f`)
+	m := vf.MutableMap()
+	m.SetType(`map[string]0..0x7f`)
 	if err := util.Catch(func() { m.Put(`c`, 132) }); err != nil {
 		fmt.Println(err)
 	}
