@@ -74,6 +74,19 @@ func TestArrayType(t *testing.T) {
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 }
 
+func TestArrayType_New(t *testing.T) {
+	at := newtype.Array(typ.Integer)
+	a := vf.Values(1, 2)
+	require.Same(t, a, vf.New(typ.Array, a))
+	require.Same(t, a, vf.New(at, a))
+	require.Same(t, a, vf.New(a.Type(), a))
+	require.Same(t, a, vf.New(newtype.Tuple(typ.Integer, typ.Integer), a))
+	require.Same(t, a, vf.New(at, vf.Arguments(a)))
+	require.Equal(t, a, vf.New(at, vf.Values(1, 2)))
+
+	require.Panic(t, func() { vf.New(at, vf.Values(`first`, `second`)) }, `cannot be assigned`)
+}
+
 func TestSizedArrayType(t *testing.T) {
 	tp := newtype.Array(typ.String)
 	v := vf.Strings(`a`, `b`)

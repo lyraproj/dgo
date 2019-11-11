@@ -154,6 +154,10 @@ func (t defaultArrayType) Min() int {
 	return 0
 }
 
+func (t defaultArrayType) New(arg dgo.Value) dgo.Value {
+	return newArray(t, arg)
+}
+
 func (t defaultArrayType) ReflectType() reflect.Type {
 	return reflect.SliceOf(reflectAnyType)
 }
@@ -239,6 +243,10 @@ func (t *sizedArrayType) Max() int {
 
 func (t *sizedArrayType) Min() int {
 	return t.min
+}
+
+func (t *sizedArrayType) New(arg dgo.Value) dgo.Value {
+	return newArray(t, arg)
 }
 
 func (t *sizedArrayType) Resolve(ap dgo.AliasProvider) {
@@ -342,6 +350,10 @@ func (t *exactArrayType) Max() int {
 
 func (t *exactArrayType) Min() int {
 	return len(t.slice)
+}
+
+func (t *exactArrayType) New(arg dgo.Value) dgo.Value {
+	return newArray(t, arg)
 }
 
 func (t *exactArrayType) ReflectType() reflect.Type {
@@ -643,6 +655,10 @@ func (t *tupleType) Min() int {
 	return tupleMin(t)
 }
 
+func (t *tupleType) New(arg dgo.Value) dgo.Value {
+	return newArray(t, arg)
+}
+
 func tupleMin(t dgo.TupleType) int {
 	n := t.Len()
 	if t.Variadic() {
@@ -831,6 +847,18 @@ func MutableValues(values []interface{}) dgo.Array {
 		cp[i] = Value(values[i])
 	}
 	return &array{slice: cp, frozen: false}
+}
+
+func newArray(t dgo.ArrayType, arg dgo.Value) dgo.Array {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`array`, 1, 1)
+		arg = args.Get(0)
+	}
+	a := Array(arg)
+	if !t.Instance(a) {
+		panic(IllegalAssignment(t, a))
+	}
+	return a
 }
 
 func valueSlice(values []interface{}, frozen bool) []dgo.Value {
