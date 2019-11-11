@@ -31,6 +31,21 @@ func TestTimeDefault(t *testing.T) {
 	require.True(t, reflect.ValueOf(ts).Type().AssignableTo(tp.ReflectType()))
 }
 
+func TestTimeType_New(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, `2019-11-11T17:57:00-00:00`)
+	tv := vf.Time(ts)
+	require.Same(t, tv, vf.New(typ.Time, tv))
+	require.Same(t, tv, vf.New(tv.Type(), tv))
+	require.Same(t, tv, vf.New(tv.Type(), vf.Arguments(tv)))
+	require.Equal(t, tv, vf.New(typ.Time, vf.Integer(tv.GoTime().Unix())))
+	require.Equal(t, tv, vf.New(typ.Time, vf.Float(tv.SecondsWithFraction())))
+
+	require.Equal(t, tv, vf.New(typ.Time, vf.String(`2019-11-11T17:57:00-00:00`)))
+
+	require.Panic(t, func() { vf.New(tv.Type(), vf.String(`2019-10-06T07:15:00-07:00`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(typ.Time, vf.Sensitive(5)) }, `illegal argument`)
+}
+
 func TestTimeExact(t *testing.T) {
 	now := time.Now()
 	ts := vf.Value(now)

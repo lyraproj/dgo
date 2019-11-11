@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"math"
 	"reflect"
 	"time"
 
@@ -42,6 +43,10 @@ func (t timeType) Instance(v interface{}) bool {
 		return true
 	}
 	return false
+}
+
+func (t timeType) New(arg dgo.Value) dgo.Value {
+	return newTime(t, arg)
 }
 
 func (t timeType) ReflectType() reflect.Type {
@@ -93,6 +98,10 @@ func (t *exactTimeType) IsInstance(tv time.Time) bool {
 	return (*time.Time)(t).Equal(tv)
 }
 
+func (t *exactTimeType) New(arg dgo.Value) dgo.Value {
+	return newTime(t, arg)
+}
+
 func (t *exactTimeType) ReflectType() reflect.Type {
 	return reflectTimeType
 }
@@ -111,6 +120,31 @@ func (t *exactTimeType) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *exactTimeType) Value() dgo.Value {
 	return (*timeVal)(t)
+}
+
+func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`time`, 1, 1)
+		arg = args.Get(0)
+	}
+	var tv dgo.Time
+	switch arg := arg.(type) {
+	case dgo.Time:
+		tv = arg
+	case dgo.Integer:
+		tv = Time(time.Unix(arg.GoInt(), 0))
+	case dgo.Float:
+		s, f := math.Modf(arg.GoFloat())
+		tv = Time(time.Unix(int64(s), int64(f*1000000000.0)))
+	case dgo.String:
+		tv = TimeFromString(arg.GoString())
+	default:
+		panic(illegalArgument(`time`, `time|string`, []interface{}{arg}, 0))
+	}
+	if !t.Instance(tv) {
+		panic(IllegalAssignment(t, tv))
+	}
+	return tv
 }
 
 // Time returns the given timestamp as a dgo.Time
