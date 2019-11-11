@@ -60,6 +60,26 @@ func (t *metaType) Instance(v interface{}) bool {
 	return false
 }
 
+func (t *metaType) New(arg dgo.Value) dgo.Value {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`type`, 1, 1)
+		arg = args.Get(0)
+	}
+	var tv dgo.Type
+	switch arg := arg.(type) {
+	case dgo.Type:
+		tv = arg
+	case dgo.String:
+		tv = Parse(arg.GoString())
+	default:
+		panic(illegalArgument(`type`, `type|string`, []interface{}{arg}, 0))
+	}
+	if !t.Instance(tv) {
+		panic(IllegalAssignment(t, tv))
+	}
+	return tv
+}
+
 func (t *metaType) Operator() dgo.TypeOp {
 	return dgo.OpMeta
 }

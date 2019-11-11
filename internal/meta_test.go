@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/vf"
+
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
@@ -28,6 +31,17 @@ func TestMeta(t *testing.T) {
 	require.Equal(t, `type[int]`, typ.Integer.Type().String())
 
 	require.True(t, reflect.ValueOf(typ.Any).Type().AssignableTo(tp.ReflectType()))
+}
+
+func TestMetaType_New(t *testing.T) {
+	m := newtype.String(1, 10)
+	require.Same(t, m, vf.New(typ.String.Type(), m))
+	require.Same(t, m, vf.New(m.Type(), m))
+	require.Same(t, m, vf.New(m.Type(), vf.Arguments(m)))
+	require.Equal(t, m, vf.New(typ.String.Type(), vf.String(`string[1, 10]`)))
+
+	require.Panic(t, func() { vf.New(typ.Integer.Type(), vf.String(`string[1, 10]`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(typ.Integer.Type(), vf.Integer(5)) }, `illegal argument`)
 }
 
 func TestMetaMeta(t *testing.T) {
