@@ -9,14 +9,14 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
 func TestTyped(t *testing.T) {
 	// value type for the map
-	mt := newtype.Map(typ.String, newtype.AnyOf(typ.String, newtype.IntegerRange(0, 15, true)), 0, 2)
+	mt := tf.Map(typ.String, tf.AnyOf(typ.String, tf.IntegerRange(0, 15, true)), 0, 2)
 
 	m := vf.MutableMap()
 	m.SetType(mt)
@@ -30,12 +30,12 @@ func TestTyped(t *testing.T) {
 }
 
 func TestMapType_New(t *testing.T) {
-	mt := newtype.Map(typ.String, typ.Integer)
+	mt := tf.Map(typ.String, typ.Integer)
 	m := vf.Map(`first`, 1, `second`, 2)
 	require.Same(t, m, vf.New(typ.Map, m))
 	require.Same(t, m, vf.New(mt, m))
 	require.Same(t, m, vf.New(m.Type(), m))
-	require.Same(t, m, vf.New(newtype.StructMapFromMap(false, vf.Map(`first`, typ.Integer, `second`, typ.Integer)), m))
+	require.Same(t, m, vf.New(tf.StructMapFromMap(false, vf.Map(`first`, typ.Integer, `second`, typ.Integer)), m))
 	require.Same(t, m, vf.New(mt, vf.Arguments(m)))
 	require.Equal(t, m, vf.New(mt, vf.Values(`first`, 1, `second`, 2)))
 
@@ -58,8 +58,8 @@ func TestMap_ValueType(t *testing.T) {
 		`four`, 3).Type().(dgo.MapType).ValueType()
 	require.Assignable(t, m1, m2)
 	require.NotAssignable(t, m1, m3)
-	require.Assignable(t, newtype.IntegerRange(1, 2, true), m1)
-	require.NotAssignable(t, newtype.IntegerRange(2, 3, true), m1)
+	require.Assignable(t, tf.IntegerRange(1, 2, true), m1)
+	require.NotAssignable(t, tf.IntegerRange(2, 3, true), m1)
 
 	require.NotAssignable(t, m2, vf.Integer(2).Type())
 	require.Assignable(t, m4, vf.Integer(3).Type())
@@ -78,13 +78,13 @@ func TestMap_ValueType(t *testing.T) {
 }
 
 func TestNewMapType_DefaultType(t *testing.T) {
-	mt := newtype.Map()
+	mt := tf.Map()
 	require.Same(t, typ.Map, mt)
 
-	mt = newtype.Map(typ.Any, typ.Any)
+	mt = tf.Map(typ.Any, typ.Any)
 	require.Same(t, typ.Map, mt)
 
-	mt = newtype.Map(typ.Any, typ.Any, 0, math.MaxInt64)
+	mt = tf.Map(typ.Any, typ.Any, 0, math.MaxInt64)
 	require.Same(t, typ.Map, mt)
 
 	m1 := vf.Map(
@@ -136,18 +136,18 @@ func TestMap_ExactType(t *testing.T) {
 	require.Assignable(t, typ.Map, t1)
 	require.NotAssignable(t, t1, typ.Map)
 	require.NotAssignable(t, t1, t3)
-	require.Assignable(t, newtype.Map(typ.String, typ.Integer), t1)
-	require.NotAssignable(t, newtype.Map(typ.String, typ.String), t1)
-	require.NotAssignable(t, newtype.Map(typ.String, typ.Integer, 3, 3), t1)
-	require.NotAssignable(t, t1, newtype.Map(typ.String, typ.Integer))
+	require.Assignable(t, tf.Map(typ.String, typ.Integer), t1)
+	require.NotAssignable(t, tf.Map(typ.String, typ.String), t1)
+	require.NotAssignable(t, tf.Map(typ.String, typ.Integer, 3, 3), t1)
+	require.NotAssignable(t, t1, tf.Map(typ.String, typ.Integer))
 	require.NotAssignable(t, typ.String, t1)
 
 	require.NotEqual(t, t1, t2)
 	require.NotEqual(t, t1, t3)
 	require.NotEqual(t, t1, typ.String)
-	require.NotEqual(t, newtype.Map(typ.String, typ.Integer), t1)
+	require.NotEqual(t, tf.Map(typ.String, typ.Integer), t1)
 
-	require.Equal(t, newtype.Map(typ.String, typ.Integer), typ.Generic(t1))
+	require.Equal(t, tf.Map(typ.String, typ.Integer), typ.Generic(t1))
 
 	require.True(t, t1.HashCode() > 0)
 	require.Equal(t, t1.HashCode(), t1.HashCode())
@@ -158,12 +158,12 @@ func TestMap_ExactType(t *testing.T) {
 }
 
 func TestMap_SizedType(t *testing.T) {
-	mt := newtype.Map(typ.String, typ.Integer)
+	mt := tf.Map(typ.String, typ.Integer)
 
 	require.Equal(t, mt, mt)
-	require.Equal(t, mt, newtype.Map(typ.String, typ.Integer))
-	require.NotEqual(t, mt, newtype.Map(typ.String, typ.Float))
-	require.NotEqual(t, mt, newtype.Array(typ.String))
+	require.Equal(t, mt, tf.Map(typ.String, typ.Integer))
+	require.NotEqual(t, mt, tf.Map(typ.String, typ.Float))
+	require.NotEqual(t, mt, tf.Array(typ.String))
 
 	m1 := vf.Map(
 		`a`, 1,
@@ -181,7 +181,7 @@ func TestMap_SizedType(t *testing.T) {
 	require.NotInstance(t, mt, m2)
 	require.NotInstance(t, mt, `a`)
 
-	mtz := newtype.Map(typ.String, typ.Integer, 3, 3)
+	mtz := tf.Map(typ.String, typ.Integer, 3, 3)
 	require.Instance(t, mtz, m3)
 	require.NotInstance(t, mtz, m1)
 
@@ -190,16 +190,16 @@ func TestMap_SizedType(t *testing.T) {
 	require.NotEqual(t, mt, mtz)
 	require.NotEqual(t, mt, typ.Any)
 
-	mta := newtype.Map(typ.Any, typ.Any, 3, 3)
+	mta := tf.Map(typ.Any, typ.Any, 3, 3)
 	require.NotInstance(t, mta, m1)
 	require.Instance(t, mta, m3)
 
-	mtva := newtype.Map(typ.String, typ.Any)
+	mtva := tf.Map(typ.String, typ.Any)
 	require.Instance(t, mtva, m1)
 	require.Instance(t, mtva, m2)
 	require.Instance(t, mtva, m3)
 
-	mtka := newtype.Map(typ.Any, typ.Integer)
+	mtka := tf.Map(typ.Any, typ.Integer)
 	require.Instance(t, mtka, m1)
 	require.NotInstance(t, mtka, m2)
 	require.Instance(t, mtka, m3)
@@ -222,8 +222,8 @@ func TestMap_KeyType(t *testing.T) {
 	m3 := vf.Map(`b`, 2).Type().(dgo.MapType).KeyType()
 	require.Assignable(t, m1, m2)
 	require.NotAssignable(t, m1, m3)
-	require.Assignable(t, newtype.Enum(`a`, `b`), m1)
-	require.NotAssignable(t, newtype.Enum(`b`, `c`), m1)
+	require.Assignable(t, tf.Enum(`a`, `b`), m1)
+	require.NotAssignable(t, tf.Enum(`b`, `c`), m1)
 
 	require.NotAssignable(t, m2, vf.String(`b`).Type())
 	require.Assignable(t, m3, vf.String(`b`).Type())
@@ -279,55 +279,55 @@ func TestMap_EntryType(t *testing.T) {
 }
 
 func TestNewMapType_max_min(t *testing.T) {
-	tp := newtype.Map(2, 1)
+	tp := tf.Map(2, 1)
 	require.Equal(t, tp.Min(), 1)
 	require.Equal(t, tp.Max(), 2)
 }
 
 func TestNewMapType_negative_min(t *testing.T) {
-	tp := newtype.Map(-2, 3)
+	tp := tf.Map(-2, 3)
 	require.Equal(t, tp.Min(), 0)
 	require.Equal(t, tp.Max(), 3)
 }
 
 func TestNewMapType_negative_min_max(t *testing.T) {
-	tp := newtype.Map(-2, -3)
+	tp := tf.Map(-2, -3)
 	require.Equal(t, tp.Min(), 0)
 	require.Equal(t, tp.Max(), 0)
 }
 
 func TestNewMapType_explicit_unbounded(t *testing.T) {
-	tp := newtype.Map(0, -3)
+	tp := tf.Map(0, -3)
 	require.Equal(t, tp.Min(), 0)
 	require.Equal(t, tp.Max(), 0)
 }
 
 func TestNewMapType_badOneArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(`bad`) }, `illegal argument`)
+	require.Panic(t, func() { tf.Map(`bad`) }, `illegal argument`)
 }
 
 func TestNewMapType_badTwoArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(`bad`, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { newtype.Map(2, `bad`) }, `illegal argument 2`)
-	require.Panic(t, func() { newtype.Map(typ.String, 2) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(`bad`, 2) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(2, `bad`) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(typ.String, 2) }, `illegal argument 2`)
 }
 
 func TestNewMapType_badThreeArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(`bad`, typ.Integer, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { newtype.Map(typ.String, `bad`, 2) }, `illegal argument 2`)
-	require.Panic(t, func() { newtype.Map(typ.String, 1, 2) }, `illegal argument 2`)
-	require.Panic(t, func() { newtype.Map(typ.String, typ.Integer, `bad`) }, `illegal argument 3`)
+	require.Panic(t, func() { tf.Map(`bad`, typ.Integer, 2) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(typ.String, `bad`, 2) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(typ.String, 1, 2) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, `bad`) }, `illegal argument 3`)
 }
 
 func TestNewMapType_badFourArg(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(`bad`, typ.Integer, 2, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { newtype.Map(typ.String, `bad`, 2, 2) }, `illegal argument 2`)
-	require.Panic(t, func() { newtype.Map(typ.String, typ.Integer, `bad`, 2) }, `illegal argument 3`)
-	require.Panic(t, func() { newtype.Map(typ.String, typ.Integer, 2, `bad`) }, `illegal argument 4`)
+	require.Panic(t, func() { tf.Map(`bad`, typ.Integer, 2, 2) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(typ.String, `bad`, 2, 2) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, `bad`, 2) }, `illegal argument 3`)
+	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, 2, `bad`) }, `illegal argument 4`)
 }
 
 func TestNewMapType_badArgCount(t *testing.T) {
-	require.Panic(t, func() { newtype.Map(typ.String, typ.Integer, 2, 2, true) }, `illegal number of arguments`)
+	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, 2, 2, true) }, `illegal number of arguments`)
 }
 
 func TestMap_illegalArgument(t *testing.T) {
@@ -399,21 +399,21 @@ func TestMutableMap(t *testing.T) {
 	m.SetType(map[string]string{})
 	mt := m.Type()
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.String), mt)
+	require.Equal(t, tf.Map(typ.String, typ.String), mt)
 
 	m = vf.MutableMap()
 	m.SetType(mt)
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.String), m.Type())
+	require.Equal(t, tf.Map(typ.String, typ.String), m.Type())
 
 	m = vf.MutableMap()
 	m.SetType(`map[string]int`)
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.Integer), m.Type())
+	require.Equal(t, tf.Map(typ.String, typ.Integer), m.Type())
 
 	m = vf.MapWithCapacity(7, vf.String(`map[string]int`))
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.Integer), m.Type())
+	require.Equal(t, tf.Map(typ.String, typ.Integer), m.Type())
 
 	require.Panic(t, func() { vf.MutableMap().SetType(`[]int`) }, `does not evaluate to a map type`)
 }
@@ -421,7 +421,7 @@ func TestMutableMap(t *testing.T) {
 func TestMapFromReflected(t *testing.T) {
 	m := vf.FromReflectedMap(reflect.ValueOf(map[string]string{}), false)
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, newtype.Map(typ.String, typ.String), m.Type())
+	require.Equal(t, tf.Map(typ.String, typ.String), m.Type())
 	m.Put(`hi`, `there`)
 	require.Equal(t, 1, m.Len())
 }
@@ -434,10 +434,10 @@ func TestMapType_KeyType(t *testing.T) {
 
 	m = vf.Map(`hello`, `world`, 2, 2.0)
 	mt = m.Type().(dgo.MapType)
-	require.Assignable(t, newtype.AnyOf(typ.String, typ.Integer), mt.KeyType())
-	require.Instance(t, newtype.Array(newtype.AnyOf(typ.String, typ.Integer)), m.Keys())
-	require.Assignable(t, newtype.AnyOf(typ.String, typ.Float), mt.ValueType())
-	require.Instance(t, newtype.Array(newtype.AnyOf(typ.String, typ.Float)), m.Values())
+	require.Assignable(t, tf.AnyOf(typ.String, typ.Integer), mt.KeyType())
+	require.Instance(t, tf.Array(tf.AnyOf(typ.String, typ.Integer)), m.Keys())
+	require.Assignable(t, tf.AnyOf(typ.String, typ.Float), mt.ValueType())
+	require.Instance(t, tf.Array(tf.AnyOf(typ.String, typ.Float)), m.Values())
 }
 
 func TestMapType_ValueType(t *testing.T) {
@@ -603,7 +603,7 @@ func TestMap_StringKeys(t *testing.T) {
 	m = vf.Map(`a`, 1, 2, `b`)
 	require.False(t, m.StringKeys())
 	m = vf.MutableMap()
-	m.SetType(newtype.Map(typ.String, typ.String))
+	m.SetType(tf.Map(typ.String, typ.String))
 	require.True(t, m.StringKeys())
 }
 
@@ -656,14 +656,14 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 }
 
 func TestMap_selfReference(t *testing.T) {
-	tp := newtype.Parse(`x=map[string](string|x)`)
+	tp := tf.Parse(`x=map[string](string|x)`)
 	d := vf.MutableMap()
 	d.Put(`hello`, `world`)
 	d.Put(`deep`, d)
 	require.Instance(t, tp, d)
 	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map>}`, d.String())
 
-	t2 := newtype.Parse(`x=map[string](string|map[string](string|x))`)
+	t2 := tf.Parse(`x=map[string](string|map[string](string|x))`)
 	require.Assignable(t, tp, t2)
 }
 
@@ -781,7 +781,7 @@ func TestMap_SetType(t *testing.T) {
 		`third`:  `three`,
 	}), false)
 
-	mt := newtype.Map(typ.String, newtype.AnyOf(typ.Integer, typ.Float, typ.String))
+	mt := tf.Map(typ.String, tf.AnyOf(typ.Integer, typ.Float, typ.String))
 	m.SetType(mt)
 	require.Same(t, mt, m.Type())
 
@@ -795,7 +795,7 @@ func TestMap_SetType(t *testing.T) {
 		`Map.SetType: argument does not evaluate to a map type`)
 
 	m.SetType(nil)
-	require.Assignable(t, newtype.Parse(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
+	require.Assignable(t, tf.Parse(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
 
 	m.Freeze()
 	require.Panic(t, func() { m.SetType(mt) }, `frozen`)

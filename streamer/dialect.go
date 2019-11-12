@@ -2,7 +2,7 @@ package streamer
 
 import (
 	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -88,5 +88,5 @@ func (d dgoDialect) TimeTypeName() dgo.String {
 }
 
 func (d dgoDialect) ParseType(aliasMap dgo.AliasMap, typeString dgo.String) dgo.Type {
-	return newtype.ParseFile(aliasMap, ``, typeString.String())
+	return tf.ParseFile(aliasMap, ``, typeString.String())
 }

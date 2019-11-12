@@ -8,8 +8,8 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
 	"github.com/lyraproj/dgo/streamer"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -52,7 +52,7 @@ func TestEncode_unknown(t *testing.T) {
 
 func TestEncode_type(t *testing.T) {
 	c := streamer.NewCollector()
-	streamer.New(nil, nil).Stream(newtype.String(1), c)
+	streamer.New(nil, nil).Stream(tf.String(1), c)
 	require.Equal(t, vf.Map(`__type`, `string[1]`), c.Value())
 }
 
@@ -71,8 +71,8 @@ func TestEncode_time(t *testing.T) {
 }
 
 func TestEncode_alias(t *testing.T) {
-	am := newtype.NewAliasMap()
-	tp := newtype.ParseFile(am, ``, `ne=string[1]`)
+	am := tf.NewAliasMap()
+	tp := tf.ParseFile(am, ``, `ne=string[1]`)
 	c := streamer.NewCollector()
 	streamer.New(am, nil).Stream(tp, c)
 	require.Equal(t, vf.Map(`__type`, `alias`, `__value`, vf.Strings(`ne`, `string[1]`)), c.Value())
@@ -147,7 +147,7 @@ func (v *testNamed) String() string {
 }
 
 func (v *testNamed) Type() dgo.Type {
-	return newtype.ExactNamed(newtype.Named(`testNamed`), v)
+	return tf.ExactNamed(tf.Named(`testNamed`), v)
 }
 
 func (v *testNamed) Equals(other interface{}) bool {
@@ -162,8 +162,8 @@ func (v *testNamed) HashCode() int {
 }
 
 func TestEncode_namedUsingMap(t *testing.T) {
-	defer newtype.RemoveNamed(`testNamed`)
-	tp := newtype.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
+	defer tf.RemoveNamed(`testNamed`)
+	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		sm := vf.Map(&testNamed{}).(dgo.Struct)
 		sm.PutAll(arg.(dgo.Map))
 		return sm.GoStruct().(dgo.Value)
@@ -185,8 +185,8 @@ func TestEncode_namedUsingMap(t *testing.T) {
 }
 
 func TestEncode_namedUsingValue(t *testing.T) {
-	defer newtype.RemoveNamed(`testNamed`)
-	tp := newtype.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
+	defer tf.RemoveNamed(`testNamed`)
+	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		a := arg.(dgo.Array)
 		return &testNamed{A: a.Get(0).(dgo.String).GoString(), B: a.Get(1).(dgo.Integer).GoInt()}
 	}, func(value dgo.Value) dgo.Value {

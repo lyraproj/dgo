@@ -1,4 +1,4 @@
-package newtype
+package tf
 
 import (
 	"github.com/lyraproj/dgo/dgo"

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -79,7 +79,7 @@ func New(parentNs dgo.Loader, name string, entries dgo.Map, finder dgo.Finder, n
 }
 
 // Type is the basic immutable loader dgo.Type
-var Type = newtype.NewNamed(`mapLoader`,
+var Type = tf.NewNamed(`mapLoader`,
 	func(arg dgo.Value) dgo.Value {
 		l := &mapLoader{}
 		l.init(arg.(dgo.Map))
@@ -108,7 +108,7 @@ func (l *mapLoader) String() string {
 }
 
 func (l *mapLoader) Type() dgo.Type {
-	return newtype.ExactNamed(Type, l)
+	return tf.ExactNamed(Type, l)
 }
 
 func (l *mapLoader) Equals(other interface{}) bool {
@@ -160,7 +160,7 @@ func (l *mapLoader) ParentNamespace() dgo.Loader {
 }
 
 // MutableType is the mutable loader dgo.Type
-var MutableType = newtype.NewNamed(`loader`,
+var MutableType = tf.NewNamed(`loader`,
 	func(args dgo.Value) dgo.Value {
 		l := &loader{}
 		l.init(args.(dgo.Map))
@@ -285,11 +285,11 @@ func (l *loader) String() string {
 }
 
 func (l *loader) Type() dgo.Type {
-	return newtype.ExactNamed(MutableType, l)
+	return tf.ExactNamed(MutableType, l)
 }
 
 // ChildType is the parented loader dgo.Type
-var ChildType = newtype.NewNamed(`childLoader`,
+var ChildType = tf.NewNamed(`childLoader`,
 	func(args dgo.Value) dgo.Value {
 		l := &childLoader{}
 		l.init(args.(dgo.Map))
@@ -361,7 +361,7 @@ func (l *childLoader) String() string {
 }
 
 func (l *childLoader) Type() dgo.Type {
-	return newtype.ExactNamed(ChildType, l)
+	return tf.ExactNamed(ChildType, l)
 }
 
 func loaderWithParent(parent dgo.Loader, finder dgo.Finder, nsCreator dgo.NsCreator) dgo.Loader {

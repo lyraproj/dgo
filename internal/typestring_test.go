@@ -6,7 +6,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
@@ -24,67 +24,67 @@ func TestType_String_arrayExact(t *testing.T) {
 }
 
 func TestType_String_arrayUnboundedElementInt(t *testing.T) {
-	require.Equal(t, `[]int`, newtype.Array(typ.Integer).String())
+	require.Equal(t, `[]int`, tf.Array(typ.Integer).String())
 }
 
 func TestType_String_arrayBoundedElementInt(t *testing.T) {
-	require.Equal(t, `[0,4]int`, newtype.Array(typ.Integer, 0, 4).String())
+	require.Equal(t, `[0,4]int`, tf.Array(typ.Integer, 0, 4).String())
 }
 
 func TestType_String_arrayBoundedElementRange(t *testing.T) {
-	require.Equal(t, `[0,4]3..8`, newtype.Array(newtype.IntegerRange(3, 8, true), 0, 4).String())
+	require.Equal(t, `[0,4]3..8`, tf.Array(tf.IntegerRange(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedElementEnum(t *testing.T) {
-	require.Equal(t, `[0,4]("a"|"b")`, newtype.Array(newtype.Enum(`a`, `b`), 0, 4).String())
+	require.Equal(t, `[0,4]("a"|"b")`, tf.Array(tf.Enum(`a`, `b`), 0, 4).String())
 }
 
 func TestType_String_mapUnboundedEntryStringInt(t *testing.T) {
-	require.Equal(t, `map[string]int`, newtype.Map(typ.String, typ.Integer).String())
+	require.Equal(t, `map[string]int`, tf.Map(typ.String, typ.Integer).String())
 }
 
 func TestType_String_arrayBoundedEntryStringInt(t *testing.T) {
-	require.Equal(t, `map[string,0,4]int`, newtype.Map(typ.String, typ.Integer, 0, 4).String())
+	require.Equal(t, `map[string,0,4]int`, tf.Map(typ.String, typ.Integer, 0, 4).String())
 }
 
 func TestType_String_arrayBoundedEntryStringRange(t *testing.T) {
-	require.Equal(t, `map[string,0,4]3..8`, newtype.Map(typ.String, newtype.IntegerRange(3, 8, true), 0, 4).String())
+	require.Equal(t, `map[string,0,4]3..8`, tf.Map(typ.String, tf.IntegerRange(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedEntryStringEnum(t *testing.T) {
-	require.Equal(t, `map[string,0,4]("a"|"b")`, newtype.Map(typ.String, newtype.Enum(`a`, `b`), 0, 4).String())
+	require.Equal(t, `map[string,0,4]("a"|"b")`, tf.Map(typ.String, tf.Enum(`a`, `b`), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedEntryIntRangeEnum(t *testing.T) {
-	require.Equal(t, `map[3..8,0,4]("a"|"b")`, newtype.Map(newtype.IntegerRange(3, 8, true), newtype.Enum(`a`, `b`), 0, 4).String())
+	require.Equal(t, `map[3..8,0,4]("a"|"b")`, tf.Map(tf.IntegerRange(3, 8, true), tf.Enum(`a`, `b`), 0, 4).String())
 }
 
 func TestType_String_priorities(t *testing.T) {
-	var tp dgo.Type = newtype.Array(newtype.String(1), 2, 2)
+	var tp dgo.Type = tf.Array(tf.String(1), 2, 2)
 	require.Equal(t, `[2,2]string[1]`, tp.String())
 
-	tp = newtype.Array(vf.Value(regexp.MustCompile(`a`)).Type(), 2, 2)
+	tp = tf.Array(vf.Value(regexp.MustCompile(`a`)).Type(), 2, 2)
 	require.Equal(t, `[2,2]regexp["a"]`, tp.String())
 
-	tp = newtype.Array(newtype.Not(newtype.String(1)), 2, 2)
+	tp = tf.Array(tf.Not(tf.String(1)), 2, 2)
 	require.Equal(t, `[2,2]!string[1]`, tp.String())
 
-	tp = newtype.Not(newtype.String(1))
+	tp = tf.Not(tf.String(1))
 	require.Equal(t, `!string[1]`, tp.String())
 
-	tp = newtype.Array(newtype.Map(typ.Integer, typ.String, 1), 2, 2)
+	tp = tf.Array(tf.Map(typ.Integer, typ.String, 1), 2, 2)
 	require.Equal(t, `[2,2]map[int,1]string`, tp.String())
 
-	tp = newtype.Array(newtype.Map(typ.Integer, newtype.String(1), 2), 3, 4)
+	tp = tf.Array(tf.Map(typ.Integer, tf.String(1), 2), 3, 4)
 	require.Equal(t, `[3,4]map[int,2]string[1]`, tp.String())
 
-	tp = newtype.Array(newtype.AllOf(newtype.Enum(`a`, `b`), newtype.Enum(`b`, `c`)), 2, 2)
+	tp = tf.Array(tf.AllOf(tf.Enum(`a`, `b`), tf.Enum(`b`, `c`)), 2, 2)
 	require.Equal(t, `[2,2](("a"|"b")&("b"|"c"))`, tp.String())
 
-	tp = newtype.Array(newtype.OneOf(typ.Integer, typ.String), 2, 2)
+	tp = tf.Array(tf.OneOf(typ.Integer, typ.String), 2, 2)
 	require.Equal(t, `[2,2](int^string)`, tp.String())
 
-	tp = newtype.Array(vf.Values(`a`, `b`).Type().(dgo.ArrayType).ElementType(), 2, 2)
+	tp = tf.Array(vf.Values(`a`, `b`).Type().(dgo.ArrayType).ElementType(), 2, 2)
 	require.Equal(t, `[2,2]("a"&"b")`, tp.String())
 }
 

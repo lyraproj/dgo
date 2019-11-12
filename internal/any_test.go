@@ -6,7 +6,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 )
 
@@ -16,9 +16,9 @@ func TestAny(t *testing.T) {
 	require.Instance(t, typ.Any, 3)
 	require.Instance(t, typ.Any, `foo`)
 	require.Assignable(t, typ.Any, typ.String)
-	require.Assignable(t, typ.Any, newtype.String(3, 3))
-	require.Assignable(t, typ.Any, newtype.Pattern(regexp.MustCompile(`f`)))
-	require.Assignable(t, typ.Any, newtype.Enum(`f`, `foo`, `foobar`))
+	require.Assignable(t, typ.Any, tf.String(3, 3))
+	require.Assignable(t, typ.Any, tf.Pattern(regexp.MustCompile(`f`)))
+	require.Assignable(t, typ.Any, tf.Enum(`f`, `foo`, `foobar`))
 	require.Assignable(t, typ.Any.Type(), typ.Any.Type())
 	require.Instance(t, typ.Any.Type(), typ.Any)
 	require.Instance(t, typ.Any.Type(), typ.Boolean)
@@ -26,7 +26,7 @@ func TestAny(t *testing.T) {
 	require.NotEqual(t, 0, typ.Any.HashCode())
 
 	// Yes, since the Not is more constrained
-	require.Assignable(t, typ.Any, newtype.Not(typ.Any))
+	require.Assignable(t, typ.Any, tf.Not(typ.Any))
 
 	require.Equal(t, `any`, typ.Any.String())
 	require.Equal(t, dgo.TiAny, typ.Any.TypeIdentifier())

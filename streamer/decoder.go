@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -75,7 +75,7 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 			d.aliasMap.Add(v.(dgo.Type), ad.Get(0).(dgo.String))
 		}
 	default:
-		tp := newtype.Named(ts.GoString())
+		tp := tf.Named(ts.GoString())
 		if tp == nil {
 			panic(fmt.Errorf(`unable to decode %s: %s`, dl.TypeKey(), ts))
 		}

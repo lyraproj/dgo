@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -34,7 +34,7 @@ func TestMeta(t *testing.T) {
 }
 
 func TestMetaType_New(t *testing.T) {
-	m := newtype.String(1, 10)
+	m := tf.String(1, 10)
 	require.Same(t, m, vf.New(typ.String.Type(), m))
 	require.Same(t, m, vf.New(m.Type(), m))
 	require.Same(t, m, vf.New(m.Type(), vf.Arguments(m)))

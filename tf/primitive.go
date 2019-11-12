@@ -1,5 +1,5 @@
-// Package newtype (Type Factory) contains the factory methods for creating dgo Types
-package newtype
+// Package tf (Type Factory) contains the factory methods for creating dgo Types
+package tf
 
 import (
 	"regexp"

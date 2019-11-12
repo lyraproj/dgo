@@ -6,16 +6,16 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
 func TestIllegalAssignment(t *testing.T) {
-	v := newtype.IllegalAssignment(typ.String, vf.Integer(3))
+	v := tf.IllegalAssignment(typ.String, vf.Integer(3))
 
-	require.Equal(t, v, newtype.IllegalAssignment(typ.String, vf.Integer(3)))
-	require.NotEqual(t, v, newtype.IllegalAssignment(typ.String, vf.Integer(4)))
+	require.Equal(t, v, tf.IllegalAssignment(typ.String, vf.Integer(3)))
+	require.NotEqual(t, v, tf.IllegalAssignment(typ.String, vf.Integer(4)))
 	require.NotEqual(t, v, `oops`)
 
 	require.Instance(t, v.Type(), v)
@@ -25,10 +25,10 @@ func TestIllegalAssignment(t *testing.T) {
 }
 
 func TestIllegalSize(t *testing.T) {
-	v := newtype.IllegalSize(newtype.String(1, 10), 12)
+	v := tf.IllegalSize(tf.String(1, 10), 12)
 
-	require.Equal(t, v, newtype.IllegalSize(newtype.String(1, 10), 12))
-	require.NotEqual(t, v, newtype.IllegalSize(newtype.String(1, 10), 11))
+	require.Equal(t, v, tf.IllegalSize(tf.String(1, 10), 12))
+	require.NotEqual(t, v, tf.IllegalSize(tf.String(1, 10), 11))
 	require.NotEqual(t, v, `oops`)
 
 	require.Instance(t, v.Type(), v)
@@ -38,11 +38,11 @@ func TestIllegalSize(t *testing.T) {
 }
 
 func TestIllegalMapKey(t *testing.T) {
-	tp := newtype.Parse(`{a:string}`).(dgo.StructMapType)
-	v := newtype.IllegalMapKey(tp, vf.String(`b`))
+	tp := tf.Parse(`{a:string}`).(dgo.StructMapType)
+	v := tf.IllegalMapKey(tp, vf.String(`b`))
 
-	require.Equal(t, v, newtype.IllegalMapKey(tp, vf.String(`b`)))
-	require.NotEqual(t, v, newtype.IllegalMapKey(tp, vf.String(`c`)))
+	require.Equal(t, v, tf.IllegalMapKey(tp, vf.String(`b`)))
+	require.NotEqual(t, v, tf.IllegalMapKey(tp, vf.String(`c`)))
 	require.NotEqual(t, v, `oops`)
 
 	require.Instance(t, v.Type(), v)

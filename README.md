@@ -22,8 +22,8 @@ Next, include needed packages in your application. Pick what you need from the f
 ```go
 import (
   "github.com/lyraproj/dgo/dgo"
-  "github.com/lyraproj/dgo/newtype"
   "github.com/lyraproj/dgo/typ"
+  "github.com/lyraproj/dgo/tf"
   "github.com/lyraproj/dgo/vf"
 )
 ```

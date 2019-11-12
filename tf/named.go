@@ -1,4 +1,4 @@
-package newtype
+package tf
 
 import (
 	"reflect"

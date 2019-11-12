@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	"github.com/lyraproj/dgo/dgo"
 
@@ -22,7 +22,7 @@ func TestSensitiveType(t *testing.T) {
 	require.NotAssignable(t, tp, typ.Any)
 	require.Assignable(t, tp, s.Type())
 	require.NotAssignable(t, s.Type(), tp)
-	require.Assignable(t, newtype.Sensitive(typ.Integer), s.Type())
+	require.Assignable(t, tf.Sensitive(typ.Integer), s.Type())
 	require.Instance(t, tp.Type(), s.Type())
 
 	tp = s.Type()
@@ -30,7 +30,7 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
 	require.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
 	require.NotEqual(t, tp, typ.Any)
-	require.NotEqual(t, tp, newtype.Array(typ.String))
+	require.NotEqual(t, tp, tf.Array(typ.String))
 
 	require.NotEqual(t, 0, tp.HashCode())
 	require.Equal(t, tp.HashCode(), tp.HashCode())
@@ -42,12 +42,12 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
 	require.Equal(t, `sensitive[int]`, s.Type().String())
 
-	require.Equal(t, newtype.Sensitive(), newtype.Parse(`sensitive`))
-	require.Equal(t, newtype.Sensitive(typ.Integer), newtype.Parse(`sensitive[int]`))
-	require.Equal(t, vf.Sensitive(typ.Integer).Type(), newtype.Parse(`sensitive int`))
-	require.Equal(t, vf.Sensitive(34).Type(), newtype.Parse(`sensitive 34`))
-	require.Panic(t, func() { newtype.Parse(`sensitive[34]`) }, `illegal argument`)
-	require.Panic(t, func() { newtype.Parse(`sensitive[int, string]`) }, `illegal number of arguments`)
+	require.Equal(t, tf.Sensitive(), tf.Parse(`sensitive`))
+	require.Equal(t, tf.Sensitive(typ.Integer), tf.Parse(`sensitive[int]`))
+	require.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.Parse(`sensitive int`))
+	require.Equal(t, vf.Sensitive(34).Type(), tf.Parse(`sensitive 34`))
+	require.Panic(t, func() { tf.Parse(`sensitive[34]`) }, `illegal argument`)
+	require.Panic(t, func() { tf.Parse(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 
 func TestSensitiveType_New(t *testing.T) {

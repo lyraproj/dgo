@@ -9,7 +9,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
@@ -194,5 +194,5 @@ func TestNew(t *testing.T) {
 	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Nil))
 	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Arguments(vf.Nil)))
 	require.Panic(t, func() { vf.New(typ.Any, vf.Arguments(vf.Nil, vf.Nil)) }, `unable to create`)
-	require.Panic(t, func() { vf.New(newtype.Not(typ.Nil), vf.Nil) }, `unable to create`)
+	require.Panic(t, func() { vf.New(tf.Not(typ.Nil), vf.Nil) }, `unable to create`)
 }

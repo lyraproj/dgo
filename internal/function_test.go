@@ -8,7 +8,7 @@ import (
 
 	"github.com/lyraproj/dgo/typ"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -101,40 +101,40 @@ func TestFunction_GoFunc(t *testing.T) {
 }
 
 func TestFunctionType(t *testing.T) {
-	ft := newtype.Function(nil, nil)
-	require.Equal(t, newtype.Parse(`func()`), ft)
+	ft := tf.Function(nil, nil)
+	require.Equal(t, tf.Parse(`func()`), ft)
 
-	ft = newtype.Parse(`func(string, ...string)`).(dgo.FunctionType)
+	ft = tf.Parse(`func(string, ...string)`).(dgo.FunctionType)
 	require.Assignable(t, typ.Any, ft)
 	require.NotAssignable(t, ft, typ.Any)
-	require.Assignable(t, ft, newtype.Parse(`func(string, ...string)`))
+	require.Assignable(t, ft, tf.Parse(`func(string, ...string)`))
 	require.Instance(t, ft.Type(), ft)
 
 	require.Panic(t, func() { ft.ReflectType() }, `unable to build`)
 	require.Equal(t, ft, ft)
-	require.Equal(t, ft, newtype.Parse(`func(string, ...string)`))
+	require.Equal(t, ft, tf.Parse(`func(string, ...string)`))
 	require.Equal(t, ft.String(), `func(string,...string)`)
-	require.NotEqual(t, ft, newtype.Parse(`func(int, ...string)`))
-	require.NotEqual(t, ft, newtype.Parse(`func(string, []string)`))
-	require.NotEqual(t, ft, newtype.Parse(`func(string, ...string) string`))
-	require.NotEqual(t, ft, newtype.Parse(`{string, ...string}`))
+	require.NotEqual(t, ft, tf.Parse(`func(int, ...string)`))
+	require.NotEqual(t, ft, tf.Parse(`func(string, []string)`))
+	require.NotEqual(t, ft, tf.Parse(`func(string, ...string) string`))
+	require.NotEqual(t, ft, tf.Parse(`{string, ...string}`))
 
 	in := ft.In()
-	require.Assignable(t, in, newtype.Parse(`{string, ...string}`))
-	require.Assignable(t, in, newtype.Parse(`[1]string`))
-	require.NotAssignable(t, in, newtype.Parse(`[]string`))
+	require.Assignable(t, in, tf.Parse(`{string, ...string}`))
+	require.Assignable(t, in, tf.Parse(`[1]string`))
+	require.NotAssignable(t, in, tf.Parse(`[]string`))
 	require.Same(t, typ.String, in.ElementType())
-	require.Same(t, typ.String, newtype.Parse(`{...string}`).(dgo.TupleType).ElementType())
+	require.Same(t, typ.String, tf.Parse(`{...string}`).(dgo.TupleType).ElementType())
 
 	require.NotEqual(t, 0, ft.HashCode())
-	require.Equal(t, ft.HashCode(), newtype.Parse(`func(string, ...string)`).HashCode())
+	require.Equal(t, ft.HashCode(), tf.Parse(`func(string, ...string)`).HashCode())
 
-	ft = newtype.Parse(`func(string, ...int) string`).(dgo.FunctionType)
+	ft = tf.Parse(`func(string, ...int) string`).(dgo.FunctionType)
 	require.Instance(t, ft, testB)
 	require.NotInstance(t, ft, testA)
 	require.NotInstance(t, ft, ft)
 
-	require.Panic(t, func() { newtype.Function(nil, newtype.VariadicTuple(newtype.Array(typ.Any))) },
+	require.Panic(t, func() { tf.Function(nil, tf.VariadicTuple(tf.Array(typ.Any))) },
 		`return values cannot be variadic`)
 }
 
@@ -150,18 +150,18 @@ func TestFunctionType_exact(t *testing.T) {
 	require.NotInstance(t, ft, `func(string,...int)string`)
 	require.Instance(t, ft.Type(), ft)
 	require.NotEqual(t, 0, ft.HashCode())
-	require.Equal(t, newtype.Parse(`func(string,...int)string`).HashCode(), ft.HashCode())
+	require.Equal(t, tf.Parse(`func(string,...int)string`).HashCode(), ft.HashCode())
 	require.Equal(t, ft.ReflectType(), reflect.TypeOf(testB))
 
 	in := ft.In()
 	require.Equal(t, `{string,...int}`, in.String())
 	require.Equal(t, in, in)
-	require.Equal(t, newtype.Parse(`{string, ...int}`), in)
-	require.Equal(t, in, newtype.Parse(`{string, ...int}`))
-	require.NotEqual(t, in, newtype.Parse(`{string, int, ...int}`))
-	require.Assignable(t, in, newtype.Parse(`{string, int, ...int}`))
-	require.NotAssignable(t, in, newtype.Parse(`{string, string, ...int}`))
-	require.Equal(t, newtype.Parse(`string&int`), in.ElementType())
+	require.Equal(t, tf.Parse(`{string, ...int}`), in)
+	require.Equal(t, in, tf.Parse(`{string, ...int}`))
+	require.NotEqual(t, in, tf.Parse(`{string, int, ...int}`))
+	require.Assignable(t, in, tf.Parse(`{string, int, ...int}`))
+	require.NotAssignable(t, in, tf.Parse(`{string, string, ...int}`))
+	require.Equal(t, tf.Parse(`string&int`), in.ElementType())
 
 	require.Instance(t, in, vf.Values(`hello`))
 	require.Instance(t, in, vf.Values(`hello`, 3))
@@ -169,23 +169,23 @@ func TestFunctionType_exact(t *testing.T) {
 	require.Instance(t, in.Type(), in)
 
 	require.False(t, in.Unbounded())
-	require.Equal(t, in.HashCode(), newtype.Parse(`{string, ...int}`).HashCode())
+	require.Equal(t, in.HashCode(), tf.Parse(`{string, ...int}`).HashCode())
 
 	out := ft.Out()
-	require.Equal(t, out, newtype.Parse(`{string}`))
+	require.Equal(t, out, tf.Parse(`{string}`))
 	require.Equal(t, out.ReflectType(), reflect.SliceOf(reflect.TypeOf(``)))
 	require.Instance(t, out.Type(), out)
 
 	ft = vf.Value(testC).Type().(dgo.FunctionType)
 	require.Equal(t, `func(func(string,...int)string,...int)string`, ft.String())
 	require.NotEqual(t, 0, ft.HashCode())
-	require.Equal(t, newtype.Parse(`func(func(string, ...int) string,...int) string`).HashCode(), ft.HashCode())
-	require.Equal(t, newtype.Function(ft.In(), newtype.Tuple(typ.String)).HashCode(), ft.HashCode())
-	require.Assignable(t, ft, newtype.Parse(`func(func(string, int, ...int) string, ...int) string`))
+	require.Equal(t, tf.Parse(`func(func(string, ...int) string,...int) string`).HashCode(), ft.HashCode())
+	require.Equal(t, tf.Function(ft.In(), tf.Tuple(typ.String)).HashCode(), ft.HashCode())
+	require.Assignable(t, ft, tf.Parse(`func(func(string, int, ...int) string, ...int) string`))
 
-	require.Equal(t, ft, newtype.Parse(`func(func(string, ...int) string, ...int) string`))
-	require.NotEqual(t, ft, newtype.Parse(`func(func(string, int, ...int) string, ...int) string`))
-	require.NotEqual(t, ft, newtype.Parse(`{func(string, int, ...int) string, ...int}`))
+	require.Equal(t, ft, tf.Parse(`func(func(string, ...int) string, ...int) string`))
+	require.NotEqual(t, ft, tf.Parse(`func(func(string, int, ...int) string, ...int) string`))
+	require.NotEqual(t, ft, tf.Parse(`{func(string, int, ...int) string, ...int}`))
 
 	ft = vf.Value(testD).Type().(dgo.FunctionType)
 	require.True(t, ft.In().Unbounded())

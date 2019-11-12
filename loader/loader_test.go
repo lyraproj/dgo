@@ -3,7 +3,7 @@ package loader_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/typ"
@@ -211,7 +211,7 @@ func TestLoader_Namespace_redefinedBad(t *testing.T) {
 }
 
 func TestLoader_parsed(t *testing.T) {
-	tp := newtype.Parse(`childLoader{"loader":loader{"name":"", "entries":{"b":"the b"},"namespaces":{}},"parent":mapLoader{"name":"","entries":{"a":"the a"}}}`)
+	tp := tf.Parse(`childLoader{"loader":loader{"name":"", "entries":{"b":"the b"},"namespaces":{}},"parent":mapLoader{"name":"","entries":{"a":"the a"}}}`)
 	et, ok := tp.(dgo.ExactType)
 	require.True(t, ok)
 	ld, ok := et.Value().(dgo.Loader)

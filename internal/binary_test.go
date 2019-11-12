@@ -9,7 +9,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	"github.com/lyraproj/dgo/typ"
 
@@ -31,31 +31,31 @@ func TestBinaryType(t *testing.T) {
 	require.Instance(t, tp, []byte{1, 2, 3})
 	require.NotInstance(t, tp, []byte{1, 2})
 	require.NotInstance(t, tp, []byte{1, 2})
-	require.NotInstance(t, newtype.Binary(1, 5), `abc`)
+	require.NotInstance(t, tf.Binary(1, 5), `abc`)
 
-	require.Assignable(t, newtype.Binary(3, 3), tp)
-	require.Assignable(t, tp, newtype.Binary(3, 3))
+	require.Assignable(t, tf.Binary(3, 3), tp)
+	require.Assignable(t, tp, tf.Binary(3, 3))
 
-	require.Same(t, typ.Binary, newtype.Binary())
-	require.Same(t, typ.Binary, newtype.Binary(0, math.MaxInt64))
+	require.Same(t, typ.Binary, tf.Binary())
+	require.Same(t, typ.Binary, tf.Binary(0, math.MaxInt64))
 
-	require.NotAssignable(t, newtype.Binary(4), tp)
-	require.NotAssignable(t, newtype.Binary(0, 2), tp)
+	require.NotAssignable(t, tf.Binary(4), tp)
+	require.NotAssignable(t, tf.Binary(0, 2), tp)
 
-	require.Equal(t, newtype.Binary(1, 2), newtype.Binary(2, 1))
-	require.Equal(t, newtype.Binary(-1, 2), newtype.Binary(0, 2))
-	require.NotEqual(t, newtype.Binary(0, 2), newtype.String(0, 2))
+	require.Equal(t, tf.Binary(1, 2), tf.Binary(2, 1))
+	require.Equal(t, tf.Binary(-1, 2), tf.Binary(0, 2))
+	require.NotEqual(t, tf.Binary(0, 2), tf.String(0, 2))
 
-	require.Equal(t, newtype.Binary(0, 2).HashCode(), newtype.Binary(0, 2).HashCode())
-	require.NotEqual(t, newtype.Binary(1, 2).HashCode(), newtype.Binary(0, 2).HashCode())
-	require.NotEqual(t, newtype.Binary(0, 1).HashCode(), newtype.Binary(0, 2).HashCode())
+	require.Equal(t, tf.Binary(0, 2).HashCode(), tf.Binary(0, 2).HashCode())
+	require.NotEqual(t, tf.Binary(1, 2).HashCode(), tf.Binary(0, 2).HashCode())
+	require.NotEqual(t, tf.Binary(0, 1).HashCode(), tf.Binary(0, 2).HashCode())
 
 	require.Instance(t, tp.Type(), tp)
 
-	require.Panic(t, func() { newtype.Binary(`blue`) }, `illegal argument`)
-	require.Panic(t, func() { newtype.Binary(`blue`, 1) }, `illegal argument 1`)
-	require.Panic(t, func() { newtype.Binary(1, `blue`) }, `illegal argument 2`)
-	require.Panic(t, func() { newtype.Binary(1, 2, 3) }, `illegal number of arguments`)
+	require.Panic(t, func() { tf.Binary(`blue`) }, `illegal argument`)
+	require.Panic(t, func() { tf.Binary(`blue`, 1) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Binary(1, `blue`) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Binary(1, 2, 3) }, `illegal number of arguments`)
 	require.Equal(t, `binary[3,3]`, tp.String())
 
 	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
@@ -84,7 +84,7 @@ func TestBinaryType_New_badArg(t *testing.T) {
 }
 
 func TestBinaryType_New_badType(t *testing.T) {
-	require.Panic(t, func() { vf.New(newtype.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(tf.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) }, `cannot be assigned`)
 }
 
 func TestBinaryType_New_badBytes(t *testing.T) {
