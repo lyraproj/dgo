@@ -26,18 +26,18 @@ var DefaultAnyOfType = &anyOfType{}
 var DefaultOneOfType = &oneOfType{}
 
 // AllOfType returns a type that represents all values that matches all of the included types
-func AllOfType(types []dgo.Type) dgo.Type {
+func AllOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// And of no types is an unconstrained type
 		return DefaultAnyType
 	case 1:
-		return types[0]
+		return types[0].(dgo.Type)
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = types[i].(dgo.Type)
 	}
 	return &allOfType{slice: ts, frozen: true}
 }
@@ -226,18 +226,18 @@ func (t *allOfValueType) Value() dgo.Value {
 var notAnyType = &notType{DefaultAnyType}
 
 // AnyOfType returns a type that represents all values that matches at least one of the included types
-func AnyOfType(types []dgo.Type) dgo.Type {
+func AnyOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// Or of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0]
+		return types[0].(dgo.Type)
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = types[i].(dgo.Type)
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
@@ -327,18 +327,18 @@ func (t *anyOfType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 // OneOfType returns a type that represents all values that matches exactly one of the included types
-func OneOfType(types []dgo.Type) dgo.Type {
+func OneOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// One of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0]
+		return types[0].(dgo.Type)
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = types[i].(dgo.Type)
 	}
 	return &oneOfType{slice: ts, frozen: true}
 }
@@ -534,4 +534,12 @@ nextA:
 		}
 	}
 	return true
+}
+
+func typeAsType(v dgo.Value) dgo.Type {
+	return v.(dgo.Type)
+}
+
+func valueAsType(v dgo.Value) dgo.Type {
+	return v.Type()
 }

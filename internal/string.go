@@ -579,7 +579,7 @@ func makeHString(s string) *hstring {
 	return &hstring{s: s}
 }
 
-func (v *hstring) AppendTo(w util.Indenter) {
+func (v *hstring) AppendTo(w dgo.Indenter) {
 	w.Append(strconv.Quote(v.s))
 }
 

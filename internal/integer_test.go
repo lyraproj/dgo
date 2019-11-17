@@ -33,7 +33,7 @@ func TestInteger(t *testing.T) {
 }
 
 func TestIntegerExact(t *testing.T) {
-	tp := vf.Integer(3).Type().(dgo.IntegerRangeType)
+	tp := vf.Integer(3).Type().(dgo.IntegerType)
 	require.Instance(t, tp, 3)
 	require.NotInstance(t, tp, 2)
 	require.NotInstance(t, tp, true)

@@ -3,8 +3,6 @@ package internal
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/util"
-
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -15,7 +13,7 @@ type (
 	nilValue int
 )
 
-func (nilValue) AppendTo(w util.Indenter) {
+func (nilValue) AppendTo(w dgo.Indenter) {
 	w.Append(`nil`)
 }
 

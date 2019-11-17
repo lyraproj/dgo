@@ -656,14 +656,14 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 }
 
 func TestMap_selfReference(t *testing.T) {
-	tp := tf.Parse(`x=map[string](string|x)`)
+	tp := tf.ParseType(`x=map[string](string|x)`)
 	d := vf.MutableMap()
 	d.Put(`hello`, `world`)
 	d.Put(`deep`, d)
 	require.Instance(t, tp, d)
 	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map>}`, d.String())
 
-	t2 := tf.Parse(`x=map[string](string|map[string](string|x))`)
+	t2 := tf.ParseType(`x=map[string](string|map[string](string|x))`)
 	require.Assignable(t, tp, t2)
 }
 
@@ -795,7 +795,7 @@ func TestMap_SetType(t *testing.T) {
 		`Map.SetType: argument does not evaluate to a map type`)
 
 	m.SetType(nil)
-	require.Assignable(t, tf.Parse(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
+	require.Assignable(t, tf.ParseType(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
 
 	m.Freeze()
 	require.Panic(t, func() { m.SetType(mt) }, `frozen`)

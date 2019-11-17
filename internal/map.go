@@ -7,8 +7,9 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+
+	"github.com/lyraproj/dgo/dgo"
 )
 
 const initialCapacity = 1 << 4
@@ -102,7 +103,7 @@ func (t *exactEntryType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiMapEntryExact
 }
 
-// NewMapEntry is for testing purposes only
+// NewMapEntry returns a new MapEntry instance with the given key and value
 func NewMapEntry(key, value interface{}) dgo.MapEntry {
 	return &mapEntry{Value(key), Value(value)}
 }
@@ -112,7 +113,7 @@ func (t *exactEntryType) Value() dgo.Value {
 	return v
 }
 
-func (v *mapEntry) AppendTo(w util.Indenter) {
+func (v *mapEntry) AppendTo(w dgo.Indenter) {
 	w.AppendValue(v.key)
 	w.Append(`:`)
 	if w.Indenting() {
@@ -176,7 +177,7 @@ func (v *mapEntry) Key() dgo.Value {
 }
 
 func (v *mapEntry) String() string {
-	return ToStringERP(v)
+	return util.ToStringERP(v)
 }
 
 func (v *mapEntry) Type() dgo.Type {
@@ -425,11 +426,11 @@ func (g *hashMap) AnyValue(predicate dgo.Predicate) bool {
 	return false
 }
 
-func (g *hashMap) AppendTo(w util.Indenter) {
+func (g *hashMap) AppendTo(w dgo.Indenter) {
 	appendMapTo(g, w)
 }
 
-func appendMapTo(m dgo.Map, w util.Indenter) {
+func appendMapTo(m dgo.Map, w dgo.Indenter) {
 	w.AppendRune('{')
 	ew := w.Indent()
 	first := true
@@ -804,6 +805,21 @@ func (g *hashMap) RemoveAll(keys dgo.Array) {
 	})
 }
 
+func (g *hashMap) Resolve(ap dgo.AliasProvider) {
+	needRehash := false
+	for e := g.first; e != nil; e = e.next {
+		if rk := ap.Replace(e.key); rk != e.key {
+			e.key = rk
+			needRehash = true
+		}
+		e.value = ap.Replace(e.value)
+	}
+
+	if needRehash {
+		g.resize(g, 0)
+	}
+}
+
 func (g *hashMap) SetType(ti interface{}) {
 	if g.frozen {
 		panic(frozenMap(`SetType`))
@@ -817,7 +833,7 @@ func (g *hashMap) SetType(ti interface{}) {
 }
 
 func (g *hashMap) String() string {
-	return ToStringERP(g)
+	return util.ToStringERP(g)
 }
 
 func (g *hashMap) StringKeys() bool {
@@ -1040,7 +1056,7 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 }
 
 // MapType returns a type that represents an Map value
-func MapType(args ...interface{}) dgo.MapType {
+func MapType(args []interface{}) dgo.MapType {
 	switch len(args) {
 	case 0:
 		return DefaultMapType
@@ -1177,8 +1193,8 @@ func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
 	vt := t.valueType
 	t.keyType = DefaultAnyType
 	t.valueType = DefaultAnyType
-	kt = ap.Replace(kt)
-	vt = ap.Replace(vt)
+	kt = ap.Replace(kt).(dgo.Type)
+	vt = ap.Replace(vt).(dgo.Type)
 	t.keyType = kt
 	t.valueType = vt
 }
@@ -1327,6 +1343,12 @@ func (t *exactMapType) New(arg dgo.Value) dgo.Value {
 
 func (t *exactMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
+}
+
+func (t *exactMapType) Resolve(ap dgo.AliasProvider) {
+	if ac, ok := t.value.(dgo.AliasContainer); ok {
+		ac.Resolve(ap)
+	}
 }
 
 func (t *exactMapType) String() string {

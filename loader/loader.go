@@ -89,7 +89,8 @@ var Type = tf.NewNamed(`mapLoader`,
 		return v.(*mapLoader).initMap()
 	},
 	reflect.TypeOf(&mapLoader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *mapLoader) init(im dgo.Map) {
 	l.name = im.Get(`name`).String()
@@ -170,7 +171,8 @@ var MutableType = tf.NewNamed(`loader`,
 		return v.(*loader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *loader) init(im dgo.Map) {
 	l.mapLoader.init(im)
@@ -299,7 +301,8 @@ var ChildType = tf.NewNamed(`childLoader`,
 		return v.(*childLoader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *childLoader) init(im dgo.Map) {
 	l.Loader = im.Get(`loader`).(dgo.Loader)

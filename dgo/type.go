@@ -21,8 +21,16 @@ type (
 		ReflectType() reflect.Type
 	}
 
-	// IntegerRangeType describes integers that are within an inclusive or exclusive range
-	IntegerRangeType interface {
+	// Meta is the description of a Type.
+	Meta interface {
+		Type
+
+		// Describes returns the type that the meta type describes.
+		Describes() Type
+	}
+
+	// IntegerType describes integers that are within an inclusive or exclusive range
+	IntegerType interface {
 		Type
 
 		// Inclusive returns true if this range has an inclusive end
@@ -91,11 +99,11 @@ type (
 		GoType() reflect.Type
 	}
 
-	// AliasProvider replaces aliases with their concrete type.
+	// AliasProvider replaces aliases with their concrete value.
 	//
 	// The parser uses this interface to perform in-place replacement of aliases
 	AliasProvider interface {
-		Replace(Type) Type
+		Replace(Value) Value
 	}
 
 	// AliasContainer is implemented by types that can contain other types.

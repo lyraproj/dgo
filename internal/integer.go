@@ -29,9 +29,9 @@ const DefaultIntegerType = integerType(0)
 
 var reflectIntegerType = reflect.TypeOf(int64(0))
 
-// IntegerRangeType returns a dgo.IntegerRangeType that is limited to the inclusive range given by min and max
+// IntegerType returns a dgo.IntegerType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerRangeType {
+func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerType {
 	if min == max {
 		if !inclusive {
 			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))

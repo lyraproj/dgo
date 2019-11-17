@@ -1,4 +1,4 @@
-package internal
+package parser
 
 import (
 	"bytes"
@@ -7,9 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lyraproj/dgo/internal"
+
 	"github.com/lyraproj/dgo/util"
 )
 
+// tokenType denotes the type of token
 type tokenType int
 
 const (
@@ -27,6 +30,8 @@ const (
 	digit = 1 << iota
 	hexDigit
 	letter
+	lcLetter
+	ucLetter
 	idCharStart
 	idChar
 	exprEnd
@@ -43,42 +48,44 @@ func init() {
 		charTypes[i] = digit | hexDigit | idChar
 	}
 	for i = 'A'; i <= 'F'; i++ {
-		charTypes[i] = hexDigit | letter | idCharStart | idChar
+		charTypes[i] = hexDigit | letter | ucLetter | idCharStart | idChar
 	}
 	for i = 'G'; i <= 'Z'; i++ {
-		charTypes[i] = letter | idCharStart | idChar
+		charTypes[i] = letter | ucLetter | idCharStart | idChar
 	}
 	for i = 'a'; i <= 'f'; i++ {
-		charTypes[i] = hexDigit | letter | idCharStart | idChar
+		charTypes[i] = hexDigit | letter | lcLetter | idCharStart | idChar
 	}
 	for i = 'g'; i <= 'z'; i++ {
-		charTypes[i] = letter | idCharStart | idChar
+		charTypes[i] = letter | lcLetter | idCharStart | idChar
 	}
-	for _, i := range []int{end, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.'} {
+	for _, i = range []int{0, ')', '}', ']', ',', ':', '?', '|', '&', '^', '.'} {
 		charTypes[i] = exprEnd
 	}
 }
 
-type token struct {
-	s string
-	i tokenType
+// Token is what the lexer produces for the parser to consume
+type Token struct {
+	Value string
+	Type  int
 }
 
-func (t *token) String() (s string) {
-	if t == nil || t.i == end {
+func tokenString(t *Token) (s string) {
+	tt := t.Type
+	if t == nil || tt == end {
 		return "EOT"
 	}
-	switch t.i {
+	switch tt {
 	case identifier, integer, float, dotdot, dotdotdot:
-		s = t.s
+		s = t.Value
 	case regexpLiteral:
 		sb := &strings.Builder{}
-		RegexpSlashQuote(sb, t.s)
+		internal.RegexpSlashQuote(sb, t.Value)
 		s = sb.String()
 	case stringLiteral:
-		s = strconv.Quote(t.s)
+		s = strconv.Quote(t.Value)
 	default:
-		s = fmt.Sprintf(`'%c'`, rune(t.i))
+		s = fmt.Sprintf(`'%c'`, rune(t.Type))
 	}
 	return
 }
@@ -90,35 +97,35 @@ func badToken(r rune) error {
 	return fmt.Errorf("unexpected character '%c'", r)
 }
 
-func nextToken(sr *util.StringReader) (t *token) {
+func nextToken(sr *util.StringReader) (t *Token) {
 	for {
 		r := sr.Next()
 		switch r {
 		case 0:
-			return &token{``, end}
+			return &Token{``, end}
 		case ' ', '\t', '\n':
 			continue
 		case '`':
-			t = &token{consumeRawString(sr), stringLiteral}
+			t = &Token{consumeRawString(sr), stringLiteral}
 		case '"':
-			t = &token{consumeQuotedString(sr), stringLiteral}
+			t = &Token{consumeQuotedString(sr), stringLiteral}
 		case '/':
-			t = &token{consumeRegexp(sr), regexpLiteral}
+			t = &Token{consumeRegexp(sr), regexpLiteral}
 		case '.':
 			if sr.Peek() == '.' {
 				sr.Next()
 				if sr.Peek() == '.' {
 					sr.Next()
-					t = &token{`...`, dotdotdot}
+					t = &Token{`...`, dotdotdot}
 				} else {
-					t = &token{`..`, dotdot}
+					t = &Token{`..`, dotdot}
 				}
 			} else {
-				t = &token{i: tokenType(r)}
+				t = &Token{Type: int(r)}
 			}
 		case '-', '+':
 			n := sr.Next()
-			if !isDigit(n) {
+			if !IsDigit(n) {
 				panic(badToken(n))
 			}
 			buf := bytes.NewBufferString(``)
@@ -126,7 +133,7 @@ func nextToken(sr *util.StringReader) (t *token) {
 				util.WriteRune(buf, r)
 			}
 			tkn := consumeNumber(sr, n, buf, integer)
-			return &token{buf.String(), tkn}
+			return &Token{buf.String(), tkn}
 		default:
 			t = buildToken(r, sr)
 		}
@@ -135,18 +142,18 @@ func nextToken(sr *util.StringReader) (t *token) {
 	return t
 }
 
-func buildToken(r rune, sr *util.StringReader) *token {
+func buildToken(r rune, sr *util.StringReader) *Token {
 	switch {
-	case isDigit(r):
+	case IsDigit(r):
 		buf := bytes.NewBufferString(``)
 		tkn := consumeNumber(sr, r, buf, integer)
-		return &token{buf.String(), tkn}
-	case isIdentifierStart(r):
+		return &Token{buf.String(), tkn}
+	case IsIdentifierStart(r):
 		buf := bytes.NewBufferString(``)
 		consumeIdentifier(sr, r, buf)
-		return &token{buf.String(), identifier}
+		return &Token{buf.String(), identifier}
 	default:
-		return &token{i: tokenType(r)}
+		return &Token{Type: int(r)}
 	}
 }
 
@@ -154,9 +161,9 @@ func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
 	for {
 		r := sr.Peek()
 		switch {
-		case r == '.' || isLetter(r):
+		case r == '.' || IsLetter(r):
 			panic(badToken(r))
-		case isDigit(r):
+		case IsDigit(r):
 			sr.Next()
 			util.WriteRune(buf, r)
 		default:
@@ -169,24 +176,44 @@ func isExpressionEnd(r rune) bool {
 	return r < 128 && (charTypes[r]&exprEnd) != 0
 }
 
-func isDigit(r rune) bool {
+// IsDigit returns true if the given rune is an ASCII digit
+func IsDigit(r rune) bool {
 	return r < 128 && (charTypes[r]&digit) != 0
 }
 
-func isLetter(r rune) bool {
+// IsLetter returns true if the given rune is an ASCII letter
+func IsLetter(r rune) bool {
 	return r < 128 && (charTypes[r]&letter) != 0
 }
 
-func isHex(r rune) bool {
+// IsLetterOrDigit returns true if the given rune is an ASCII letter or digit
+func IsLetterOrDigit(r rune) bool {
+	return r < 128 && (charTypes[r]&(letter|digit)) != 0
+}
+
+// IsHex returns true if the given rune is an ASCII digit, 'a' - 'f' or 'A' - 'F'
+func IsHex(r rune) bool {
 	return r < 128 && (charTypes[r]&hexDigit) != 0
 }
 
-func isIdentifier(r rune) bool {
+// IsIdentifier returns true if the given rune is an ASCII letter, a digit, '$' or '_'
+func IsIdentifier(r rune) bool {
 	return r < 128 && (charTypes[r]&idChar) != 0
 }
 
-func isIdentifierStart(r rune) bool {
+// IsIdentifierStart returns true if the given rune is an ASCII letter, '$' or '_'
+func IsIdentifierStart(r rune) bool {
 	return r < 128 && (charTypes[r]&idCharStart) != 0
+}
+
+// IsUpperCase returns true if the given rune is an uppercase ASCII letter
+func IsUpperCase(r rune) bool {
+	return r < 128 && (charTypes[r]&ucLetter) != 0
+}
+
+// IsLowerCase returns true if the given rune is an lowercase ASCII letter
+func IsLowerCase(r rune) bool {
+	return r < 128 && (charTypes[r]&lcLetter) != 0
 }
 
 func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
@@ -200,7 +227,7 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 			r = sr.Next()
 			fallthrough
 		default:
-			if isDigit(r) {
+			if IsDigit(r) {
 				util.WriteRune(buf, r)
 				consumeUnsignedInteger(sr, buf)
 				return
@@ -211,12 +238,12 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 }
 
 func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
-	for isHex(sr.Peek()) {
+	for IsHex(sr.Peek()) {
 		util.WriteRune(buf, sr.Next())
 	}
 }
 
-func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t tokenType) tokenType {
+func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t int) int {
 	util.WriteRune(buf, start)
 	firstZero := t != float && start == '0'
 
@@ -235,7 +262,7 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 				sr.Next()
 				util.WriteRune(buf, r)
 				r = sr.Next()
-				if isHex(r) {
+				if IsHex(r) {
 					util.WriteRune(buf, r)
 					consumeHexInteger(sr, buf)
 					return t
@@ -250,13 +277,13 @@ func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t token
 				sr.Next()
 				util.WriteRune(buf, r)
 				r = sr.Next()
-				if isDigit(r) {
+				if IsDigit(r) {
 					return consumeNumber(sr, r, buf, float)
 				}
 			}
 			panic(badToken(r))
 		default:
-			if !isDigit(r) {
+			if !IsDigit(r) {
 				return t
 			}
 			sr.Next()
@@ -339,7 +366,7 @@ func consumeRawString(sr *util.StringReader) string {
 
 func consumeIdentifier(sr *util.StringReader, start rune, buf *bytes.Buffer) {
 	util.WriteRune(buf, start)
-	for isIdentifier(sr.Peek()) {
+	for IsIdentifier(sr.Peek()) {
 		util.WriteRune(buf, sr.Next())
 	}
 }

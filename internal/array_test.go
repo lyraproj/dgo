@@ -240,6 +240,9 @@ func TestArrayElementType_multipleElements(t *testing.T) {
 
 func TestTupleType(t *testing.T) {
 	tt := typ.Tuple
+	require.Same(t, tt, tf.VariadicTuple(typ.Any))
+
+	tt = typ.EmptyTuple
 	require.Same(t, tt, tf.Tuple())
 	require.Assignable(t, tt, tf.Array(0, 0))
 
@@ -330,41 +333,40 @@ func TestTupleType(t *testing.T) {
 }
 
 func TestTupleType_selfReference(t *testing.T) {
-	tp := tf.Parse(`x={string,x}`).(dgo.ArrayType)
+	tp := tf.ParseType(`x={string,x}`).(dgo.ArrayType)
 	d := vf.MutableValues()
 	d.Add(`hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
-	t2 := tf.Parse(`x={string,{string,x}}`)
+	t2 := tf.ParseType(`x={string,{string,x}}`)
 	require.Assignable(t, tp, t2)
 
 	require.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
 }
 
 func TestVariadicTupleType(t *testing.T) {
-	tt := tf.Parse(`{string,...string}`).(dgo.TupleType)
+	tt := tf.ParseType(`{string,...string}`).(dgo.TupleType)
 	require.Instance(t, tt, vf.Values(`one`))
 	require.Instance(t, tt, vf.Values(`one`, `two`))
 	require.NotInstance(t, tt, vf.Values(`one`, 2))
 	require.NotInstance(t, tt, vf.Values(1))
 
-	tt = tf.VariadicTuple(typ.String, tf.Array(typ.String, 1, 1))
-	require.NotInstance(t, tt, vf.Values(`one`))
+	tt = tf.VariadicTuple(typ.String, typ.String)
+	require.NotInstance(t, tt, vf.Values())
+	require.Instance(t, tt, vf.Values(`one`))
 	require.Instance(t, tt, vf.Values(`one`, `two`))
-	require.NotInstance(t, tt, vf.Values(`one`, `two`, `three`))
-	require.False(t, tt.Unbounded())
-	require.Equal(t, 2, tt.Min())
-	require.Equal(t, 2, tt.Max())
+	require.Instance(t, tt, vf.Values(`one`, `two`, `three`))
+	require.True(t, tt.Unbounded())
+	require.Equal(t, 1, tt.Min())
+	require.Equal(t, math.MaxInt64, tt.Max())
 
 	a := vf.MutableValues(`one`, `two`)
 	a.SetType(tt)
 	require.Panic(t, func() { a.Set(0, 1) }, `cannot be assigned`)
 	require.Panic(t, func() { a.Set(1, 2) }, `cannot be assigned`)
-	require.Panic(t, func() { a.Add(`three`) }, `size constraint violation`)
 
 	require.Panic(t, func() { tf.VariadicTuple() }, `must have at least one element`)
-	require.Panic(t, func() { tf.VariadicTuple(typ.String) }, `last element .* must be an ArrayType`)
 }
 
 func TestMutableValues_withoutType(t *testing.T) {
@@ -496,12 +498,12 @@ func TestArray_SetType(t *testing.T) {
 }
 
 func TestArray_selfReference(t *testing.T) {
-	tp := tf.Parse(`x=[](string|x)`).(dgo.ArrayType)
+	tp := tf.ParseType(`x=[](string|x)`).(dgo.ArrayType)
 	d := vf.MutableValues(tp, `hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
-	t2 := tf.Parse(`x=[](string|[](string|x))`)
+	t2 := tf.ParseType(`x=[](string|[](string|x))`)
 	require.Assignable(t, tp, t2)
 }
 

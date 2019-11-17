@@ -31,11 +31,11 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 	kind := vt.Kind()
 	switch kind {
 	case reflect.Slice, reflect.Array:
-		return ArrayType(TypeFromReflected(vt.Elem()), 0, math.MaxInt64)
+		return ArrayType([]interface{}{TypeFromReflected(vt.Elem()), 0, math.MaxInt64})
 	case reflect.Map:
-		return MapType(TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, math.MaxInt64)
+		return MapType([]interface{}{TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, math.MaxInt64})
 	case reflect.Ptr:
-		return OneOfType([]dgo.Type{TypeFromReflected(vt.Elem()), DefaultNilType})
+		return OneOfType([]interface{}{TypeFromReflected(vt.Elem()), DefaultNilType})
 	case reflect.Func:
 		return exactFunctionType{vt}
 	case reflect.Interface:
@@ -51,6 +51,15 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 		}
 	}
 	return &nativeType{vt}
+}
+
+// AsType returns the value as a type. If the value already is a type, it is returned. Otherwise the
+// exact type of the value is returned.
+func AsType(value dgo.Value) dgo.Type {
+	if tp, ok := value.(dgo.Type); ok {
+		return tp
+	}
+	return value.Type()
 }
 
 // ExactValue returns the "exact value" that a value represents. If the given value is a dgo.ExactType, then the value
@@ -71,14 +80,6 @@ func Generic(t dgo.Type) dgo.Type {
 		return et.Generic()
 	}
 	return t
-}
-
-func typeAsType(v dgo.Value) dgo.Type {
-	return v.(dgo.Type)
-}
-
-func valueAsType(v dgo.Value) dgo.Type {
-	return v.Type()
 }
 
 func illegalArgument(name, expected string, args []interface{}, argno int) error {
@@ -122,3 +123,7 @@ var primitivePTypes = map[reflect.Kind]dgo.Type{
 	reflect.Float64: DefaultFloatType,
 	reflect.Bool:    DefaultBooleanType,
 }
+
+var Parse func(s string) dgo.Value
+
+var TypeString func(dgo.Type) string

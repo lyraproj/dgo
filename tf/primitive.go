@@ -40,9 +40,9 @@ func CiEnum(strings ...string) dgo.Type {
 	return internal.CiEnumType(strings)
 }
 
-// IntegerRange returns a dgo.Type that is limited to the inclusive range given by min and max
+// IntegerRange returns a dgo.IntegerType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func IntegerRange(min, max int64, inclusive bool) dgo.IntegerRangeType {
+func IntegerRange(min, max int64, inclusive bool) dgo.IntegerType {
 	return internal.IntegerRangeType(min, max, inclusive)
 }
 

@@ -37,3 +37,8 @@ func MapWithCapacity(capacity int, typ interface{}) dgo.Map {
 func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Map {
 	return internal.FromReflectedMap(rm, frozen).(dgo.Map)
 }
+
+// MapEntry returns a new MapEntry instance with the given key and value
+func MapEntry(k, v interface{}) dgo.MapEntry {
+	return internal.NewMapEntry(k, v)
+}

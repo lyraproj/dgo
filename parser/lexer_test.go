@@ -1,4 +1,4 @@
-package internal
+package parser
 
 import (
 	"fmt"
@@ -37,10 +37,10 @@ func Example_nextToken() {
 	sr := util.NewStringReader(src)
 	for {
 		tf := nextToken(sr)
-		if tf.i == end {
+		if tf.Type == end {
 			break
 		}
-		fmt.Println(tf)
+		fmt.Println(tokenString(tf))
 	}
 	// Output:
 	//constants

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 // deepEqual is implemented by values that need DeepEqual comparisons.
@@ -24,10 +25,10 @@ func (s *doubleSeen) Hit() bool {
 
 func (s *doubleSeen) Append(a, b dgo.Value) dgo.RecursionGuard {
 	if !s.seenInA {
-		s.seenInA = recursionHit(s.aSeen, a)
+		s.seenInA = util.RecursionHit(s.aSeen, a)
 	}
 	if !s.seenInB {
-		s.seenInB = recursionHit(s.bSeen, b)
+		s.seenInB = util.RecursionHit(s.bSeen, b)
 	}
 	c := *s
 	if !c.seenInA {
@@ -96,7 +97,7 @@ func Instance(guard dgo.RecursionGuard, a dgo.Type, b interface{}) bool {
 
 func deepHashCode(seen []dgo.Value, e dgo.Value) int {
 	if de, ok := e.(deepEqual); ok {
-		if recursionHit(seen, e) {
+		if util.RecursionHit(seen, e) {
 			return 0
 		}
 		return de.deepHashCode(append(seen, e))
@@ -118,7 +119,7 @@ func equals(seen []dgo.Value, a dgo.Value, b interface{}) bool {
 	if !ok {
 		return a.Equals(b)
 	}
-	if recursionHit(seen, a) {
+	if util.RecursionHit(seen, a) {
 		// Recursion, so assume true
 		return true
 	}
@@ -166,18 +167,9 @@ func compare(seen []dgo.Value, a dgo.Value, b dgo.Value) (int, bool) {
 		return 0, false
 	}
 
-	if recursionHit(seen, a) {
+	if util.RecursionHit(seen, a) {
 		// Recursion, so assume equal
 		return 0, true
 	}
 	return da.deepCompare(append(seen, a), db)
-}
-
-func recursionHit(seen []dgo.Value, this dgo.Value) bool {
-	for i := range seen {
-		if this == seen[i] {
-			return true
-		}
-	}
-	return false
 }

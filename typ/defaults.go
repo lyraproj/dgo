@@ -22,8 +22,11 @@ var OneOf dgo.TernaryType = internal.DefaultOneOfType
 // Array represents all array values
 var Array dgo.ArrayType = internal.DefaultArrayType
 
-// Tuple represents all Array values since it has no elements with type constraints
+// Tuple is represents all arrays since it's the tuple with one ellipsis argument of type any
 var Tuple dgo.TupleType = internal.DefaultTupleType
+
+// EmptyTuple is represents an empty arrays
+var EmptyTuple dgo.TupleType = internal.EmptyTupleType
 
 // Not represents a negated type. The default Not is negated Any so no other type
 // is assignable to it.
@@ -47,11 +50,17 @@ var False dgo.BooleanType = internal.FalseType
 // True is a type that only represents the value true
 var True dgo.BooleanType = internal.TrueType
 
+// Number is a type that represents all numbers
+var Number dgo.Type = internal.AnyOfType([]interface{}{internal.DefaultIntegerType, internal.DefaultFloatType})
+
 // Float is a type that represents all floats
 var Float dgo.FloatRangeType = internal.DefaultFloatType
 
+// Function is the type that represents all functions
+var Function dgo.FunctionType = internal.DefaultFunctionType
+
 // Integer is a type that represents all integers
-var Integer dgo.IntegerRangeType = internal.DefaultIntegerType
+var Integer dgo.IntegerType = internal.DefaultIntegerType
 
 // Regexp is a type that represents all regexps
 var Regexp dgo.Type = internal.DefaultRegexpType

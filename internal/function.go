@@ -42,7 +42,14 @@ func (t *exactFunctionTuple) DeepAssignable(guard dgo.RecursionGuard, other dgo.
 }
 
 func (t *exactFunctionTuple) Element(index int) dgo.Type {
-	return TypeFromReflected(t.element(index))
+	rt := t.element(index)
+	if t.variadic {
+		n := t.count() - 1
+		if n == index {
+			rt = rt.Elem()
+		}
+	}
+	return TypeFromReflected(rt)
 }
 
 func (t *exactFunctionTuple) ElementType() dgo.Type {
@@ -112,8 +119,13 @@ func (t *exactFunctionTuple) Unbounded() bool {
 func (t *exactFunctionTuple) typeSlice() []dgo.Value {
 	na := t.count()
 	as := make([]dgo.Value, na)
+	vdic := t.variadic
 	for i := 0; i < na; i++ {
-		as[i] = TypeFromReflected(t.element(i))
+		rt := t.element(i)
+		if vdic && i == na-1 {
+			rt = rt.Elem()
+		}
+		as[i] = TypeFromReflected(rt)
 	}
 	return as
 }
@@ -134,7 +146,7 @@ func (t exactFunctionType) Equals(other interface{}) bool {
 }
 
 func (t exactFunctionType) HashCode() int {
-	h := 1
+	h := int(dgo.TiFunction)
 	h = h*31 + t.In().HashCode()
 	h = h*31 + t.Out().HashCode()
 	return h
@@ -177,16 +189,17 @@ func (t exactFunctionType) Variadic() bool {
 	return t.funcType.IsVariadic()
 }
 
+// DefaultFunctionType is a function that without any constraints on arguments or return value
+var DefaultFunctionType = &functionType{arguments: DefaultTupleType, returns: DefaultTupleType}
+
 // FunctionType returns a new dgo.FunctionType with the given argument and return value
 // types.
 func FunctionType(args dgo.TupleType, returns dgo.TupleType) dgo.FunctionType {
-	if args == nil {
-		args = DefaultTupleType
-	}
-	if returns == nil {
-		returns = DefaultTupleType
-	} else if returns.Variadic() {
+	if returns.Variadic() && !DefaultTupleType.Equals(returns) {
 		panic(errors.New(`tuple describing return values cannot be variadic`))
+	}
+	if args == DefaultTupleType && returns == DefaultTupleType {
+		return DefaultFunctionType
 	}
 	return &functionType{arguments: args, returns: returns}
 }
@@ -201,7 +214,9 @@ func (t *functionType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) 
 
 func functionTypeAssignable(guard dgo.RecursionGuard, t dgo.FunctionType, other dgo.Type) bool {
 	if ot, ok := other.(dgo.FunctionType); ok {
-		return t.Variadic() == ot.Variadic() && tupleAssignableTuple(guard, t.In(), ot.In()) && tupleAssignableTuple(guard, t.Out(), ot.Out())
+		return t.Variadic() == ot.Variadic() &&
+			tupleAssignableTuple(guard, t.In(), ot.In()) &&
+			tupleAssignableTuple(guard, t.Out(), ot.Out())
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -222,7 +237,7 @@ func (t *functionType) HashCode() int {
 }
 
 func (t *functionType) deepHashCode(seen []dgo.Value) int {
-	h := 1
+	h := int(dgo.TiFunction)
 	h = h*31 + deepHashCode(seen, t.arguments)
 	h = h*31 + deepHashCode(seen, t.returns)
 	return h

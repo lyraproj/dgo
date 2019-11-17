@@ -6,8 +6,9 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+
+	"github.com/lyraproj/dgo/dgo"
 )
 
 type (
@@ -17,7 +18,7 @@ type (
 	}
 )
 
-func (v *structVal) AppendTo(w util.Indenter) {
+func (v *structVal) AppendTo(w dgo.Indenter) {
 	appendMapTo(v, w)
 }
 
@@ -277,7 +278,7 @@ func (v *structVal) SetType(t interface{}) {
 }
 
 func (v *structVal) String() string {
-	return ToStringERP(v)
+	return util.ToStringERP(v)
 }
 
 func (v *structVal) StringKeys() bool {

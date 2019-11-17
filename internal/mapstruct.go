@@ -7,8 +7,6 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/lyraproj/dgo/util"
-
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -27,8 +25,8 @@ type (
 	}
 )
 
-// StructMap returns a new StructMap type built from the given MapEntryTypes.
-func StructMap(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
+// StructMapType returns a new StructMapType type built from the given StructMapEntries.
+func StructMapType(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
 	l := len(entries)
 	keys := make([]dgo.Value, l)
 	values := make([]dgo.Value, l)
@@ -56,7 +54,7 @@ func StructMap(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType 
 var sfmType dgo.MapType
 
 // StructFromMapType returns the map type used when validating the map sent to
-// StructMapFromMap
+// StructMapTypeFromMap
 func StructFromMapType() dgo.MapType {
 	if sfmType == nil {
 		sfmType = Parse(`map[string](dgo|type|{type:dgo|type,required?:bool,...})`).(dgo.MapType)
@@ -64,8 +62,8 @@ func StructFromMapType() dgo.MapType {
 	return sfmType
 }
 
-// StructMapFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
-func StructMapFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
+// StructMapTypeFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
+func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 	if !StructFromMapType().Instance(entries) {
 		panic(IllegalAssignment(sfmType, entries))
 	}
@@ -77,10 +75,15 @@ func StructMapFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 
 	// turn dgo|type into type
 	asType := func(v dgo.Value) dgo.Type {
-		if tp, ok := v.(dgo.Type); ok {
-			return tp
+		tp, ok := v.(dgo.Type)
+		if !ok {
+			v := Parse(v.String())
+			tp, ok = v.(dgo.Type)
+			if !ok {
+				tp = v.Type()
+			}
 		}
-		return Parse(v.String())
+		return tp
 	}
 
 	entries.EachEntry(func(e dgo.MapEntry) {
@@ -349,7 +352,7 @@ func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interfa
 	return errs
 }
 
-func (t *structType) ValidateVerbose(value interface{}, out util.Indenter) bool {
+func (t *structType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
 	pm, ok := Value(value).(dgo.Map)
 	if !ok {
 		out.Append(`value is not a Map`)

@@ -1,12 +1,13 @@
-package internal_test
+package util_test
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/lyraproj/dgo/util"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -19,7 +20,7 @@ func ExampleToIndentedStringERP() {
 			`city`, `Smallfylke`,
 			`gender`, `male`),
 		`age`, 32)
-	fmt.Println(internal.ToIndentedStringERP(v))
+	fmt.Println(util.ToIndentedStringERP(v))
 	// Output:
 	// {
 	//   "name": "Bob",
@@ -34,7 +35,7 @@ func ExampleToIndentedStringERP() {
 }
 
 func TestToIndentedStringERP_nonStringer(t *testing.T) {
-	ei := internal.NewERPIndenter(` `)
+	ei := util.NewERPIndenter(` `)
 	ei.AppendValue(struct{ A string }{`hello`})
 	require.Equal(t, `struct { A string }{A:"hello"}`, ei.String())
 }

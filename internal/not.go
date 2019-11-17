@@ -90,7 +90,7 @@ func (t *notType) ReflectType() reflect.Type {
 func (t *notType) Resolve(ap dgo.AliasProvider) {
 	tn := t.negated
 	t.negated = DefaultAnyType
-	t.negated = ap.Replace(tn)
+	t.negated = ap.Replace(tn).(dgo.Type)
 }
 
 func (t *notType) String() string {

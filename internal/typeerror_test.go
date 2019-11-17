@@ -38,7 +38,7 @@ func TestIllegalSize(t *testing.T) {
 }
 
 func TestIllegalMapKey(t *testing.T) {
-	tp := tf.Parse(`{a:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:string}`).(dgo.StructMapType)
 	v := tf.IllegalMapKey(tp, vf.String(`b`))
 
 	require.Equal(t, v, tf.IllegalMapKey(tp, vf.String(`b`)))

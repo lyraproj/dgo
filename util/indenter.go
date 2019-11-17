@@ -6,62 +6,9 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/lyraproj/dgo/dgo"
 )
-
-// An Indenter helps building strings where all newlines are supposed to be followed by
-// a sequence of zero or many spaces that reflect an indent level.
-type Indenter interface {
-	// Append appends a string to the internal buffer without checking for newlines
-	Append(string)
-
-	// AppendRune appends a rune to the internal buffer without checking for newlines
-	AppendRune(rune)
-
-	// AppendValue appends the string form of the given value to the internal buffer. Indentation
-	// will be recursive if the value implements Indentable
-	AppendValue(interface{})
-
-	// AppendIndented is like Append but replaces all occurrences of newline with an indented newline
-	AppendIndented(string)
-
-	// AppendBool writes the string "true" or "false" to the internal buffer
-	AppendBool(bool)
-
-	// AppendInt writes the result of calling strconf.Itoa() in the given argument
-	AppendInt(int)
-
-	// Indent returns a new indenter instance that shares the same buffer but has an
-	// indent level that is increased by one.
-	Indent() Indenter
-
-	// Indenting returns true if this indenter has an indent string with a length > 0
-	Indenting() bool
-
-	// Len returns the current number of bytes that has been appended to the indenter
-	Len() int
-
-	// Level returns the indent level for the indenter
-	Level() int
-
-	// NewLine writes a newline followed by the current indent after trimming trailing whitespaces
-	NewLine()
-
-	// Printf formats according to a format specifier and writes to the internal buffer.
-	Printf(string, ...interface{})
-
-	// Reset resets the internal buffer. It does not reset the indent
-	Reset()
-
-	// String returns the current string that has been built using the indenter. Trailing whitespaces
-	// are deleted from all lines.
-	String() string
-
-	// Write appends a slice of bytes to the internal buffer without checking for newlines
-	Write(p []byte) (n int, err error)
-
-	// WriteString appends a string to the internal buffer without checking for newlines
-	WriteString(s string) (n int, err error)
-}
 
 type indenter struct {
 	b *bytes.Buffer
@@ -69,14 +16,8 @@ type indenter struct {
 	s string
 }
 
-// An Indentable can create build a string representation of itself using an indenter
-type Indentable interface {
-	// AppendTo appends a string representation of the Node to the indenter
-	AppendTo(w Indenter)
-}
-
 // ToString will produce an unindented string from an Indentable
-func ToString(ia Indentable) string {
+func ToString(ia dgo.Indentable) string {
 	i := NewIndenter(``)
 	ia.AppendTo(i)
 	return i.String()
@@ -84,7 +25,7 @@ func ToString(ia Indentable) string {
 
 // ToIndentedString will produce a string from an Indentable using an indenter initialized
 // with a two space indentation.
-func ToIndentedString(ia Indentable) string {
+func ToIndentedString(ia dgo.Indentable) string {
 	i := NewIndenter(`  `)
 	ia.AppendTo(i)
 	return i.String()
@@ -92,7 +33,7 @@ func ToIndentedString(ia Indentable) string {
 
 // NewIndenter creates a new indenter for indent level zero using the given string to perform
 // one level of indentation. An empty string will yield unindented output
-func NewIndenter(indent string) Indenter {
+func NewIndenter(indent string) dgo.Indenter {
 	return &indenter{b: &bytes.Buffer{}, i: 0, s: indent}
 }
 
@@ -150,7 +91,7 @@ func (i *indenter) Append(s string) {
 }
 
 func (i *indenter) AppendValue(v interface{}) {
-	if vi, ok := v.(Indentable); ok {
+	if vi, ok := v.(dgo.Indentable); ok {
 		vi.AppendTo(i)
 	} else if vs, ok := v.(fmt.Stringer); ok {
 		WriteString(i.b, vs.String())
@@ -190,7 +131,7 @@ func (i *indenter) AppendInt(b int) {
 	WriteString(i.b, strconv.Itoa(b))
 }
 
-func (i *indenter) Indent() Indenter {
+func (i *indenter) Indent() dgo.Indenter {
 	c := *i
 	c.i++
 	return &c
