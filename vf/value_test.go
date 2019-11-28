@@ -26,6 +26,7 @@ func ExampleFromValue_map_string_string() {
 		`third`, `three`)
 
 	var gv map[string]string
+
 	vf.FromValue(v, &gv)
 	fmt.Println(gv) // As of go 1.12 maps are printed in key-sorted order
 	// Output: map[first:one second:two third:three]

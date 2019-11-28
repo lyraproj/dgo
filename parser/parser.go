@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/lyraproj/dgo/vf"
-
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/util"
@@ -39,50 +37,14 @@ type optionalValue struct {
 	dgo.Value
 }
 
-type alias struct {
-	dgo.StringType
-}
-
-type dType = dgo.Type // To avoid collision with method named Type
-type deferredCall struct {
-	dType
-	args dgo.Arguments
-}
-
+// LexFunction returns the next Token from the given StringReader
 type LexFunction func(reader *util.StringReader) *Token
 
 // NewAlias creates a special interim type that represents a type alias used during parsing, and then nowhere else.
-func NewAlias(s dgo.String) dgo.Type {
-	return &alias{s.Type().(dgo.StringType)}
-}
+var NewAlias = internal.NewAlias
 
 // NewCall creates a special interim type that represents a call during parsing, and then nowhere else.
-func NewCall(s dgo.Type, args dgo.Arguments) dgo.Type {
-	return &deferredCall{s, args}
-}
-
-func (a *alias) GoString() string {
-	return a.StringType.(dgo.ExactType).Value().(dgo.String).GoString()
-}
-
-type aliasProvider struct {
-	sc dgo.AliasMap
-}
-
-func (p *aliasProvider) Replace(t dgo.Value) dgo.Value {
-	switch t := t.(type) {
-	case *deferredCall:
-		return vf.New(t.dType, t.args)
-	case *alias:
-		if ra := p.sc.GetType(internal.String(t.GoString())); ra != nil {
-			return ra
-		}
-		panic(fmt.Errorf(`reference to unresolved type '%s'`, t.GoString()))
-	case dgo.AliasContainer:
-		t.Resolve(p)
-	}
-	return t
-}
+var NewCall = internal.NewCall
 
 func expect(state int) (s string) {
 	switch state {
@@ -123,18 +85,34 @@ func (p *parser) badSyntax(t *Token, state int) error {
 type (
 	// Parser is the interface that a parser is required to implement
 	Parser interface {
+		// AliasMap returns the AliasMap used by this parser
 		AliasMap() dgo.AliasMap
+
+		// Append appends the given value to the value stack
+		Append(dgo.Value)
+
+		// NextToken returns next token and advances the token stream
 		NextToken() *Token
+
+		// Parse performs the actual parsing, starting at the given token
 		Parse(t *Token)
+
+		// PopLast returns the lastly parsed value
 		PopLast() dgo.Value
+
+		// LastToken returns the token that was last returned by NextToken
 		LastToken() *Token
+
+		// StringReader returns the reader in use by this parser
 		StringReader() *util.StringReader
+
+		// TokenString returns the string representation of the given token
 		TokenString(*Token) string
 	}
 
-	// ParserBase provides all methods of the Parser interface except the
+	// Base provides all methods of the Parser interface except the
 	// Parse method.
-	ParserBase struct {
+	Base struct {
 		lf LexFunction
 		sc dgo.AliasMap
 		d  []dgo.Value
@@ -144,16 +122,16 @@ type (
 	}
 
 	parser struct {
-		ParserBase
+		Base
 	}
 )
 
 // NewParserBase creates the extendable parser base.
-func NewParserBase(am dgo.AliasMap, lf LexFunction, content string) ParserBase {
+func NewParserBase(am dgo.AliasMap, lf LexFunction, content string) Base {
 	if am == nil {
 		am = internal.NewAliasMap()
 	}
-	return ParserBase{lf: lf, sc: am, sr: util.NewStringReader(content)}
+	return Base{lf: lf, sc: am, sr: util.NewStringReader(content)}
 }
 
 // Parse calls ParseFile with an empty string as the fileName
@@ -197,37 +175,44 @@ func DoParse(p Parser, fileName string) dgo.Value {
 	}()
 	p.Parse(p.NextToken())
 	tp := p.PopLast()
-	return (&aliasProvider{p.AliasMap()}).Replace(tp)
+	return p.AliasMap().Replace(tp)
 }
 
-func (p *ParserBase) AliasMap() dgo.AliasMap {
+// AliasMap returns the AliasMap used by this parser
+func (p *Base) AliasMap() dgo.AliasMap {
 	return p.sc
 }
 
-func (p *ParserBase) Append(v dgo.Value) {
+// Append appends the given value to the value stack
+func (p *Base) Append(v dgo.Value) {
 	p.d = append(p.d, v)
 }
 
-func (p *ParserBase) AppendFrom(pos int, v dgo.Value) {
+// AppendFrom truncates the value stack at the given position and then appends the given value
+func (p *Base) AppendFrom(pos int, v dgo.Value) {
 	p.d = append(p.d[:pos], v)
 }
 
-func (p *ParserBase) From(pos int) []dgo.Value {
+// From returns the value stack starting from the given position
+func (p *Base) From(pos int) []dgo.Value {
 	return p.d[pos:]
 }
 
-func (p *ParserBase) Len() int {
+// Len returns the current length of the value stack
+func (p *Base) Len() int {
 	return len(p.d)
 }
 
-func (p *ParserBase) PeekToken() *Token {
+// PeekToken returns the next token from the token stream without advancing the pointer
+func (p *Base) PeekToken() *Token {
 	if p.pe == nil {
 		p.pe = p.NextToken()
 	}
 	return p.pe
 }
 
-func (p *ParserBase) NextToken() *Token {
+// NextToken returns the next token from the token stream and advances the pointer
+func (p *Base) NextToken() *Token {
 	var t *Token
 	if p.pe != nil {
 		t = p.pe
@@ -239,18 +224,21 @@ func (p *ParserBase) NextToken() *Token {
 	return t
 }
 
-func (p *ParserBase) LastToken() *Token {
+// LastToken returns the token last returned by NextToken
+func (p *Base) LastToken() *Token {
 	return p.lt
 }
 
-func (p *ParserBase) PopLast() dgo.Value {
+// PopLast pops the last value from the value stack
+func (p *Base) PopLast() dgo.Value {
 	last := p.Len() - 1
 	v := p.d[last]
 	p.d = p.d[:last]
 	return v
 }
 
-func (p *ParserBase) PopLastType() dgo.Type {
+// PopLastType pops the last value from the value stack as a type.
+func (p *Base) PopLastType() dgo.Type {
 	last := p.Len() - 1
 	v := p.d[last]
 	p.d = p.d[:last]
@@ -260,10 +248,12 @@ func (p *ParserBase) PopLastType() dgo.Type {
 	return v.Type()
 }
 
-func (p *ParserBase) StringReader() *util.StringReader {
+// StringReader returns the reader in use by this parser
+func (p *Base) StringReader() *util.StringReader {
 	return p.sr
 }
 
+// Parse performs the actual parsing, starting at the given token
 func (p *parser) Parse(t *Token) {
 	p.anyOf(t)
 	tk := p.NextToken()
@@ -272,6 +262,7 @@ func (p *parser) Parse(t *Token) {
 	}
 }
 
+// TokenString returns the string representation of the given token
 func (p *parser) TokenString(t *Token) string {
 	return tokenString(t)
 }
@@ -338,7 +329,7 @@ func makeTupleType(as []dgo.Value, variadic bool) dgo.TupleType {
 	// Convert literal values to types and create a tupleType
 	ln := len(as)
 	ts := make([]interface{}, ln)
-	for i := range as {
+	for i := 0; i < ln; i++ {
 		v := as[i]
 		t, ok := v.(dgo.Type)
 		if !ok {
@@ -354,10 +345,11 @@ func makeTupleType(as []dgo.Value, variadic bool) dgo.TupleType {
 	return internal.TupleType(ts)
 }
 
-func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructMapType {
+func makeStructType(as []dgo.Value, ellipsis bool) dgo.MapType {
 	l := len(as)
 	entries := make([]dgo.StructMapEntry, l)
-	for i := range as {
+
+	for i := 0; i < l; i++ {
 		hn := as[i].(dgo.MapEntry)
 		k := hn.Key()
 		v := hn.Value()
@@ -375,7 +367,7 @@ func makeStructType(as []dgo.Value, ellipsis bool) dgo.StructMapType {
 		}
 		entries[i] = internal.StructMapEntry(kt, vt, !optional)
 	}
-	return internal.StructMapType(ellipsis, entries)
+	return internal.StructMapTypeUnresolved(ellipsis, entries)
 }
 
 func (p *parser) params() {
@@ -594,6 +586,7 @@ func (p *parser) funcExpression() dgo.Value {
 	args := p.PopLastType().(dgo.TupleType)
 	var returns dgo.TupleType = internal.EmptyTupleType
 	t = p.PeekToken()
+
 	switch {
 	case t.Type == '(':
 		p.NextToken()
@@ -667,10 +660,10 @@ func (p *parser) float(t *Token) dgo.Value {
 		n = p.PeekToken()
 		if n.Type == integer || n.Type == float {
 			p.NextToken()
-			tp = internal.FloatRangeType(f, tokenFloat(n), inclusive)
+			tp = internal.FloatType(f, tokenFloat(n), inclusive)
 		} else {
 			p.NextToken()
-			tp = internal.FloatRangeType(f, math.MaxFloat64, inclusive) // Unbounded at upper end
+			tp = internal.FloatType(f, math.MaxFloat64, inclusive) // Unbounded at upper end
 		}
 	} else {
 		tp = internal.Float(f)
@@ -689,12 +682,12 @@ func (p *parser) integer(t *Token) dgo.Value {
 		switch x.Type {
 		case integer:
 			p.NextToken()
-			tp = internal.IntegerRangeType(i, tokenInt(x), inclusive)
+			tp = internal.IntegerType(i, tokenInt(x), inclusive)
 		case float:
 			p.NextToken()
-			tp = internal.FloatRangeType(float64(i), tokenFloat(x), inclusive)
+			tp = internal.FloatType(float64(i), tokenFloat(x), inclusive)
 		default:
-			tp = internal.IntegerRangeType(i, math.MaxInt64, inclusive) // Unbounded at upper end
+			tp = internal.IntegerType(i, math.MaxInt64, inclusive) // Unbounded at upper end
 		}
 	} else {
 		tp = internal.Integer(i)
@@ -709,17 +702,17 @@ func (p *parser) dotRange(t *Token) dgo.Value {
 	switch n.Type {
 	case integer:
 		p.NextToken()
-		tp = internal.IntegerRangeType(math.MinInt64, tokenInt(n), inclusive)
+		tp = internal.IntegerType(math.MinInt64, tokenInt(n), inclusive)
 	case float:
 		p.NextToken()
-		tp = internal.FloatRangeType(-math.MaxFloat64, tokenFloat(n), inclusive)
+		tp = internal.FloatType(-math.MaxFloat64, tokenFloat(n), inclusive)
 	default:
 		panic(p.badSyntax(n, exIntOrFloat))
 	}
 	return tp
 }
 
-func (p *parser) array(t *Token) dgo.Value {
+func (p *parser) array() dgo.Value {
 	p.params()
 	params := p.PopLast().(dgo.Array)
 	p.typeExpression(p.NextToken())
@@ -760,6 +753,7 @@ func (p *parser) aliasDeclaration(t *Token) dgo.Value {
 
 func (p *parser) typeExpression(t *Token) {
 	var tp dgo.Value
+
 	switch t.Type {
 	case '{':
 		p.list('}')
@@ -772,7 +766,7 @@ func (p *parser) typeExpression(t *Token) {
 		}
 		return
 	case '[':
-		tp = p.array(t)
+		tp = p.array()
 	case '<':
 		tp = p.aliasReference(p.NextToken())
 		n := p.NextToken()
@@ -812,8 +806,9 @@ func tokenFloat(t *Token) float64 {
 }
 
 func allTypes(a []dgo.Value) []interface{} {
+	l := len(a)
 	c := make([]interface{}, len(a))
-	for i := range a {
+	for i := 0; i < l; i++ {
 		v := a[i]
 		if tv, ok := v.(dgo.Type); ok {
 			c[i] = tv
@@ -824,6 +819,11 @@ func allTypes(a []dgo.Value) []interface{} {
 	return c
 }
 
+// The internal package must be able to call the Parse function and the parser package
+// must use the internal package. The only way to break that dependency would be to merge the two
+// packages. There's however no way to use the internal package without the parser package
+// being initialized first so the circularity between them is harmless.
 func init() {
 	internal.Parse = Parse
+	internal.ParseFile = ParseFile
 }

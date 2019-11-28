@@ -220,7 +220,7 @@ func MutableMap(args []interface{}) dgo.Map {
 	return mapFromArgs(args, false)
 }
 
-func newMap(t dgo.MapType, arg dgo.Value) dgo.Map {
+func newMap(t dgo.Type, arg dgo.Value) dgo.Map {
 	if args, ok := arg.(dgo.Arguments); ok {
 		args.AssertSize(`map`, 1, 1)
 		arg = args.Get(0)
@@ -805,7 +805,7 @@ func (g *hashMap) RemoveAll(keys dgo.Array) {
 	})
 }
 
-func (g *hashMap) Resolve(ap dgo.AliasProvider) {
+func (g *hashMap) Resolve(ap dgo.AliasMap) {
 	needRehash := false
 	for e := g.first; e != nil; e = e.next {
 		if rk := ap.Replace(e.key); rk != e.key {
@@ -1106,7 +1106,8 @@ func (t *sizedMapType) Assignable(other dgo.Type) bool {
 
 func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
 	if ot, ok := other.(*sizedMapType); ok {
-		return t.min <= ot.min && ot.max <= t.max && Assignable(guard, t.keyType, ot.keyType) && Assignable(guard, t.valueType, ot.valueType)
+		return t.min <= ot.min && ot.max <= t.max &&
+			Assignable(guard, t.keyType, ot.keyType) && Assignable(guard, t.valueType, ot.valueType)
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -1188,7 +1189,7 @@ func (t *sizedMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
+func (t *sizedMapType) Resolve(ap dgo.AliasMap) {
 	kt := t.keyType
 	vt := t.valueType
 	t.keyType = DefaultAnyType
@@ -1283,6 +1284,10 @@ func (t defaultMapType) Unbounded() bool {
 	return true
 }
 
+func (t *exactMapType) Additional() bool {
+	return false
+}
+
 func (t *exactMapType) Assignable(other dgo.Type) bool {
 	return CheckAssignableTo(nil, other, t)
 }
@@ -1299,6 +1304,19 @@ func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bo
 	return false
 }
 
+func (t *exactMapType) Each(actor func(dgo.StructMapEntry)) {
+	t.value.EachEntry(func(e dgo.MapEntry) {
+		actor(&structEntry{mapEntry{e.Key().Type(), e.Value().Type()}, true})
+	})
+}
+
+func (t *exactMapType) Equals(other interface{}) bool {
+	if ot, ok := other.(*exactMapType); ok {
+		return t.value.Equals(ot.value)
+	}
+	return false
+}
+
 func (t *exactMapType) Generic() dgo.Type {
 	return &sizedMapType{
 		keyType:   Generic(t.KeyType()),
@@ -1307,11 +1325,12 @@ func (t *exactMapType) Generic() dgo.Type {
 		max:       math.MaxInt64}
 }
 
-func (t *exactMapType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactMapType); ok {
-		return t.value.Equals(ot.value)
+func (t *exactMapType) Get(key interface{}) dgo.MapEntry {
+	k := Value(key)
+	if v := t.value.Get(k); v != nil {
+		return &structEntry{mapEntry{k.Type(), v.Type()}, true}
 	}
-	return false
+	return nil
 }
 
 func (t *exactMapType) HashCode() int {
@@ -1326,7 +1345,15 @@ func (t *exactMapType) Instance(value interface{}) bool {
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
-	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachKey))
+	l := t.value.Len()
+	if l == 0 {
+		return DefaultAnyType
+	}
+	return (*allOfValueType)(arrayFromIterator(l, t.value.EachKey))
+}
+
+func (t *exactMapType) Len() int {
+	return t.value.Len()
 }
 
 func (t *exactMapType) Max() int {
@@ -1345,7 +1372,7 @@ func (t *exactMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *exactMapType) Resolve(ap dgo.AliasProvider) {
+func (t *exactMapType) Resolve(ap dgo.AliasMap) {
 	if ac, ok := t.value.(dgo.AliasContainer); ok {
 		ac.Resolve(ap)
 	}
@@ -1363,12 +1390,24 @@ func (t *exactMapType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiMapExact
 }
 
+func (t *exactMapType) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
+	return validate(t, keyLabel, value)
+}
+
+func (t *exactMapType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
+	return validateVerbose(t, value, out)
+}
+
 func (t *exactMapType) Value() dgo.Value {
 	return t.value
 }
 
 func (t *exactMapType) ValueType() dgo.Type {
-	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachValue))
+	l := t.value.Len()
+	if l == 0 {
+		return DefaultAnyType
+	}
+	return (*allOfValueType)(arrayFromIterator(l, t.value.EachValue))
 }
 
 func frozenMap(f string) error {

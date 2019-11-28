@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -16,7 +15,7 @@ type (
 		additional bool
 		keys       array
 		values     array
-		required   []byte
+		required   []bool
 	}
 
 	structEntry struct {
@@ -25,30 +24,54 @@ type (
 	}
 )
 
-// StructMapType returns a new StructMapType type built from the given StructMapEntries.
-func StructMapType(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
+// StructMapTypeUnresolved returns an unresolved new StructMapType type built from the given StructMapEntries. The
+// fact that it is unresolved vouches for that it may have keys that are not yet exact types but might become exact
+// once they are resolved.
+func StructMapTypeUnresolved(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
 	l := len(entries)
+	exact := !additional
 	keys := make([]dgo.Value, l)
 	values := make([]dgo.Value, l)
-	required := make([]byte, l)
-	for i := range entries {
+	required := make([]bool, l)
+	for i := 0; i < l; i++ {
 		e := entries[i]
-		switch k := e.Key().(type) {
-		case *exactStringType, exactIntegerType, exactFloatType, *exactArrayType, *exactMapType, booleanType:
-			keys[i] = k
-			values[i] = e.Value()
-			if e.Required() {
-				required[i] = 1
-			}
-		default:
-			panic(`non exact key types is not yet supported`)
+		kt := e.Key().(dgo.Type)
+		vt := e.Value().(dgo.Type)
+		if exact && !(e.Required() && dgo.IsExact(kt) && dgo.IsExact(vt)) {
+			exact = false
 		}
+		keys[i] = kt
+		values[i] = vt
+		required[i] = e.Required()
 	}
+
+	if exact {
+		return createExactMap(keys, values)
+	}
+
 	return &structType{
 		additional: additional,
 		keys:       array{slice: keys, frozen: true},
 		values:     array{slice: values, frozen: true},
 		required:   required}
+}
+
+func createExactMap(keys, values []dgo.Value) dgo.StructMapType {
+	l := len(keys)
+	m := MapWithCapacity(l, nil)
+	for i := 0; i < l; i++ {
+		m.Put(keys[i].(dgo.ExactType).Value(), values[i].(dgo.ExactType).Value())
+	}
+	return m.Type().(dgo.StructMapType)
+}
+
+// StructMapType returns a new StructMapType type built from the given StructMapEntries.
+func StructMapType(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
+	t := StructMapTypeUnresolved(additional, entries)
+	if st, ok := t.(*structType); ok {
+		st.checkExactKeys()
+	}
+	return t
 }
 
 var sfmType dgo.MapType
@@ -70,15 +93,18 @@ func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 	l := entries.Len()
 	keys := make([]dgo.Value, l)
 	values := make([]dgo.Value, l)
-	required := make([]byte, l)
+	required := make([]bool, l)
 	i := 0
 
 	// turn dgo|type into type
 	asType := func(v dgo.Value) dgo.Type {
 		tp, ok := v.(dgo.Type)
 		if !ok {
-			v := Parse(v.String())
-			tp, ok = v.(dgo.Type)
+			var s dgo.String
+			if s, ok = v.(dgo.String); ok {
+				v = Parse(s.GoString())
+				tp, ok = v.(dgo.Type)
+			}
 			if !ok {
 				tp = v.Type()
 			}
@@ -86,23 +112,49 @@ func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 		return tp
 	}
 
+	exact := !additional
 	entries.EachEntry(func(e dgo.MapEntry) {
-		keys[i] = e.Key().Type()
+		rq := false
+		kt := e.Key().Type()
+		var vt dgo.Type
 		if vm, ok := e.Value().(dgo.Map); ok {
-			values[i] = asType(vm.Get(`type`))
-			if rq := vm.Get(`required`); rq != nil && rq.(dgo.Boolean).GoBool() {
-				required[i] = 1
+			vt = asType(vm.Get(`type`))
+			if rqv := vm.Get(`required`); rqv != nil {
+				rq = rqv.(dgo.Boolean).GoBool()
 			}
 		} else {
-			values[i] = asType(e.Value())
+			vt = asType(e.Value())
 		}
+		if exact && !(rq && dgo.IsExact(kt) && dgo.IsExact(vt)) {
+			exact = false
+		}
+		keys[i] = kt
+		values[i] = vt
+		required[i] = rq
 		i++
 	})
-	return &structType{
+
+	if exact {
+		return createExactMap(keys, values)
+	}
+
+	t := &structType{
 		additional: additional,
 		keys:       array{slice: keys, frozen: true},
 		values:     array{slice: values, frozen: true},
 		required:   required}
+
+	t.checkExactKeys()
+	return t
+}
+
+func (t *structType) checkExactKeys() {
+	ks := t.keys.slice
+	for i := range ks {
+		if !dgo.IsExact(ks[i].(dgo.Type)) {
+			panic(`non exact key types is not yet supported`)
+		}
+	}
 }
 
 func (t *structType) Additional() bool {
@@ -144,12 +196,12 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 
 	nextKey:
 		for mi := range mks {
-			rq := mrs[mi] != 0
+			rq := mrs[mi]
 			mk := mks[mi]
 			for oi := range oks {
 				ok := oks[oi]
 				if mk.Equals(ok) {
-					if rq && ors[oi] == 0 {
+					if rq && !ors[oi] {
 						return false
 					}
 					if !Assignable(guard, mvs[mi].(dgo.Type), ovs[oi].(dgo.Type)) {
@@ -176,7 +228,7 @@ func (t *structType) Each(actor func(dgo.StructMapEntry)) {
 	vs := t.values.slice
 	rs := t.required
 	for i := range ks {
-		actor(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i] != 0})
+		actor(&structEntry{mapEntry: mapEntry{key: ks[i], value: vs[i]}, required: rs[i]})
 	}
 }
 
@@ -187,7 +239,7 @@ func (t *structType) Equals(other interface{}) bool {
 func (t *structType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*structType); ok {
 		return t.additional == ot.additional &&
-			bytes.Equal(t.required, ot.required) &&
+			boolsEqual(t.required, ot.required) &&
 			equals(seen, &t.keys, &ot.keys) &&
 			equals(seen, &t.values, &ot.values)
 	}
@@ -203,7 +255,7 @@ func (t *structType) HashCode() int {
 }
 
 func (t *structType) deepHashCode(seen []dgo.Value) int {
-	h := bytesHash(t.required)*31 + t.keys.HashCode()*31 + t.values.HashCode()
+	h := boolsHash(t.required)*31 + deepHashCode(seen, &t.keys)*31 + deepHashCode(seen, &t.values)
 	if t.additional {
 		h *= 3
 	}
@@ -227,7 +279,7 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 				if !Instance(guard, vs[i].(dgo.Type), ov) {
 					return false
 				}
-			} else if rs[i] != 0 {
+			} else if rs[i] {
 				return false
 			}
 		}
@@ -243,7 +295,7 @@ func (t *structType) Get(key interface{}) dgo.MapEntry {
 	}
 	i := t.keys.IndexOf(kv)
 	if i >= 0 {
-		return StructMapEntry(kv, t.values.slice[i], t.required[i] != 0)
+		return StructMapEntry(kv, t.values.slice[i], t.required[i])
 	}
 	return nil
 }
@@ -275,7 +327,7 @@ func (t *structType) Min() int {
 	min := 0
 	rs := t.required
 	for i := range rs {
-		if rs[i] != 0 {
+		if rs[i] {
 			min++
 		}
 	}
@@ -290,7 +342,7 @@ func (t *structType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *structType) Resolve(ap dgo.AliasProvider) {
+func (t *structType) Resolve(ap dgo.AliasMap) {
 	ks := t.keys.slice
 	vs := t.values.slice
 	t.keys.slice = []dgo.Value{}
@@ -301,6 +353,7 @@ func (t *structType) Resolve(ap dgo.AliasProvider) {
 	}
 	t.keys.slice = ks
 	t.values.slice = vs
+	t.checkExactKeys()
 }
 
 func (t *structType) String() string {
@@ -316,7 +369,7 @@ func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *structType) Unbounded() bool {
-	return len(t.required) == 0 || t.additional && t.Min() == 0
+	return t.additional && t.Min() == 0
 }
 
 func parameterLabel(key dgo.Value) string {
@@ -324,6 +377,14 @@ func parameterLabel(key dgo.Value) string {
 }
 
 func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
+	return validate(t, keyLabel, value)
+}
+
+func (t *structType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
+	return validateVerbose(t, value, out)
+}
+
+func validate(t dgo.StructMapType, keyLabel func(key dgo.Value) string, value interface{}) []error {
 	var errs []error
 	pm, ok := Value(value).(dgo.Map)
 	if !ok {
@@ -352,7 +413,7 @@ func (t *structType) Validate(keyLabel func(key dgo.Value) string, value interfa
 	return errs
 }
 
-func (t *structType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
+func validateVerbose(t dgo.StructMapType, value interface{}, out dgo.Indenter) bool {
 	pm, ok := Value(value).(dgo.Map)
 	if !ok {
 		out.Append(`value is not a Map`)
@@ -397,16 +458,6 @@ func (t *structType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
 	return ok
 }
 
-func (t *structType) Value() dgo.Value {
-	ks := t.keys.slice
-	vs := t.values.slice
-	m := MapWithCapacity(len(ks), nil)
-	for i := range ks {
-		m.Put(ExactValue(ks[i]), ExactValue(vs[i]))
-	}
-	return m
-}
-
 func (t *structType) ValueType() dgo.Type {
 	switch t.values.Len() {
 	case 0:
@@ -444,4 +495,29 @@ func (t *structEntry) deepEqual(seen []dgo.Value, other deepEqual) bool {
 
 func (t *structEntry) Required() bool {
 	return t.required
+}
+
+func boolsHash(s []bool) int {
+	h := 1
+	for i := range s {
+		m := 2
+		if s[i] {
+			m = 3
+		}
+		h = h * m
+	}
+	return h
+}
+
+func boolsEqual(a, b []bool) bool {
+	l := len(a)
+	if l != len(b) {
+		return false
+	}
+	for l--; l >= 0; l-- {
+		if a[l] != b[l] {
+			return false
+		}
+	}
+	return true
 }

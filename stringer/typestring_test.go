@@ -32,7 +32,7 @@ func TestType_String_arrayBoundedElementInt(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedElementRange(t *testing.T) {
-	require.Equal(t, `[0,4]3..8`, tf.Array(tf.IntegerRange(3, 8, true), 0, 4).String())
+	require.Equal(t, `[0,4]3..8`, tf.Array(tf.Integer(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedElementEnum(t *testing.T) {
@@ -48,7 +48,7 @@ func TestType_String_arrayBoundedEntryStringInt(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedEntryStringRange(t *testing.T) {
-	require.Equal(t, `map[string,0,4]3..8`, tf.Map(typ.String, tf.IntegerRange(3, 8, true), 0, 4).String())
+	require.Equal(t, `map[string,0,4]3..8`, tf.Map(typ.String, tf.Integer(3, 8, true), 0, 4).String())
 }
 
 func TestType_String_arrayBoundedEntryStringEnum(t *testing.T) {
@@ -56,11 +56,12 @@ func TestType_String_arrayBoundedEntryStringEnum(t *testing.T) {
 }
 
 func TestType_String_arrayBoundedEntryIntRangeEnum(t *testing.T) {
-	require.Equal(t, `map[3..8,0,4]("a"|"b")`, tf.Map(tf.IntegerRange(3, 8, true), tf.Enum(`a`, `b`), 0, 4).String())
+	require.Equal(t, `map[3..8,0,4]("a"|"b")`, tf.Map(tf.Integer(3, 8, true), tf.Enum(`a`, `b`), 0, 4).String())
 }
 
 func TestType_String_priorities(t *testing.T) {
 	var tp dgo.Type = tf.Array(tf.String(1), 2, 2)
+
 	require.Equal(t, `[2,2]string[1]`, tp.String())
 
 	tp = tf.Array(vf.Value(regexp.MustCompile(`a`)).Type(), 2, 2)

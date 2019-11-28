@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -11,9 +12,6 @@ import (
 
 	"github.com/lyraproj/dgo/util"
 )
-
-// tokenType denotes the type of token
-type tokenType int
 
 const (
 	end = iota
@@ -39,6 +37,7 @@ const (
 
 var charTypes = [128]uint8{}
 
+// This init() function ensures that the charTypes map is initialized with correct bits.
 func init() {
 	i := int('$')
 	charTypes[i] = idCharStart | idChar
@@ -157,7 +156,7 @@ func buildToken(r rune, sr *util.StringReader) *Token {
 	}
 }
 
-func consumeUnsignedInteger(sr *util.StringReader, buf *bytes.Buffer) {
+func consumeUnsignedInteger(sr *util.StringReader, buf io.Writer) {
 	for {
 		r := sr.Peek()
 		switch {
@@ -216,7 +215,7 @@ func IsLowerCase(r rune) bool {
 	return r < 128 && (charTypes[r]&lcLetter) != 0
 }
 
-func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
+func consumeExponent(sr *util.StringReader, buf io.Writer) {
 	for {
 		r := sr.Next()
 		switch r {
@@ -237,13 +236,13 @@ func consumeExponent(sr *util.StringReader, buf *bytes.Buffer) {
 	}
 }
 
-func consumeHexInteger(sr *util.StringReader, buf *bytes.Buffer) {
+func consumeHexInteger(sr *util.StringReader, buf io.Writer) {
 	for IsHex(sr.Peek()) {
 		util.WriteRune(buf, sr.Next())
 	}
 }
 
-func consumeNumber(sr *util.StringReader, start rune, buf *bytes.Buffer, t int) int {
+func consumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int {
 	util.WriteRune(buf, start)
 	firstZero := t != float && start == '0'
 
@@ -364,7 +363,7 @@ func consumeRawString(sr *util.StringReader) string {
 	}
 }
 
-func consumeIdentifier(sr *util.StringReader, start rune, buf *bytes.Buffer) {
+func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
 	util.WriteRune(buf, start)
 	for IsIdentifier(sr.Peek()) {
 		util.WriteRune(buf, sr.Next())

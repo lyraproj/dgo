@@ -51,10 +51,10 @@ var False dgo.BooleanType = internal.FalseType
 var True dgo.BooleanType = internal.TrueType
 
 // Number is a type that represents all numbers
-var Number dgo.Type = internal.AnyOfType([]interface{}{internal.DefaultIntegerType, internal.DefaultFloatType})
+var Number = internal.AnyOfType([]interface{}{internal.DefaultIntegerType, internal.DefaultFloatType})
 
 // Float is a type that represents all floats
-var Float dgo.FloatRangeType = internal.DefaultFloatType
+var Float dgo.FloatType = internal.DefaultFloatType
 
 // Function is the type that represents all functions
 var Function dgo.FunctionType = internal.DefaultFunctionType

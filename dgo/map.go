@@ -161,7 +161,7 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// EachEntry iterates over each entry of the StructMapType
+		// Each iterates over each entry of the StructMapType
 		Each(actor func(StructMapEntry))
 
 		// Get returns the MapEntry that is identified with the given key

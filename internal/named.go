@@ -59,8 +59,15 @@ func RemoveNamedType(name string) {
 // ifdType optional reflected nil value of interface type
 //
 // asgChecker optional function to check what other types that are assignable to this type
-func NewNamedType(name string, ctor dgo.Constructor, extractor dgo.InitArgExtractor, implType, ifdType reflect.Type, asgChecker dgo.AssignableChecker) dgo.NamedType {
-	t, loaded := namedTypes.LoadOrStore(name, &named{name: name, ctor: ctor, extractor: extractor, implType: implType, ifdType: ifdType, asgChecker: asgChecker})
+func NewNamedType(
+	name string,
+	ctor dgo.Constructor,
+	extractor dgo.InitArgExtractor,
+	implType,
+	ifdType reflect.Type,
+	asgChecker dgo.AssignableChecker) dgo.NamedType {
+	t, loaded := namedTypes.LoadOrStore(name,
+		&named{name: name, ctor: ctor, extractor: extractor, implType: implType, ifdType: ifdType, asgChecker: asgChecker})
 	if loaded {
 		panic(fmt.Errorf(`attempt to redefine named type '%s'`, name))
 	}

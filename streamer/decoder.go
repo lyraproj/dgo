@@ -51,6 +51,7 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 	}
 
 	var v dgo.Value
+
 	switch {
 	case ts.Equals(dl.MapTypeName()):
 		nm := mv.(dgo.Array).ToMap()
@@ -90,6 +91,7 @@ func replaceInstance(orig, repl, in dgo.Value) (dgo.Value, bool) {
 	}
 
 	replaceHappened := false
+
 	switch iv := in.(type) {
 	case dgo.Map:
 		iv.EachEntry(func(v dgo.MapEntry) {

@@ -106,7 +106,7 @@ func (t *metaType) ReflectType() reflect.Type {
 	return reflectTypeType
 }
 
-func (t *metaType) Resolve(ap dgo.AliasProvider) {
+func (t *metaType) Resolve(ap dgo.AliasMap) {
 	tp := t.tp
 	t.tp = DefaultAnyType
 	t.tp = ap.Replace(tp).(dgo.Type)

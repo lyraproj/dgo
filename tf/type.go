@@ -7,6 +7,7 @@ import (
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/parser"
 
+	// ensure that stringer package is initialized prior to using this package
 	_ "github.com/lyraproj/dgo/stringer"
 )
 

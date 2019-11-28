@@ -249,7 +249,7 @@ func (t *sizedArrayType) New(arg dgo.Value) dgo.Value {
 	return newArray(t, arg)
 }
 
-func (t *sizedArrayType) Resolve(ap dgo.AliasProvider) {
+func (t *sizedArrayType) Resolve(ap dgo.AliasMap) {
 	te := t.elementType
 	t.elementType = DefaultAnyType
 	t.elementType = ap.Replace(te).(dgo.Type)
@@ -360,7 +360,7 @@ func (t *exactArrayType) ReflectType() reflect.Type {
 	return reflect.SliceOf(t.ElementType().ReflectType())
 }
 
-func (t *exactArrayType) Resolve(ap dgo.AliasProvider) {
+func (t *exactArrayType) Resolve(ap dgo.AliasMap) {
 	(*array)(t).Resolve(ap)
 }
 
@@ -591,37 +591,42 @@ func (t *tupleType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bo
 }
 
 func tupleInstance(guard dgo.RecursionGuard, t dgo.TupleType, value interface{}) bool {
-	if ov, ok := value.(*array); ok {
-		s := ov.slice
-		n := len(s)
-		if t.Variadic() {
-			if t.Min() <= n {
-				tn := t.Len() - 1
-				for i := 0; i < tn; i++ {
-					if !Instance(guard, t.Element(i), s[i]) {
-						return false
-					}
-				}
-				vt := t.Element(tn)
-				for ; tn < n; tn++ {
-					if !Instance(guard, vt, s[tn]) {
-						return false
-					}
-				}
-				return true
-			}
-		} else {
-			if n == t.Len() {
-				for i := range s {
-					if !Instance(guard, t.Element(i), s[i]) {
-						return false
-					}
-				}
-				return true
+	ov, ok := value.(*array)
+	if !ok {
+		return false
+	}
+
+	s := ov.slice
+	n := len(s)
+	if t.Variadic() {
+		if t.Min() > n {
+			return false
+		}
+		tn := t.Len() - 1
+		for i := 0; i < tn; i++ {
+			if !Instance(guard, t.Element(i), s[i]) {
+				return false
 			}
 		}
+		vt := t.Element(tn)
+		for ; tn < n; tn++ {
+			if !Instance(guard, vt, s[tn]) {
+				return false
+			}
+		}
+		return true
 	}
-	return false
+
+	if n != t.Len() {
+		return false
+	}
+
+	for i := range s {
+		if !Instance(guard, t.Element(i), s[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func (t *tupleType) Len() int {
@@ -660,7 +665,7 @@ func (t *tupleType) ReflectType() reflect.Type {
 	return reflect.SliceOf(t.ElementType().ReflectType())
 }
 
-func (t *tupleType) Resolve(ap dgo.AliasProvider) {
+func (t *tupleType) Resolve(ap dgo.AliasMap) {
 	s := t.types
 	t.types = nil
 	resolveSlice(s, ap)
@@ -837,7 +842,7 @@ func MutableValues(values []interface{}) dgo.Array {
 	return &array{slice: cp, frozen: false}
 }
 
-func newArray(t dgo.ArrayType, arg dgo.Value) dgo.Array {
+func newArray(t dgo.Type, arg dgo.Value) dgo.Array {
 	if args, ok := arg.(dgo.Arguments); ok {
 		args.AssertSize(`array`, 1, 1)
 		arg = args.Get(0)
@@ -1360,7 +1365,7 @@ func (v *array) RemoveValue(value interface{}) bool {
 	return v.removePos(v.IndexOf(value)) != nil
 }
 
-func (v *array) Resolve(ap dgo.AliasProvider) {
+func (v *array) Resolve(ap dgo.AliasMap) {
 	a := v.slice
 	for i := range a {
 		a[i] = ap.Replace(a[i])
@@ -1636,7 +1641,7 @@ func frozenArray(f string) error {
 	return fmt.Errorf(`%s called on a frozen Array`, f)
 }
 
-func resolveSlice(ts []dgo.Value, ap dgo.AliasProvider) {
+func resolveSlice(ts []dgo.Value, ap dgo.AliasMap) {
 	for i := range ts {
 		ts[i] = ap.Replace(ts[i])
 	}

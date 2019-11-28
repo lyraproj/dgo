@@ -91,11 +91,12 @@ func (i *indenter) Append(s string) {
 }
 
 func (i *indenter) AppendValue(v interface{}) {
-	if vi, ok := v.(dgo.Indentable); ok {
-		vi.AppendTo(i)
-	} else if vs, ok := v.(fmt.Stringer); ok {
-		WriteString(i.b, vs.String())
-	} else {
+	switch v := v.(type) {
+	case dgo.Indentable:
+		v.AppendTo(i)
+	case fmt.Stringer:
+		WriteString(i.b, v.String())
+	default:
 		Fprintf(i.b, "%#v", v)
 	}
 }

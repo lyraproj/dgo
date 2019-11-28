@@ -138,7 +138,7 @@ func TestSizedArrayType(t *testing.T) {
 	require.NotEqual(t, tp.HashCode(), tf.Array(typ.Integer).HashCode())
 	require.Equal(t, `[2,3]int`, tp.String())
 
-	tp = tf.Array(tf.IntegerRange(0, 15, true), 2, 3)
+	tp = tf.Array(tf.Integer(0, 15, true), 2, 3)
 	require.Equal(t, `[2,3]0..15`, tp.String())
 
 	tp = tf.Array(tf.Array(2, 2), 0, 10)
@@ -241,10 +241,12 @@ func TestArrayElementType_multipleElements(t *testing.T) {
 func TestTupleType(t *testing.T) {
 	tt := typ.Tuple
 	require.Same(t, tt, tf.VariadicTuple(typ.Any))
+	require.Same(t, typ.Any, tt.ElementType())
 
 	tt = typ.EmptyTuple
 	require.Same(t, tt, tf.Tuple())
 	require.Assignable(t, tt, tf.Array(0, 0))
+	require.Same(t, typ.Any, tt.ElementType())
 
 	tt = tf.Tuple(typ.String, typ.Any, typ.Float)
 	require.Assignable(t, tt, tf.Tuple(typ.String, typ.Integer, typ.Float))

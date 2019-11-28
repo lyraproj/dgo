@@ -16,7 +16,7 @@ import (
 
 func TestTyped(t *testing.T) {
 	// value type for the map
-	mt := tf.Map(typ.String, tf.AnyOf(typ.String, tf.IntegerRange(0, 15, true)), 0, 2)
+	mt := tf.Map(typ.String, tf.AnyOf(typ.String, tf.Integer(0, 15, true)), 0, 2)
 
 	m := vf.MutableMap()
 	m.SetType(mt)
@@ -58,8 +58,8 @@ func TestMap_ValueType(t *testing.T) {
 		`four`, 3).Type().(dgo.MapType).ValueType()
 	require.Assignable(t, m1, m2)
 	require.NotAssignable(t, m1, m3)
-	require.Assignable(t, tf.IntegerRange(1, 2, true), m1)
-	require.NotAssignable(t, tf.IntegerRange(2, 3, true), m1)
+	require.Assignable(t, tf.Integer(1, 2, true), m1)
+	require.NotAssignable(t, tf.Integer(2, 3, true), m1)
 
 	require.NotAssignable(t, m2, vf.Integer(2).Type())
 	require.Assignable(t, m4, vf.Integer(3).Type())
@@ -74,7 +74,7 @@ func TestMap_ValueType(t *testing.T) {
 	vm := m1.Type()
 	require.Instance(t, vm, m1)
 
-	require.True(t, `1&2` == m1.String())
+	require.True(t, m1.String() == `1&2`)
 }
 
 func TestNewMapType_DefaultType(t *testing.T) {
@@ -368,7 +368,7 @@ func TestMap_fromStruct(t *testing.T) {
 	require.True(t, m.Frozen())
 	require.Equal(t, `Alpha`, m.Get(`A`))
 	require.Equal(t, 32, m.Get(`B`))
-	require.Equal(t, `Charlie`, m.Get(`C`))
+	require.Equal(t, c, m.Get(`C`))
 	require.Equal(t, 42, m.Get(`D`))
 	e, ok := m.Get(`E`).(dgo.Array)
 	require.True(t, ok)
@@ -669,9 +669,11 @@ func TestMap_selfReference(t *testing.T) {
 
 func TestMap_Map(t *testing.T) {
 	a := vf.Map(`a`, `value a`, `b`, `value b`, `c`, `value c`)
-	require.Equal(t, vf.Map(map[string]string{`a`: `the a`, `b`: `the b`, `c`: `the c`}), a.Map(func(e dgo.MapEntry) interface{} {
-		return strings.Replace(e.Value().String(), `value`, `the`, 1)
-	}))
+	require.Equal(t,
+		vf.Map(map[string]string{`a`: `the a`, `b`: `the b`, `c`: `the c`}),
+		a.Map(func(e dgo.MapEntry) interface{} {
+			return strings.Replace(e.Value().String(), `value`, `the`, 1)
+		}))
 	require.Equal(t, vf.Map(`a`, nil, `b`, vf.Nil, `c`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil
 	}))

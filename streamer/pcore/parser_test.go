@@ -106,7 +106,9 @@ func ExampleParse_hash() {
 }
 
 func TestParse_emptyTypeArgs(t *testing.T) {
-	require.Panic(t, func() { pcore.Parse(`String[]`) }, `illegal number of arguments for String\. Expected 1 or 2, got 0: \(column: 8\)`)
+	require.Panic(t,
+		func() { pcore.Parse(`String[]`) },
+		`illegal number of arguments for String\. Expected 1 or 2, got 0: \(column: 8\)`)
 }
 
 func TestParse_default(t *testing.T) {
@@ -136,7 +138,7 @@ func TestParse_exact(t *testing.T) {
 
 	st := pcore.Parse(`Struct[a => Integer[1, 5], Optional[b] => Integer[2,2]]`)
 	require.Equal(t, tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.IntegerRange(1, 5, true), true),
+		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
 		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 }
 
@@ -222,9 +224,12 @@ func TestParse_nestedSized(t *testing.T) {
 }
 
 func TestParse_aliasBad(t *testing.T) {
-	require.Panic(t, func() { pcore.Parse(`f=Hash[String,Integer]`) }, `expected end of expression, got '='`)
-	require.Panic(t, func() { pcore.Parse(`type m=Hash[String,Variant[Integer,M]]`) }, `expected end of expression, got m`)
-	require.Panic(t, func() { pcore.Parse(`type Integer=Hash[String,Integer]`) }, `attempt to redeclare identifier 'Integer'`)
+	require.Panic(t,
+		func() { pcore.Parse(`f=Hash[String,Integer]`) }, `expected end of expression, got '='`)
+	require.Panic(t,
+		func() { pcore.Parse(`type m=Hash[String,Variant[Integer,M]]`) }, `expected end of expression, got m`)
+	require.Panic(t,
+		func() { pcore.Parse(`type Integer=Hash[String,Integer]`) }, `attempt to redeclare identifier 'Integer'`)
 }
 
 func TestParse_aliasInUnary(t *testing.T) {
@@ -233,19 +238,24 @@ func TestParse_aliasInUnary(t *testing.T) {
 }
 
 func TestParse_aliasInAnyOf(t *testing.T) {
-	tp := pcore.Parse(`type M=Array[Variant[Integer[0, 5], Integer[3, 8], M]]`)
+	tp := pcore.Parse(`type M=Array[Variant[Integer[0, 5], Integer[3, 8], M]]`).(dgo.Type)
+	require.Equal(t, `[](0..5|3..8|<recursive self reference to slice type>)`, tp.String())
+}
+
+func TestParse_aliasInMap(t *testing.T) {
+	tp := pcore.Parse(`type M=Array[Variant[Integer[0, 5], Integer[3, 8], M]]`).(dgo.Type)
 	require.Equal(t, `[](0..5|3..8|<recursive self reference to slice type>)`, tp.String())
 }
 
 func TestParse_range(t *testing.T) {
-	require.Equal(t, tf.IntegerRange(1, 10, true), pcore.Parse(`Integer[1,10]`))
-	require.Equal(t, tf.IntegerRange(1, math.MaxInt64, true), pcore.Parse(`Integer[1]`))
-	require.Equal(t, tf.IntegerRange(math.MinInt64, 0, true), pcore.Parse(`Integer[default,0]`))
-	require.Equal(t, tf.FloatRange(1, 10, true), pcore.Parse(`Float[1.0,10]`))
-	require.Equal(t, tf.FloatRange(1, 10, true), pcore.Parse(`Float[1,10.0]`))
-	require.Equal(t, tf.FloatRange(1, 10, true), pcore.Parse(`Float[1.0,10.0]`))
-	require.Equal(t, tf.FloatRange(1, math.MaxFloat64, true), pcore.Parse(`Float[1.0]`))
-	require.Equal(t, tf.FloatRange(-math.MaxFloat64, 0, true), pcore.Parse(`Float[default,0.0]`))
+	require.Equal(t, tf.Integer(1, 10, true), pcore.Parse(`Integer[1,10]`))
+	require.Equal(t, tf.Integer(1, math.MaxInt64, true), pcore.Parse(`Integer[1]`))
+	require.Equal(t, tf.Integer(math.MinInt64, 0, true), pcore.Parse(`Integer[default,0]`))
+	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1.0,10]`))
+	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1,10.0]`))
+	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1.0,10.0]`))
+	require.Equal(t, tf.Float(1, math.MaxFloat64, true), pcore.Parse(`Float[1.0]`))
+	require.Equal(t, tf.Float(-math.MaxFloat64, 0, true), pcore.Parse(`Float[default,0.0]`))
 
 	require.Panic(t, func() { pcore.Parse(`Float[b]`) }, `illegal argument for Float. Expected int|float, got b`)
 }
@@ -286,7 +296,7 @@ Struct[
   ],
   x => Hash[Slug,Struct["Token" => Ascii, value => String]]
 ]`).(dgo.StructMapType)
-	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().String())
+	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
 }
 
 func TestParse_errors(t *testing.T) {
@@ -300,5 +310,7 @@ func TestParse_errors(t *testing.T) {
 }
 
 func TestParseFile_errors(t *testing.T) {
-	require.Panic(t, func() { pcore.ParseFile(nil, `foo.dgo`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
+	require.Panic(t,
+		func() { pcore.ParseFile(nil, `foo.dgo`, `[1 2]`) },
+		`expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
 }

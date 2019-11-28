@@ -268,9 +268,11 @@ func Test_structMap_Map(t *testing.T) {
 		C string
 	}
 	a := vf.Map(&structA{A: `value a`, B: `value b`, C: `value c`})
-	require.Equal(t, vf.Map(map[string]string{`A`: `the a`, `B`: `the b`, `C`: `the c`}), a.Map(func(e dgo.MapEntry) interface{} {
-		return strings.Replace(e.Value().String(), `value`, `the`, 1)
-	}))
+	require.Equal(t,
+		vf.Map(map[string]string{`A`: `the a`, `B`: `the b`, `C`: `the c`}),
+		a.Map(func(e dgo.MapEntry) interface{} {
+			return strings.Replace(e.Value().String(), `value`, `the`, 1)
+		}))
 	require.Equal(t, vf.Map(`A`, nil, `B`, vf.Nil, `C`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil
 	}))

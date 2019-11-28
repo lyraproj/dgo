@@ -284,5 +284,5 @@ func TestString(t *testing.T) {
 	_, ok = v.CompareTo(3)
 	require.False(t, ok)
 
-	require.True(t, `hello` == v.GoString())
+	require.True(t, v.GoString() == `hello`)
 }

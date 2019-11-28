@@ -93,7 +93,7 @@ var Type = tf.NewNamed(`mapLoader`,
 	nil)
 
 func (l *mapLoader) init(im dgo.Map) {
-	l.name = im.Get(`name`).String()
+	l.name = im.Get(`name`).(dgo.String).GoString()
 	l.entries = im.Get(`entries`).(dgo.Map)
 }
 
@@ -229,7 +229,7 @@ func (l *loader) Get(ki interface{}) dgo.Value {
 	v := l.entries.Get(key)
 	l.lock.RUnlock()
 	if v == nil && l.finder != nil {
-		v = vf.Value(l.finder(l, key.String()))
+		v = vf.Value(l.finder(l, key.GoString()))
 		v = l.add(key, v)
 	}
 	if vf.Nil == v {

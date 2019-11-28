@@ -15,11 +15,11 @@ type (
 	// floatVal is a float64 that implements the dgo.Value interface
 	floatVal float64
 
-	floatType int
+	defaultFloatType int
 
 	exactFloatType float64
 
-	floatRangeType struct {
+	floatType struct {
 		min       float64
 		max       float64
 		inclusive bool
@@ -27,13 +27,13 @@ type (
 )
 
 // DefaultFloatType is the unconstrained floatVal type
-const DefaultFloatType = floatType(0)
+const DefaultFloatType = defaultFloatType(0)
 
 var reflectFloatType = reflect.TypeOf(float64(0))
 
-// FloatRangeType returns a dgo.FloatRangeType that is limited to the inclusive range given by min and max
+// FloatType returns a dgo.FloatType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func FloatRangeType(min, max float64, inclusive bool) dgo.FloatRangeType {
+func FloatType(min, max float64, inclusive bool) dgo.FloatType {
 	if min == max {
 		if !inclusive {
 			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
@@ -48,14 +48,14 @@ func FloatRangeType(min, max float64, inclusive bool) dgo.FloatRangeType {
 	if min == -math.MaxFloat64 && max == math.MaxFloat64 {
 		return DefaultFloatType
 	}
-	return &floatRangeType{min: min, max: max, inclusive: inclusive}
+	return &floatType{min: min, max: max, inclusive: inclusive}
 }
 
-func (t *floatRangeType) Assignable(other dgo.Type) bool {
+func (t *floatType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case exactFloatType:
 		return t.IsInstance(float64(ot))
-	case *floatRangeType:
+	case *floatType:
 		if t.min > ot.min {
 			return false
 		}
@@ -67,14 +67,14 @@ func (t *floatRangeType) Assignable(other dgo.Type) bool {
 	return CheckAssignableTo(nil, other, t)
 }
 
-func (t *floatRangeType) Equals(other interface{}) bool {
-	if ot, ok := other.(*floatRangeType); ok {
+func (t *floatType) Equals(other interface{}) bool {
+	if ot, ok := other.(*floatType); ok {
 		return *t == *ot
 	}
 	return false
 }
 
-func (t *floatRangeType) HashCode() int {
+func (t *floatType) HashCode() int {
 	h := int(dgo.TiFloatRange)
 	if t.min > 0 {
 		h = h*31 + int(t.min)
@@ -88,12 +88,12 @@ func (t *floatRangeType) HashCode() int {
 	return h
 }
 
-func (t *floatRangeType) Instance(value interface{}) bool {
+func (t *floatType) Instance(value interface{}) bool {
 	f, ok := ToFloat(value)
 	return ok && t.IsInstance(f)
 }
 
-func (t *floatRangeType) IsInstance(value float64) bool {
+func (t *floatType) IsInstance(value float64) bool {
 	if t.min <= value {
 		if t.inclusive {
 			return value <= t.max
@@ -103,35 +103,35 @@ func (t *floatRangeType) IsInstance(value float64) bool {
 	return false
 }
 
-func (t *floatRangeType) Max() float64 {
+func (t *floatType) Max() float64 {
 	return t.max
 }
 
-func (t *floatRangeType) Inclusive() bool {
+func (t *floatType) Inclusive() bool {
 	return t.inclusive
 }
 
-func (t *floatRangeType) Min() float64 {
+func (t *floatType) Min() float64 {
 	return t.min
 }
 
-func (t *floatRangeType) New(arg dgo.Value) dgo.Value {
+func (t *floatType) New(arg dgo.Value) dgo.Value {
 	return newFloat(t, arg)
 }
 
-func (t *floatRangeType) String() string {
+func (t *floatType) String() string {
 	return TypeString(t)
 }
 
-func (t *floatRangeType) ReflectType() reflect.Type {
+func (t *floatType) ReflectType() reflect.Type {
 	return reflectFloatType
 }
 
-func (t *floatRangeType) Type() dgo.Type {
+func (t *floatType) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t *floatRangeType) TypeIdentifier() dgo.TypeIdentifier {
+func (t *floatType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiFloatRange
 }
 
@@ -199,61 +199,61 @@ func (t exactFloatType) Value() dgo.Value {
 	return floatVal(t)
 }
 
-func (t floatType) Assignable(other dgo.Type) bool {
+func (t defaultFloatType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case floatType, exactFloatType, *floatRangeType:
+	case defaultFloatType, exactFloatType, *floatType:
 		return true
 	}
 	return false
 }
 
-func (t floatType) Equals(other interface{}) bool {
-	_, ok := other.(floatType)
+func (t defaultFloatType) Equals(other interface{}) bool {
+	_, ok := other.(defaultFloatType)
 	return ok
 }
 
-func (t floatType) HashCode() int {
+func (t defaultFloatType) HashCode() int {
 	return int(dgo.TiFloat)
 }
 
-func (t floatType) Inclusive() bool {
+func (t defaultFloatType) Inclusive() bool {
 	return true
 }
 
-func (t floatType) Instance(value interface{}) bool {
+func (t defaultFloatType) Instance(value interface{}) bool {
 	_, ok := ToFloat(value)
 	return ok
 }
 
-func (t floatType) IsInstance(value float64) bool {
+func (t defaultFloatType) IsInstance(value float64) bool {
 	return true
 }
 
-func (t floatType) Max() float64 {
+func (t defaultFloatType) Max() float64 {
 	return math.MaxFloat64
 }
 
-func (t floatType) Min() float64 {
+func (t defaultFloatType) Min() float64 {
 	return -math.MaxFloat64
 }
 
-func (t floatType) New(arg dgo.Value) dgo.Value {
+func (t defaultFloatType) New(arg dgo.Value) dgo.Value {
 	return newFloat(t, arg)
 }
 
-func (t floatType) ReflectType() reflect.Type {
+func (t defaultFloatType) ReflectType() reflect.Type {
 	return reflectFloatType
 }
 
-func (t floatType) String() string {
+func (t defaultFloatType) String() string {
 	return TypeString(t)
 }
 
-func (t floatType) Type() dgo.Type {
+func (t defaultFloatType) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t floatType) TypeIdentifier() dgo.TypeIdentifier {
+func (t defaultFloatType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiFloat
 }
 
@@ -266,8 +266,8 @@ func (v floatVal) Type() dgo.Type {
 	return exactFloatType(v)
 }
 
-func (v floatVal) CompareTo(other interface{}) (r int, ok bool) {
-	ok = true
+func (v floatVal) CompareTo(other interface{}) (int, bool) {
+	r := 0
 	if ov, isFloat := ToFloat(other); isFloat {
 		fv := float64(v)
 		switch {
@@ -275,11 +275,10 @@ func (v floatVal) CompareTo(other interface{}) (r int, ok bool) {
 			r = 1
 		case fv < ov:
 			r = -1
-		default:
-			r = 0
 		}
-		return
+		return r, true
 	}
+
 	if oi, isInt := ToInt(other); isInt {
 		fv := float64(v)
 		ov := float64(oi)
@@ -288,17 +287,14 @@ func (v floatVal) CompareTo(other interface{}) (r int, ok bool) {
 			r = 1
 		case fv < ov:
 			r = -1
-		default:
-			r = 0
 		}
-		return
+		return r, true
 	}
+
 	if other == Nil || other == nil {
-		r = 1
-	} else {
-		ok = false
+		return 1, true
 	}
-	return
+	return 0, false
 }
 
 func (v floatVal) Equals(other interface{}) bool {

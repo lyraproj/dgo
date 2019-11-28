@@ -13,14 +13,16 @@ import (
 )
 
 type (
-	binary struct {
-		bytes  []byte
-		frozen bool
-	}
-
 	binaryType struct {
 		min int
 		max int
+	}
+
+	exactBinaryType binary
+
+	binary struct {
+		bytes  []byte
+		frozen bool
 	}
 )
 
@@ -69,8 +71,8 @@ func SizedBinaryType(min, max int) dgo.BinaryType {
 }
 
 func (t *binaryType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*binaryType); ok {
-		return t.min <= ot.min && t.max >= ot.max
+	if ot, ok := other.(dgo.BinaryType); ok {
+		return t.min <= ot.Min() && t.max >= ot.Max()
 	}
 	return CheckAssignableTo(nil, other, t)
 }
@@ -140,6 +142,71 @@ func (t *binaryType) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *binaryType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
+}
+
+func (v *exactBinaryType) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
+}
+
+func (v *exactBinaryType) Equals(other interface{}) bool {
+	if ot, ok := other.(*exactBinaryType); ok {
+		return bytes.Equal(v.bytes, ot.bytes)
+	}
+	return false
+}
+
+func (v *exactBinaryType) HashCode() int {
+	return bytesHash(v.bytes)*7 + int(dgo.TiBinaryExact)
+}
+
+func (v *exactBinaryType) Instance(value interface{}) bool {
+	if ot, ok := value.(*binary); ok {
+		return bytes.Equal(v.bytes, ot.bytes)
+	}
+	if ot, ok := value.([]byte); ok {
+		return bytes.Equal(v.bytes, ot)
+	}
+	return false
+}
+
+func (v *exactBinaryType) IsInstance(b []byte) bool {
+	return bytes.Equal(v.bytes, b)
+}
+
+func (v *exactBinaryType) Max() int {
+	return len(v.bytes)
+}
+
+func (v *exactBinaryType) Min() int {
+	return len(v.bytes)
+}
+
+func (v *exactBinaryType) New(arg dgo.Value) dgo.Value {
+	return newBinary(v, arg)
+}
+
+func (v *exactBinaryType) ReflectType() reflect.Type {
+	return reflectBinaryType
+}
+
+func (v *exactBinaryType) String() string {
+	return TypeString(v)
+}
+
+func (v *exactBinaryType) Type() dgo.Type {
+	return &metaType{v}
+}
+
+func (v *exactBinaryType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiBinaryExact
+}
+
+func (v *exactBinaryType) Unbounded() bool {
+	return false
+}
+
+func (v *exactBinaryType) Value() dgo.Value {
+	return (*binary)(v)
 }
 
 var encType = EnumType([]string{`%B`, `%b`, `%u`, `%s`, `%r`})
@@ -288,6 +355,10 @@ func (v *binary) CompareTo(other interface{}) (r int, ok bool) {
 	return
 }
 
+func (v *binary) Encode() string {
+	return base64.StdEncoding.Strict().EncodeToString(v.bytes)
+}
+
 func (v *binary) Equals(other interface{}) bool {
 	if ot, ok := other.(*binary); ok {
 		return bytes.Equal(v.bytes, ot.bytes)
@@ -351,8 +422,7 @@ func (v *binary) String() string {
 }
 
 func (v *binary) Type() dgo.Type {
-	l := len(v.bytes)
-	return &binaryType{l, l}
+	return (*exactBinaryType)(v)
 }
 
 func bytesHash(s []byte) int {

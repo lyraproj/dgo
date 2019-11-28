@@ -31,5 +31,5 @@ func (a *arguments) Arg(funcName string, n int, typ dgo.Type) dgo.Value {
 	if typ.Instance(v) {
 		return v
 	}
-	panic(illegalArgument(funcName, typ.String(), a.InterfaceSlice(), n))
+	panic(illegalArgument(funcName, typ, a.InterfaceSlice(), n))
 }

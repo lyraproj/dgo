@@ -42,7 +42,12 @@ func ExactNamed(typ dgo.NamedType, value dgo.Value) dgo.NamedType {
 // asgChecker optional function to check what other types that are assignable to this type
 //
 // params optional parameter Array
-func NewNamed(name string, ctor dgo.Constructor, extractor dgo.InitArgExtractor, implType, ifdType reflect.Type, asgChecker dgo.AssignableChecker) dgo.NamedType {
+func NewNamed(
+	name string,
+	ctor dgo.Constructor,
+	extractor dgo.InitArgExtractor,
+	implType, ifdType reflect.Type,
+	asgChecker dgo.AssignableChecker) dgo.NamedType {
 	return internal.NewNamedType(name, ctor, extractor, implType, ifdType, asgChecker)
 }
 

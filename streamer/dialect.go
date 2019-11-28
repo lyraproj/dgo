@@ -89,5 +89,5 @@ func (d dgoDialect) TimeTypeName() dgo.String {
 }
 
 func (d dgoDialect) ParseType(aliasMap dgo.AliasMap, typeString dgo.String) dgo.Type {
-	return typ.AsType(tf.ParseFile(aliasMap, ``, typeString.String()))
+	return typ.AsType(tf.ParseFile(aliasMap, ``, typeString.GoString()))
 }

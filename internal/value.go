@@ -70,13 +70,14 @@ func value(v interface{}) dgo.Value {
 		dv = valueFromJSONNumber(v)
 	case reflect.Value:
 		dv = ValueFromReflected(v)
-	}
-
-	if dv == nil {
+	default:
 		if i, ok := ToInt(v); ok {
 			dv = intVal(i)
-		} else if f, ok := ToFloat(v); ok {
-			dv = floatVal(f)
+		} else {
+			var f float64
+			if f, ok = ToFloat(v); ok {
+				dv = floatVal(f)
+			}
 		}
 	}
 	return dv
@@ -163,11 +164,7 @@ func ReflectTo(src dgo.Value, dest reflect.Value) {
 }
 
 // Add well known types like regexp, time, etc. here
-var wellKnownTypes map[reflect.Type]dgo.Type
-
-func init() {
-	wellKnownTypes = map[reflect.Type]dgo.Type{
-		reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
-		reflect.TypeOf(time.Time{}):      DefaultTimeType,
-	}
+var wellKnownTypes = map[reflect.Type]dgo.Type{
+	reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
+	reflect.TypeOf(time.Time{}):      DefaultTimeType,
 }

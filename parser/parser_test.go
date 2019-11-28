@@ -35,12 +35,12 @@ func TestParse_exact(t *testing.T) {
 
 	st := tf.ParseType(`{"a":1..5,"b"?:2}`)
 	require.Equal(t, tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.IntegerRange(1, 5, true), true),
+		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
 		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	st = tf.ParseType(`{"a":1..5,"b"?:2,...}`)
 	require.Equal(t, tf.StructMap(true,
-		tf.StructMapEntry(`a`, tf.IntegerRange(1, 5, true), true),
+		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
 		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 
 	require.Equal(t, `{"a":1..5,"b"?:2,...}`, st.String())
@@ -117,22 +117,22 @@ func TestParse_aliasInOneOf(t *testing.T) {
 }
 
 func TestParse_range(t *testing.T) {
-	require.Equal(t, tf.IntegerRange(1, 10, true), tf.ParseType(`1..10`))
-	require.Equal(t, tf.IntegerRange(1, 10, false), tf.ParseType(`1...10`))
-	require.Equal(t, tf.IntegerRange(1, math.MaxInt64, true), tf.ParseType(`1..`))
-	require.Equal(t, tf.IntegerRange(1, math.MaxInt64, false), tf.ParseType(`1...`))
-	require.Equal(t, tf.IntegerRange(math.MinInt64, 0, true), tf.ParseType(`..0`))
-	require.Equal(t, tf.IntegerRange(math.MinInt64, 0, false), tf.ParseType(`...0`))
-	require.Equal(t, tf.FloatRange(1, 10, true), tf.ParseType(`1.0..10`))
-	require.Equal(t, tf.FloatRange(1, 10, true), tf.ParseType(`1..10.0`))
-	require.Equal(t, tf.FloatRange(1, 10, true), tf.ParseType(`1.0..10.0`))
-	require.Equal(t, tf.FloatRange(1, 10, false), tf.ParseType(`1.0...10`))
-	require.Equal(t, tf.FloatRange(1, 10, false), tf.ParseType(`1...10.0`))
-	require.Equal(t, tf.FloatRange(1, 10, false), tf.ParseType(`1.0...10.0`))
-	require.Equal(t, tf.FloatRange(1, math.MaxFloat64, true), tf.ParseType(`1.0..`))
-	require.Equal(t, tf.FloatRange(1, math.MaxFloat64, false), tf.ParseType(`1.0...`))
-	require.Equal(t, tf.FloatRange(-math.MaxFloat64, 0, true), tf.ParseType(`..0.0`))
-	require.Equal(t, tf.FloatRange(-math.MaxFloat64, 0, false), tf.ParseType(`...0.0`))
+	require.Equal(t, tf.Integer(1, 10, true), tf.ParseType(`1..10`))
+	require.Equal(t, tf.Integer(1, 10, false), tf.ParseType(`1...10`))
+	require.Equal(t, tf.Integer(1, math.MaxInt64, true), tf.ParseType(`1..`))
+	require.Equal(t, tf.Integer(1, math.MaxInt64, false), tf.ParseType(`1...`))
+	require.Equal(t, tf.Integer(math.MinInt64, 0, true), tf.ParseType(`..0`))
+	require.Equal(t, tf.Integer(math.MinInt64, 0, false), tf.ParseType(`...0`))
+	require.Equal(t, tf.Float(1, 10, true), tf.ParseType(`1.0..10`))
+	require.Equal(t, tf.Float(1, 10, true), tf.ParseType(`1..10.0`))
+	require.Equal(t, tf.Float(1, 10, true), tf.ParseType(`1.0..10.0`))
+	require.Equal(t, tf.Float(1, 10, false), tf.ParseType(`1.0...10`))
+	require.Equal(t, tf.Float(1, 10, false), tf.ParseType(`1...10.0`))
+	require.Equal(t, tf.Float(1, 10, false), tf.ParseType(`1.0...10.0`))
+	require.Equal(t, tf.Float(1, math.MaxFloat64, true), tf.ParseType(`1.0..`))
+	require.Equal(t, tf.Float(1, math.MaxFloat64, false), tf.ParseType(`1.0...`))
+	require.Equal(t, tf.Float(-math.MaxFloat64, 0, true), tf.ParseType(`..0.0`))
+	require.Equal(t, tf.Float(-math.MaxFloat64, 0, false), tf.ParseType(`...0.0`))
 
 	require.Panic(t, func() { tf.ParseType(`.."b"`) }, `expected an integer or a float, got "b"`)
 	require.Panic(t, func() { tf.ParseType(`../a*/`) }, `expected an integer or a float, got /a\*/`)
@@ -187,7 +187,12 @@ func TestParse_multiAliases(t *testing.T) {
   },
   x: map[slug]{Token:ascii,value:string}
 }`).(dgo.StructMapType)
-	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().String())
+	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
+}
+
+func TestParse_mapKeyAliases(t *testing.T) {
+	tp := tf.ParseType(`{tp = "key", { key: 2 }}`)
+	require.Equal(t, `{"key",{"key":2}}`, tp.String())
 }
 
 func TestParse_errors(t *testing.T) {
@@ -224,5 +229,7 @@ func TestParse_errors(t *testing.T) {
 }
 
 func TestParseFile_errors(t *testing.T) {
-	require.Panic(t, func() { tf.ParseFile(nil, `foo.dgo`, `[1 2]`) }, `expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
+	require.Panic(t,
+		func() { tf.ParseFile(nil, `foo.dgo`, `[1 2]`) },
+		`expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
 }

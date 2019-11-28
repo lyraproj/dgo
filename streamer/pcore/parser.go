@@ -33,6 +33,8 @@ const (
 	exEnd         = 14
 )
 
+const defaultLiteral = `default`
+
 func expect(state int) (s string) {
 	switch state {
 	case exElement, exParam:
@@ -98,7 +100,7 @@ func ParseFile(am dgo.AliasMap, fileName, content string) dgo.Value {
 }
 
 type pcoreParser struct {
-	parser.ParserBase
+	parser.Base
 }
 
 func (p *pcoreParser) Parse(t *parser.Token) {
@@ -134,18 +136,18 @@ func (p *pcoreParser) list(et int, bs int) {
 	szp := p.Len()
 	arrayHash := false
 
-	var rockLhs dgo.Value
+	var rockLHS dgo.Value
 	for {
 		tk := p.NextToken()
-		if rockLhs == nil && tk.Type == et {
+		if rockLHS == nil && tk.Type == et {
 			// Right bracket instead of element indicates an empty array or an extraneous comma. Both are OK
 			break
 		}
 		p.element(tk)
-		if rockLhs != nil {
+		if rockLHS != nil {
 			// Last two elements is a hash entry
-			p.Append(vf.MapEntry(rockLhs, p.PopLast()))
-			rockLhs = nil
+			p.Append(vf.MapEntry(rockLHS, p.PopLast()))
+			rockLHS = nil
 			arrayHash = true
 		}
 
@@ -156,7 +158,7 @@ func (p *pcoreParser) list(et int, bs int) {
 		case ',':
 			continue
 		case rocket:
-			rockLhs = p.PopLast()
+			rockLHS = p.PopLast()
 			continue
 		default:
 			panic(badSyntax(tk, bs))
@@ -243,35 +245,39 @@ func (p *pcoreParser) element(t *parser.Token) {
 		}
 		p.Append(vf.Float(f))
 	case identifier:
-		switch t.Value {
-		case `true`:
-			p.Append(vf.True)
-		case `type`:
-			if p.PeekToken().Type == name {
-				t = p.NextToken()
-				et := p.NextToken()
-				if et.Type != '=' {
-					panic(badSyntax(t, exEqual))
-				}
-				p.Append(p.aliasDeclaration(t))
-			} else {
-				p.Append(vf.String(t.Value))
-			}
-		case `false`:
-			p.Append(vf.False)
-		case `undef`:
-			p.Append(vf.Nil)
-		default:
-			p.Append(vf.String(t.Value))
-		}
+		p.identifier(t)
 	case stringLiteral:
 		p.Append(vf.String(t.Value))
 	case regexpLiteral:
 		p.Append(vf.Regexp(regexp.MustCompile(t.Value)))
 	case name:
-		p.Append(p.identifier(t))
+		p.Append(p.name(t))
 	default:
 		panic(badSyntax(t, exElement))
+	}
+}
+
+func (p *pcoreParser) identifier(t *parser.Token) {
+	switch t.Value {
+	case `true`:
+		p.Append(vf.True)
+	case `type`:
+		if p.PeekToken().Type == name {
+			t = p.NextToken()
+			et := p.NextToken()
+			if et.Type != '=' {
+				panic(badSyntax(t, exEqual))
+			}
+			p.Append(p.aliasDeclaration(t))
+		} else {
+			p.Append(vf.String(t.Value))
+		}
+	case `false`:
+		p.Append(vf.False)
+	case `undef`:
+		p.Append(vf.Nil)
+	default:
+		p.Append(vf.String(t.Value))
 	}
 }
 
@@ -328,48 +334,48 @@ func binaryType(p *pcoreParser) dgo.Value {
 
 func callableType(p *pcoreParser) dgo.Value {
 	var rt dgo.Type
-	if p.PeekToken().Type == '[' {
-		// get size arguments
-		p.NextToken()
-		p.array()
-		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
-		args.AssertSize(`Callable`, 1, 3)
-		argc := args.Len()
-		first := args.Get(0)
-		if params, ok := first.(dgo.TupleType); ok {
-			var blockType dgo.Type
-			if argc > 1 {
-				blockType, ok = args.Get(1).(dgo.Type)
-				if argc > 2 {
-					rt, ok = args.Get(2).(dgo.Type)
-				}
-			}
-
-			if ok {
-				if blockType != nil {
-					params = paramsWithBlock(params, blockType)
-				}
-				return tf.Function(params, returnType(rt))
-			}
-		}
-
-		if argc == 1 || argc == 2 {
-			// check for [[params, block], return]
-			if iv, ok := first.(dgo.Array); ok {
-				if argc == 2 {
-					rt = args.Arg(`Callable`, 1, typ.Type).(dgo.Type)
-				}
-				argc = iv.Len()
-				args = vf.ArgumentsFromArray(iv)
-			}
-		}
-		params := tupleFromArgs(args)
-		if rt == nil {
-			rt = typ.Any
-		}
-		return tf.Function(params, returnType(rt))
+	if p.PeekToken().Type != '[' {
+		return typ.Function
 	}
-	return typ.Function
+
+	// get size arguments
+	p.NextToken()
+	p.array()
+	args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
+	args.AssertSize(`Callable`, 1, 3)
+	argc := args.Len()
+	first := args.Get(0)
+	if params, ok := first.(dgo.TupleType); ok {
+		var blockType dgo.Type
+		if argc > 1 {
+			blockType, ok = args.Get(1).(dgo.Type)
+			if argc > 2 {
+				rt, ok = args.Get(2).(dgo.Type)
+			}
+		}
+
+		if ok {
+			if blockType != nil {
+				params = paramsWithBlock(params, blockType)
+			}
+			return tf.Function(params, returnType(rt))
+		}
+	}
+
+	if argc == 1 || argc == 2 {
+		// check for [[params, block], return]
+		if iv, ok := first.(dgo.Array); ok {
+			if argc == 2 {
+				rt = args.Arg(`Callable`, 1, typ.Type).(dgo.Type)
+			}
+			args = vf.ArgumentsFromArray(iv)
+		}
+	}
+
+	if rt == nil {
+		rt = typ.Any
+	}
+	return tf.Function(tupleFromArgs(args), returnType(rt))
 }
 
 func enumType(p *pcoreParser) dgo.Value {
@@ -410,7 +416,7 @@ func floatType(p *pcoreParser) dgo.Value {
 		if args.Len() == 2 {
 			to = getFloat(`Float`, args, 1, math.MaxFloat64)
 		}
-		return tf.FloatRange(from, to, true)
+		return tf.Float(from, to, true)
 	}
 	return typ.Float
 }
@@ -455,18 +461,18 @@ func integerType(p *pcoreParser) dgo.Value {
 		if args.Len() == 2 {
 			to = getInt(`Integer`, args, 1, math.MaxInt64)
 		}
-		return tf.IntegerRange(from, to, true)
+		return tf.Integer(from, to, true)
 	}
 	return typ.Integer
 }
 
 func numberType(p *pcoreParser) dgo.Value {
-	tp := floatType(p).(dgo.FloatRangeType)
+	tp := floatType(p).(dgo.FloatType)
 	max := int64(math.MaxInt64)
 	if tp.Max() != math.MaxFloat64 {
 		max = int64(tp.Max())
 	}
-	return tf.AnyOf(tf.IntegerRange(int64(tp.Min()), max, true), tp)
+	return tf.AnyOf(tf.Integer(int64(tp.Min()), max, true), tp)
 }
 
 func notUndefType(p *pcoreParser) dgo.Value {
@@ -693,7 +699,7 @@ func (p *pcoreParser) knownType(t *parser.Token) dgo.Value {
 	return nil
 }
 
-func (p *pcoreParser) identifier(t *parser.Token) dgo.Value {
+func (p *pcoreParser) name(t *parser.Token) dgo.Value {
 	if tp := p.knownType(t); tp != nil {
 		return tp
 	}
@@ -765,7 +771,7 @@ func getIfInt(args dgo.Array, arg int, dflt int64) (int64, bool) {
 	case dgo.Integer:
 		return v.GoInt(), true
 	case dgo.String:
-		if v.GoString() == `default` {
+		if defaultLiteral == v.GoString() {
 			return dflt, true
 		}
 	}
@@ -777,7 +783,7 @@ func getInt(fn string, args dgo.Arguments, arg int, dflt int64) int64 {
 	case dgo.Integer:
 		return v.GoInt()
 	case dgo.String:
-		if v.GoString() == `default` {
+		if defaultLiteral == v.GoString() {
 			return dflt
 		}
 	}
@@ -793,7 +799,7 @@ func getFloat(fn string, args dgo.Arguments, arg int, dflt float64) float64 {
 	case dgo.Float:
 		return v.GoFloat()
 	case dgo.String:
-		if v.GoString() == `default` {
+		if defaultLiteral == v.GoString() {
 			return dflt
 		}
 	}

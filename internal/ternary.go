@@ -74,6 +74,10 @@ func (t *allOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *allOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *allOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfType); ok {
 		return (*array)(t).SameValues((*array)(ot))
 	}
@@ -85,7 +89,11 @@ func (t *allOfType) Generic() dgo.Type {
 }
 
 func (t *allOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAllOf)
+	return deepHashCode(nil, t)
+}
+
+func (t *allOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOf)
 }
 
 func (t *allOfType) Instance(value interface{}) bool {
@@ -114,7 +122,7 @@ func (t *allOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *allOfType) Resolve(ap dgo.AliasProvider) {
+func (t *allOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)
@@ -171,6 +179,10 @@ func (t *allOfValueType) Generic() dgo.Type {
 }
 
 func (t *allOfValueType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *allOfValueType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfValueType); ok {
 		return (*array)(t).SameValues((*array)(ot))
 	}
@@ -178,7 +190,11 @@ func (t *allOfValueType) Equals(other interface{}) bool {
 }
 
 func (t *allOfValueType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAllOfValue)
+	return deepHashCode(nil, t)
+}
+
+func (t *allOfValueType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOfValue)
 }
 
 func (t *allOfValueType) Instance(value interface{}) bool {
@@ -271,6 +287,10 @@ func (t *anyOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *anyOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *anyOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*anyOfType); ok {
 		return (*array)(t).SameValues((*array)(ot))
 	}
@@ -278,7 +298,11 @@ func (t *anyOfType) Equals(other interface{}) bool {
 }
 
 func (t *anyOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAnyOf)
+	return deepHashCode(nil, t)
+}
+
+func (t *anyOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAnyOf)
 }
 
 func (t *anyOfType) Instance(value interface{}) bool {
@@ -307,7 +331,7 @@ func (t *anyOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *anyOfType) Resolve(ap dgo.AliasProvider) {
+func (t *anyOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)
@@ -381,6 +405,10 @@ func (t *oneOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *oneOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *oneOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*oneOfType); ok {
 		return (*array)(t).SameValues((*array)(ot))
 	}
@@ -388,7 +416,11 @@ func (t *oneOfType) Equals(other interface{}) bool {
 }
 
 func (t *oneOfType) HashCode() int {
-	return (*array)(t).HashCode()
+	return deepHashCode(nil, t)
+}
+
+func (t *oneOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiOneOf)
 }
 
 func (t *oneOfType) Instance(value interface{}) bool {
@@ -422,7 +454,7 @@ func (t *oneOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *oneOfType) Resolve(ap dgo.AliasProvider) {
+func (t *oneOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)

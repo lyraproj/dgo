@@ -65,7 +65,7 @@ func (t *exactFunctionTuple) Equals(other interface{}) bool {
 }
 
 func (t *exactFunctionTuple) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	return tupleEquals(nil, t, other)
+	return tupleEquals(seen, t, other)
 }
 
 func (t *exactFunctionTuple) HashCode() int {

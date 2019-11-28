@@ -211,7 +211,8 @@ func TestLoader_Namespace_redefinedBad(t *testing.T) {
 }
 
 func TestLoader_parsed(t *testing.T) {
-	tp := tf.ParseType(`childLoader{"loader":loader{"name":"", "entries":{"b":"the b"},"namespaces":{}},"parent":mapLoader{"name":"","entries":{"a":"the a"}}}`)
+	tp := tf.ParseType(
+		`childLoader{"loader":loader{"name":"", "entries":{"b":"the b"},"namespaces":{}},"parent":mapLoader{"name":"","entries":{"a":"the a"}}}`)
 	et, ok := tp.(dgo.ExactType)
 	require.True(t, ok)
 	ld, ok := et.Value().(dgo.Loader)

@@ -58,5 +58,5 @@ func (d pcoreDialect) TimeTypeName() dgo.String {
 }
 
 func (d pcoreDialect) ParseType(aliasMap dgo.AliasMap, typeString dgo.String) (dt dgo.Type) {
-	return typ.AsType(Parse(typeString.String()))
+	return typ.AsType(Parse(typeString.GoString()))
 }

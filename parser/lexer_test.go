@@ -9,6 +9,7 @@ import (
 
 func Test_nextToken_unicodeError(t *testing.T) {
 	sr := util.NewStringReader(string([]byte{0x82, 0xff}))
+
 	defer func() {
 		err, ok := recover().(error)
 		if !(ok && err.Error() == `unicode error`) {

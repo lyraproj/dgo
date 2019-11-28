@@ -1,6 +1,9 @@
 package dgo
 
-import "reflect"
+import (
+	"reflect"
+	"regexp"
+)
 
 type (
 	// A Type describes an immutable Value. The Type is in itself also a Value
@@ -46,8 +49,8 @@ type (
 		Min() int64
 	}
 
-	// FloatRangeType describes floating point numbers that are within an inclusive or exclusive range
-	FloatRangeType interface {
+	// FloatType describes floating point numbers that are within an inclusive or exclusive range
+	FloatType interface {
 		Type
 
 		// Inclusive returns true if this range has an inclusive end
@@ -69,6 +72,14 @@ type (
 
 		// IsInstance returns true if the Go native value is represented by this type
 		IsInstance(value bool) bool
+	}
+
+	// RegexpType matches regular expressions
+	RegexpType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(regexp *regexp.Regexp) bool
 	}
 
 	// SizedType is implemented by types that may have a size constraint
@@ -99,18 +110,19 @@ type (
 		GoType() reflect.Type
 	}
 
-	// AliasProvider replaces aliases with their concrete value.
-	//
-	// The parser uses this interface to perform in-place replacement of aliases
-	AliasProvider interface {
-		Replace(Value) Value
-	}
-
-	// AliasContainer is implemented by types that can contain other types.
+	// AliasContainer is implemented by types and values that can contain other types.
 	//
 	// The parser uses this interface to perform in-place replacement of aliases
 	AliasContainer interface {
-		Resolve(AliasProvider)
+		Resolve(AliasMap)
+	}
+
+	// Alias is a named reference of another type which can be resolved using an AliasMap
+	Alias interface {
+		Type
+
+		// Reference returns the name of the aliased type.
+		Reference() String
 	}
 
 	// An AliasMap maps names to types and vice versa.
@@ -123,6 +135,11 @@ type (
 
 		// Add adds the type t with the given name to this map
 		Add(t Type, name String)
+
+		// Replace replaces aliases with their concrete value.
+		//
+		// The parser uses this interface to perform in-place replacement of aliases
+		Replace(Value) Value
 	}
 
 	// GenericType is implemented by types that represent themselves stripped from
@@ -144,11 +161,6 @@ type (
 	Factory interface {
 		// New creates instances of this type.
 		New(Value) Value
-	}
-
-	// Named is implemented by named types such as the StructMap
-	Named interface {
-		Name() string
 	}
 
 	// DeepAssignable is implemented by values that need deep Assignable comparisons.

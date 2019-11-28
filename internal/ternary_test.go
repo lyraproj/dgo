@@ -42,11 +42,16 @@ func TestAllOfType(t *testing.T) {
 
 	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 
-	tp = tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`)))
+	tp = tf.AllOf(
+		tf.Pattern(regexp.MustCompile(`a`)),
+		tf.Pattern(regexp.MustCompile(`b`)),
+		tf.Pattern(regexp.MustCompile(`c`)))
 	require.Instance(t, tp, `abc`)
 	require.NotInstance(t, tp, `c`)
 
-	require.Assignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`))))
+	require.Assignable(t, tp, tf.AllOf(
+		tf.Pattern(regexp.MustCompile(`a`)),
+		tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`))))
 	require.NotAssignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
 	require.Assignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type()))
 	require.NotAssignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type(), typ.String))
@@ -121,7 +126,9 @@ func TestOneOfType(t *testing.T) {
 	require.Equal(t, tf.OneOf(), tf.Not(typ.Any))
 	require.Same(t, tf.OneOf(typ.String), typ.String)
 
-	require.Equal(t, tp.(dgo.TernaryType).Operands(), vf.Values(typ.Integer, tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
+	require.Equal(t,
+		tp.(dgo.TernaryType).Operands(),
+		vf.Values(typ.Integer, tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpOne)
 
 	require.Equal(t, `int^/a/^/b/`, tp.String())
@@ -171,8 +178,8 @@ func TestIntEnum(t *testing.T) {
 	require.Instance(t, tp, 4)
 	require.NotInstance(t, tp, 5)
 	require.Assignable(t, typ.Integer, tp)
-	require.NotAssignable(t, tf.IntegerRange(3, 3, true), tp)
-	require.Assignable(t, tf.IntegerRange(2, 8, true), tp)
+	require.NotAssignable(t, tf.Integer(3, 3, true), tp)
+	require.Assignable(t, tf.Integer(2, 8, true), tp)
 	require.Assignable(t, tp, tf.IntEnum(8))
 	require.Assignable(t, tp, tf.IntEnum(2, 4))
 	require.Assignable(t, tp, tf.IntEnum(8, 2, 4))

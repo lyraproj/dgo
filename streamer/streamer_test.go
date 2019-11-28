@@ -47,7 +47,9 @@ func TestEncode_sensitive(t *testing.T) {
 
 func TestEncode_unknown(t *testing.T) {
 	c := streamer.NewCollector()
-	require.Panic(t, func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) }, `unable to serialize value`)
+	require.Panic(t,
+		func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) },
+		`unable to serialize value`)
 }
 
 func TestEncode_type(t *testing.T) {

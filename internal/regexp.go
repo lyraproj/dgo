@@ -1,9 +1,9 @@
 package internal
 
 import (
+	"io"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/lyraproj/dgo/util"
 
@@ -46,6 +46,10 @@ func (t regexpType) Instance(v interface{}) bool {
 		_, ok = v.(*regexp.Regexp)
 	}
 	return ok
+}
+
+func (t regexpType) IsInstance(v *regexp.Regexp) bool {
+	return true
 }
 
 func (t regexpType) ReflectType() reflect.Type {
@@ -159,7 +163,7 @@ func (v *regexpVal) Type() dgo.Type {
 
 // RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped
 // and writes it on the given builder.
-func RegexpSlashQuote(sb *strings.Builder, str string) {
+func RegexpSlashQuote(sb io.Writer, str string) {
 	util.WriteByte(sb, '/')
 	for _, c := range str {
 		switch c {

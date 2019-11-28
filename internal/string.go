@@ -47,7 +47,7 @@ type (
 
 var formatPattern = PatternType(regexp.MustCompile(`\A%([\s\[+#0{<(|-]*)([1-9][0-9]*)?(?:\.([0-9]+))?([a-zA-Z])\z`))
 
-func newString(t dgo.StringType, arg dgo.Value) dgo.String {
+func newString(t dgo.Type, arg dgo.Value) dgo.String {
 	var s dgo.String
 	if args, ok := arg.(dgo.Arguments); ok {
 		args.AssertSize(`string`, 1, 2)
@@ -61,10 +61,13 @@ func newString(t dgo.StringType, arg dgo.Value) dgo.String {
 	}
 
 	if s == nil {
-		var ok bool
-		s, ok = arg.(dgo.String)
-		if !ok {
+		switch arg := arg.(type) {
+		case dgo.String:
+			s = arg
+		case fmt.Stringer:
 			s = String(arg.String())
+		default:
+			panic(fmt.Errorf(`a value of type '%s' cannot be converted to an int`, arg.Type()))
 		}
 	}
 

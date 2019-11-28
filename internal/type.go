@@ -82,11 +82,13 @@ func Generic(t dgo.Type) dgo.Type {
 	return t
 }
 
-func illegalArgument(name, expected string, args []interface{}, argno int) error {
+func illegalArgument(name, expected interface{}, args []interface{}, argno int) error {
 	if len(args) == 1 {
 		return fmt.Errorf(`illegal argument for %s. Expected %s, got %s`, name, expected, Value(args[argno]))
 	}
-	return fmt.Errorf(`illegal argument %d for %s with %d arguments. Expected %s, got %s`, argno+1, name, len(args), expected, Value(args[argno]))
+	return fmt.Errorf(
+		`illegal argument %d for %s with %d arguments. Expected %s, got %s`,
+		argno+1, name, len(args), expected, Value(args[argno]))
 }
 
 func illegalArgumentCount(name string, min, max, actual int) error {
@@ -110,20 +112,28 @@ func illegalArgumentCount(name string, min, max, actual int) error {
 var primitivePTypes = map[reflect.Kind]dgo.Type{
 	reflect.String:  DefaultStringType,
 	reflect.Int:     DefaultIntegerType,
-	reflect.Int8:    IntegerRangeType(math.MinInt8, math.MaxInt8, true),
-	reflect.Int16:   IntegerRangeType(math.MinInt16, math.MaxInt16, true),
-	reflect.Int32:   IntegerRangeType(math.MinInt32, math.MaxInt32, true),
+	reflect.Int8:    IntegerType(math.MinInt8, math.MaxInt8, true),
+	reflect.Int16:   IntegerType(math.MinInt16, math.MaxInt16, true),
+	reflect.Int32:   IntegerType(math.MinInt32, math.MaxInt32, true),
 	reflect.Int64:   DefaultIntegerType,
-	reflect.Uint:    IntegerRangeType(0, math.MaxInt64, true),
-	reflect.Uint8:   IntegerRangeType(0, math.MaxUint8, true),
-	reflect.Uint16:  IntegerRangeType(0, math.MaxUint16, true),
-	reflect.Uint32:  IntegerRangeType(0, math.MaxUint32, true),
-	reflect.Uint64:  IntegerRangeType(0, math.MaxInt64, true),
-	reflect.Float32: FloatRangeType(-math.MaxFloat32, math.MaxFloat32, true),
+	reflect.Uint:    IntegerType(0, math.MaxInt64, true),
+	reflect.Uint8:   IntegerType(0, math.MaxUint8, true),
+	reflect.Uint16:  IntegerType(0, math.MaxUint16, true),
+	reflect.Uint32:  IntegerType(0, math.MaxUint32, true),
+	reflect.Uint64:  IntegerType(0, math.MaxInt64, true),
+	reflect.Float32: FloatType(-math.MaxFloat32, math.MaxFloat32, true),
 	reflect.Float64: DefaultFloatType,
 	reflect.Bool:    DefaultBooleanType,
 }
 
+// Parse parses the given string into a dgo.Value
 var Parse func(s string) dgo.Value
 
+// ParseFile parses the given content into a dgo.Type. The filename is used in error messages.
+//
+// The alias map is optional. If given, the parser will recognize the type aliases provided in the map
+// and also add any new aliases declared within the parsed content to that map.
+var ParseFile func(am dgo.AliasMap, fileName, content string) dgo.Value
+
+// TypeString produces the string that represents the given type
 var TypeString func(dgo.Type) string

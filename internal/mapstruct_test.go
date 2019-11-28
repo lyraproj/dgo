@@ -158,7 +158,7 @@ func TestStructType(t *testing.T) {
 	require.Equal(t, tp, tf.ParseType(`{}`))
 	require.Equal(t, tp.KeyType(), typ.Any)
 	require.Equal(t, tp.ValueType(), typ.Any)
-	require.True(t, tp.Unbounded())
+	require.False(t, tp.Unbounded())
 
 	tp = tf.StructMap(false,
 		tf.StructMapEntry(`a`, typ.Integer, true))
@@ -208,7 +208,7 @@ func TestStructType(t *testing.T) {
 	require.Instance(t, tp.Type(), tp)
 
 	tps := tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.IntegerRange(0, 10, true), true),
+		tf.StructMapEntry(`a`, tf.Integer(0, 10, true), true),
 		tf.StructMapEntry(`b`, tf.String(20), false))
 	require.Equal(t, tps, tf.ParseType(`{a:0..10,b?:string[20]}`))
 	require.Assignable(t, tp, tps)
@@ -269,7 +269,9 @@ func TestStructEntry(t *testing.T) {
 }
 
 func TestStructFromMap(t *testing.T) {
-	require.Panic(t, func() { tf.StructMapFromMap(false, vf.Map(`nope`, `dope`)) }, `cannot be assigned to a variable of type map`)
+	require.Panic(t, func() {
+		tf.StructMapFromMap(false, vf.Map(`nope`, `dope`))
+	}, `cannot be assigned to a variable of type map`)
 
 	tp := tf.StructMapFromMap(false, vf.Map(`first`, typ.String))
 	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, false)))
