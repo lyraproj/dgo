@@ -34,7 +34,11 @@ func NewAlias(s dgo.String) dgo.Alias {
 }
 
 func (a *alias) Reference() dgo.String {
-	return a.StringType.(dgo.ExactType).Value().(dgo.String)
+	return a.StringType.(dgo.ExactType).ExactValue().(dgo.String)
+}
+
+func (a *alias) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiAlias
 }
 
 var builtinAliases *aliasMap

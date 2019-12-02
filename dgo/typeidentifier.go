@@ -7,8 +7,11 @@ import "fmt"
 type TypeIdentifier int
 
 const (
+	// TiAlias is the type identifier for the alias type reference
+	TiAlias = TypeIdentifier(iota)
+
 	// TiAllOf is the type identifier for the AllOf type
-	TiAllOf = TypeIdentifier(iota)
+	TiAllOf
 
 	// TiAllOfValue is the type identifier for the AllOf type that uses the type of its contained values
 	TiAllOfValue
@@ -104,11 +107,11 @@ const (
 	// TiBinaryExact is the type identifier for the exact Binary type
 	TiBinaryExact
 
+	// TiBooleanExact is the type identifier for the exact Boolean type
+	TiBooleanExact
+
 	// TiErrorExact is the type identifier for for the exact Error type
 	TiErrorExact
-
-	// TiFalse is the type identifier for the False type
-	TiFalse
 
 	// TiFloatExact is the type identifier for the exact Float type
 	TiFloatExact
@@ -137,9 +140,6 @@ const (
 	// TiStringExact is the type identifier for the exact String type
 	TiStringExact
 
-	// TiTrue is the type identifier for the True type
-	TiTrue
-
 	// TiTimeExact is the type identifier for the exact Time type
 	TiTimeExact
 )
@@ -149,8 +149,7 @@ var tiLabels = map[TypeIdentifier]string{
 	TiAny:           `any`,
 	TiMeta:          `type`,
 	TiBoolean:       `bool`,
-	TiFalse:         `false`,
-	TiTrue:          `true`,
+	TiBooleanExact:  `bool`,
 	TiInteger:       `int`,
 	TiIntegerExact:  `int`,
 	TiIntegerRange:  `int range`,

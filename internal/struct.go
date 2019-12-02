@@ -286,7 +286,9 @@ func (v *structVal) StringKeys() bool {
 }
 
 func (v *structVal) Type() dgo.Type {
-	return &exactMapType{v}
+	et := &exactMapType{value: v}
+	et.ExactType = et
+	return et
 }
 
 func (v *structVal) Values() dgo.Array {

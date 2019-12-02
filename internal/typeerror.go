@@ -58,9 +58,9 @@ func (v *typeError) Error() string {
 	var what string
 	switch actual := v.actual.(type) {
 	case *exactStringType:
-		what = fmt.Sprintf(`the string %s`, strconv.Quote(actual.s))
-	case exactIntegerType, exactFloatType, booleanType, nilType:
-		what = fmt.Sprintf(`the value %s`, actual)
+		what = fmt.Sprintf(`the string %s`, strconv.Quote(actual.value.s))
+	case dgo.ExactType:
+		what = fmt.Sprintf(`the value %s`, actual.ExactValue())
 	default:
 		what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
 	}

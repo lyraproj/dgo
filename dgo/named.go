@@ -14,9 +14,8 @@ type (
 	// depending on given parameters.
 	AssignableChecker func(self NamedType, typ Type) bool
 
-	// NamedType is implemented by types that are named and made available using an AliasMap
-	NamedType interface {
-		Type
+	// NamedTypeExtension defines the extensions that a NamedType brings to a Type.
+	NamedTypeExtension interface {
 		Factory
 
 		// AssignableType returns a reflect.Type that is either an interface that instances
@@ -35,5 +34,11 @@ type (
 
 		// ValueString returns the given value as a string. The Value must be an instance of this type.
 		ValueString(value Value) string
+	}
+
+	// NamedType is implemented by types that are named and made available using an AliasMap
+	NamedType interface {
+		Type
+		NamedTypeExtension
 	}
 )

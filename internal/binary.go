@@ -18,7 +18,10 @@ type (
 		max int
 	}
 
-	exactBinaryType binary
+	exactBinaryType struct {
+		exactType
+		value *binary
+	}
 
 	binary struct {
 		bytes  []byte
@@ -144,41 +147,16 @@ func (t *binaryType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
 }
 
-func (v *exactBinaryType) Assignable(other dgo.Type) bool {
-	return v.Equals(other) || CheckAssignableTo(nil, other, v)
-}
-
-func (v *exactBinaryType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactBinaryType); ok {
-		return bytes.Equal(v.bytes, ot.bytes)
-	}
-	return false
-}
-
-func (v *exactBinaryType) HashCode() int {
-	return bytesHash(v.bytes)*7 + int(dgo.TiBinaryExact)
-}
-
-func (v *exactBinaryType) Instance(value interface{}) bool {
-	if ot, ok := value.(*binary); ok {
-		return bytes.Equal(v.bytes, ot.bytes)
-	}
-	if ot, ok := value.([]byte); ok {
-		return bytes.Equal(v.bytes, ot)
-	}
-	return false
-}
-
 func (v *exactBinaryType) IsInstance(b []byte) bool {
-	return bytes.Equal(v.bytes, b)
+	return bytes.Equal(v.value.bytes, b)
 }
 
 func (v *exactBinaryType) Max() int {
-	return len(v.bytes)
+	return len(v.value.bytes)
 }
 
 func (v *exactBinaryType) Min() int {
-	return len(v.bytes)
+	return len(v.value.bytes)
 }
 
 func (v *exactBinaryType) New(arg dgo.Value) dgo.Value {
@@ -189,14 +167,6 @@ func (v *exactBinaryType) ReflectType() reflect.Type {
 	return reflectBinaryType
 }
 
-func (v *exactBinaryType) String() string {
-	return TypeString(v)
-}
-
-func (v *exactBinaryType) Type() dgo.Type {
-	return &metaType{v}
-}
-
 func (v *exactBinaryType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBinaryExact
 }
@@ -205,8 +175,8 @@ func (v *exactBinaryType) Unbounded() bool {
 	return false
 }
 
-func (v *exactBinaryType) Value() dgo.Value {
-	return (*binary)(v)
+func (v *exactBinaryType) ExactValue() dgo.Value {
+	return v.value
 }
 
 var encType = EnumType([]string{`%B`, `%b`, `%u`, `%s`, `%r`})
@@ -422,7 +392,9 @@ func (v *binary) String() string {
 }
 
 func (v *binary) Type() dgo.Type {
-	return (*exactBinaryType)(v)
+	et := &exactBinaryType{value: v}
+	et.ExactType = et
+	return et
 }
 
 func bytesHash(s []byte) int {

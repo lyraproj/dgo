@@ -25,7 +25,8 @@ type (
 	}
 
 	exactNamed struct {
-		dgo.NamedType
+		exactType
+		dgo.NamedTypeExtension
 		value dgo.Value
 	}
 )
@@ -76,7 +77,9 @@ func NewNamedType(
 
 // ExactNamedType returns the exact NamedType that represents the given value.
 func ExactNamedType(namedType dgo.NamedType, value dgo.Value) dgo.NamedType {
-	return &exactNamed{NamedType: namedType, value: value}
+	ea := &exactNamed{NamedTypeExtension: namedType, value: value}
+	ea.ExactType = ea
+	return ea
 }
 
 // NamedType returns the type with the given name from the global type registry. The function returns
@@ -232,44 +235,18 @@ func (t *parameterized) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t *exactNamed) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactNamed); ok {
-		return t.value.Equals(ot.value)
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactNamed) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactNamed); ok {
-		return t.value.Equals(ot.value)
-	}
-	return false
-}
-
-func (t *exactNamed) HashCode() int {
-	return t.value.HashCode()*7 + int(dgo.TiNamedExact)
-}
-
 func (t *exactNamed) Generic() dgo.Type {
-	return t.NamedType
+	return t.NamedTypeExtension.(dgo.Type)
 }
 
-func (t *exactNamed) Instance(other interface{}) bool {
-	return t.value.Equals(other)
-}
-
-func (t *exactNamed) String() string {
-	return TypeString(t)
-}
-
-func (t *exactNamed) Type() dgo.Type {
-	return &metaType{t}
+func (t *exactNamed) ReflectType() reflect.Type {
+	return t.Generic().ReflectType()
 }
 
 func (t *exactNamed) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiNamedExact
 }
 
-func (t *exactNamed) Value() dgo.Value {
+func (t *exactNamed) ExactValue() dgo.Value {
 	return t.value
 }

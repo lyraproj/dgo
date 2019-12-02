@@ -66,7 +66,7 @@ func AsType(value dgo.Value) dgo.Type {
 // that it represents is the exact value. For all other cases, the exact value is the value itself.
 func ExactValue(value dgo.Value) dgo.Value {
 	if et, ok := value.(dgo.ExactType); ok {
-		value = et.Value()
+		value = et.ExactValue()
 	}
 	return value
 }

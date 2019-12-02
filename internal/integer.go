@@ -15,7 +15,10 @@ type (
 
 	defaultIntegerType int
 
-	exactIntegerType int64
+	exactIntegerType struct {
+		exactType
+		value intVal
+	}
 
 	integerType struct {
 		min       int64
@@ -36,7 +39,7 @@ func IntegerType(min, max int64, inclusive bool) dgo.IntegerType {
 		if !inclusive {
 			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
 		}
-		return exactIntegerType(min)
+		return intVal(min).Type().(dgo.IntegerType)
 	}
 	if max < min {
 		t := max
@@ -55,19 +58,19 @@ func IntEnumType(ints []int) dgo.Type {
 	case 0:
 		return &notType{DefaultAnyType}
 	case 1:
-		return exactIntegerType(ints[0])
+		return intVal(ints[0]).Type()
 	}
 	ts := make([]dgo.Value, len(ints))
 	for i := range ints {
-		ts[i] = exactIntegerType(ints[i])
+		ts[i] = intVal(ints[i]).Type()
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
 
 func (t *integerType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
-	case exactIntegerType:
-		return t.IsInstance(int64(ot))
+	case *exactIntegerType:
+		return t.IsInstance(int64(ot.value))
 	case *integerType:
 		if t.min > ot.min {
 			return false
@@ -155,73 +158,45 @@ func (t *integerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerRange
 }
 
-func (t exactIntegerType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(exactIntegerType); ok {
-		return t == ot
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t exactIntegerType) Equals(other interface{}) bool {
-	return t == other
-}
-
-func (t exactIntegerType) Generic() dgo.Type {
+func (t *exactIntegerType) Generic() dgo.Type {
 	return DefaultIntegerType
 }
 
-func (t exactIntegerType) HashCode() int {
-	return intVal(t).HashCode() * 5
-}
-
-func (t exactIntegerType) Inclusive() bool {
+func (t *exactIntegerType) Inclusive() bool {
 	return true
 }
 
-func (t exactIntegerType) Instance(value interface{}) bool {
-	ov, ok := ToInt(value)
-	return ok && int64(t) == ov
+func (t *exactIntegerType) IsInstance(value int64) bool {
+	return int64(t.value) == value
 }
 
-func (t exactIntegerType) IsInstance(value int64) bool {
-	return int64(t) == value
+func (t *exactIntegerType) Max() int64 {
+	return int64(t.value)
 }
 
-func (t exactIntegerType) Max() int64 {
-	return int64(t)
+func (t *exactIntegerType) Min() int64 {
+	return int64(t.value)
 }
 
-func (t exactIntegerType) Min() int64 {
-	return int64(t)
-}
-
-func (t exactIntegerType) New(arg dgo.Value) dgo.Value {
+func (t *exactIntegerType) New(arg dgo.Value) dgo.Value {
 	return newInt(t, arg)
 }
 
-func (t exactIntegerType) ReflectType() reflect.Type {
+func (t *exactIntegerType) ReflectType() reflect.Type {
 	return reflectIntegerType
 }
 
-func (t exactIntegerType) String() string {
-	return TypeString(t)
-}
-
-func (t exactIntegerType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
+func (t *exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerExact
 }
 
-func (t exactIntegerType) Value() dgo.Value {
-	return intVal(t)
+func (t *exactIntegerType) ExactValue() dgo.Value {
+	return t.value
 }
 
 func (t defaultIntegerType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultIntegerType, exactIntegerType, *integerType:
+	case defaultIntegerType, *exactIntegerType, *integerType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -391,7 +366,9 @@ func (v intVal) ToInt() int64 {
 }
 
 func (v intVal) Type() dgo.Type {
-	return exactIntegerType(v)
+	et := &exactIntegerType{value: v}
+	et.ExactType = et
+	return et
 }
 
 // ToInt returns the given value as a int64 if, and only if, the value type is one of the go int types. An

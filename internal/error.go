@@ -13,6 +13,11 @@ type (
 	}
 
 	errType int
+
+	exactErrorType struct {
+		exactType
+		value *errw
+	}
 )
 
 // DefaultErrorType is the unconstrained Error type
@@ -56,6 +61,26 @@ func (t errType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiError
 }
 
+func (t *exactErrorType) Generic() dgo.Type {
+	return DefaultErrorType
+}
+
+func (t *exactErrorType) IsInstance(err error) bool {
+	return t.value.Equals(err)
+}
+
+func (t *exactErrorType) ReflectType() reflect.Type {
+	return reflectErrorType
+}
+
+func (t *exactErrorType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiErrorExact
+}
+
+func (t *exactErrorType) ExactValue() dgo.Value {
+	return t.value
+}
+
 func (e *errw) Equals(other interface{}) bool {
 	if oe, ok := other.(*errw); ok {
 		return e.error.Error() == oe.error.Error()
@@ -96,5 +121,7 @@ func (e *errw) Unwrap() error {
 }
 
 func (e *errw) Type() dgo.Type {
-	return DefaultErrorType
+	ea := &exactErrorType{value: e}
+	ea.ExactType = ea
+	return ea
 }

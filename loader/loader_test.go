@@ -215,7 +215,7 @@ func TestLoader_parsed(t *testing.T) {
 		`childLoader{"loader":loader{"name":"", "entries":{"b":"the b"},"namespaces":{}},"parent":mapLoader{"name":"","entries":{"a":"the a"}}}`)
 	et, ok := tp.(dgo.ExactType)
 	require.True(t, ok)
-	ld, ok := et.Value().(dgo.Loader)
+	ld, ok := et.ExactValue().(dgo.Loader)
 	require.True(t, ok)
 	require.Equal(t, `the b`, ld.Get(`b`))
 	require.Equal(t, `the a`, ld.Get(`a`))

@@ -14,7 +14,10 @@ type (
 	// regexpType represents an regexp type without constraints
 	regexpType int
 
-	exactRegexpType regexp.Regexp
+	exactRegexpType struct {
+		exactType
+		value *regexpVal
+	}
 
 	regexpVal regexp.Regexp
 )
@@ -68,57 +71,24 @@ func (t regexpType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiRegexp
 }
 
-func (t *exactRegexpType) Assignable(other dgo.Type) bool {
-	return t.Equals(other)
-}
-
-func (t *exactRegexpType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactRegexpType); ok {
-		return (*regexp.Regexp)(t).String() == (*regexp.Regexp)(ot).String()
-	}
-	return false
-}
-
 func (t *exactRegexpType) Generic() dgo.Type {
 	return DefaultRegexpType
 }
 
-func (t *exactRegexpType) HashCode() int {
-	return (*regexpVal)(t).HashCode()*31 + int(dgo.TiRegexpExact)
-}
-
-func (t *exactRegexpType) Instance(value interface{}) bool {
-	if ot, ok := value.(*regexpVal); ok {
-		return t.IsInstance((*regexp.Regexp)(ot))
-	}
-	if ot, ok := value.(*regexp.Regexp); ok {
-		return t.IsInstance(ot)
-	}
-	return false
-}
-
 func (t *exactRegexpType) IsInstance(v *regexp.Regexp) bool {
-	return (*regexp.Regexp)(t).String() == v.String()
+	return t.value.String() == v.String()
 }
 
 func (t *exactRegexpType) ReflectType() reflect.Type {
 	return reflectRegexpType
 }
 
-func (t *exactRegexpType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactRegexpType) Type() dgo.Type {
-	return &metaType{t}
-}
-
 func (t *exactRegexpType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiRegexpExact
 }
 
-func (t *exactRegexpType) Value() dgo.Value {
-	return (*regexpVal)(t)
+func (t *exactRegexpType) ExactValue() dgo.Value {
+	return t.value
 }
 
 // Regexp returns the given regexp as a dgo.Regexp
@@ -158,7 +128,9 @@ func (v *regexpVal) String() string {
 }
 
 func (v *regexpVal) Type() dgo.Type {
-	return (*exactRegexpType)(v)
+	et := &exactRegexpType{value: v}
+	et.ExactType = et
+	return et
 }
 
 // RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped

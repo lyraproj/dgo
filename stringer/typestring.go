@@ -150,7 +150,7 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 	},
 	dgo.TiArrayExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteByte(sb, '{')
-		joinValueTypes(seen, typ.(dgo.ExactType).Value().(dgo.Iterable), `,`, commaPrio, sb)
+		joinValueTypes(seen, typ.(dgo.ExactType).ExactValue().(dgo.Iterable), `,`, commaPrio, sb)
 		util.WriteByte(sb, '}')
 	},
 	dgo.TiArray: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
@@ -175,8 +175,11 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 	},
 	dgo.TiBinaryExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteString(sb, `binary "`)
-		util.WriteString(sb, typ.(dgo.ExactType).Value().(dgo.Binary).Encode())
+		util.WriteString(sb, typ.(dgo.ExactType).ExactValue().(dgo.Binary).Encode())
 		util.WriteByte(sb, '"')
+	},
+	dgo.TiBooleanExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
+		util.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
 	},
 	dgo.TiTuple: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		writeTupleArgs(seen, typ.(dgo.TupleType), '{', '}', sb)
@@ -194,7 +197,7 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 	},
 	dgo.TiMapExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteByte(sb, '{')
-		joinValueTypes(seen, typ.(dgo.ExactType).Value().(dgo.Map), `,`, commaPrio, sb)
+		joinValueTypes(seen, typ.(dgo.ExactType).ExactValue().(dgo.Map), `,`, commaPrio, sb)
 		util.WriteByte(sb, '}')
 	},
 	dgo.TiStruct: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
@@ -210,20 +213,20 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 		util.WriteByte(sb, '}')
 	},
 	dgo.TiMapEntryExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		me := typ.(dgo.ExactType).Value().(dgo.MapEntry)
+		me := typ.(dgo.ExactType).ExactValue().(dgo.MapEntry)
 		buildTypeString(seen, me.Key().Type(), commaPrio, sb)
 		util.WriteByte(sb, ':')
 		buildTypeString(seen, me.Value().Type(), commaPrio, sb)
 	},
 	dgo.TiFloatExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		util.WriteString(sb, util.Ftoa(typ.(dgo.ExactType).Value().(dgo.Float).GoFloat()))
+		util.WriteString(sb, util.Ftoa(typ.(dgo.ExactType).ExactValue().(dgo.Float).GoFloat()))
 	},
 	dgo.TiFloatRange: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		st := typ.(dgo.FloatType)
 		writeFloatRange(st.Min(), st.Max(), st.Inclusive(), sb)
 	},
 	dgo.TiIntegerExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		util.WriteString(sb, typ.(dgo.ExactType).Value().String())
+		util.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
 	},
 	dgo.TiIntegerRange: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		st := typ.(dgo.IntegerType)
@@ -232,13 +235,13 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 	dgo.TiRegexpExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteString(sb, typ.TypeIdentifier().String())
 		util.WriteByte(sb, '[')
-		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().String()))
+		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).ExactValue().String()))
 		util.WriteByte(sb, ']')
 	},
 	dgo.TiTimeExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteString(sb, typ.TypeIdentifier().String())
 		util.WriteByte(sb, '[')
-		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().String()))
+		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).ExactValue().String()))
 		util.WriteByte(sb, ']')
 	},
 	dgo.TiSensitive: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
@@ -250,10 +253,10 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 		}
 	},
 	dgo.TiStringExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().String()))
+		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).ExactValue().String()))
 	},
 	dgo.TiStringPattern: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		internal.RegexpSlashQuote(sb, typ.(dgo.ExactType).Value().String())
+		internal.RegexpSlashQuote(sb, typ.(dgo.ExactType).ExactValue().String())
 	},
 	dgo.TiStringSized: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		st := typ.(dgo.StringType)
@@ -266,7 +269,7 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 	},
 	dgo.TiCiString: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		util.WriteByte(sb, '~')
-		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).Value().String()))
+		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).ExactValue().String()))
 	},
 	dgo.TiNot: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		nt := typ.(dgo.UnaryType)
@@ -319,7 +322,7 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 		}
 	},
 	dgo.TiNamedExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
-		util.WriteString(sb, typ.(dgo.ExactType).Value().String())
+		util.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
 	},
 }
 

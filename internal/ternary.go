@@ -235,7 +235,7 @@ func (t *allOfValueType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiAllOfValue
 }
 
-func (t *allOfValueType) Value() dgo.Value {
+func (t *allOfValueType) ExactValue() dgo.Value {
 	return (*array)(t)
 }
 

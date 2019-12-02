@@ -22,6 +22,7 @@ type (
 
 	// exactMapType represents a map exactly
 	exactMapType struct {
+		deepExactType
 		value dgo.Map
 	}
 
@@ -38,7 +39,10 @@ type (
 		value dgo.Value
 	}
 
-	exactEntryType mapEntry
+	exactEntryType struct {
+		deepExactType
+		value *mapEntry
+	}
 
 	hashNode struct {
 		mapEntry
@@ -58,45 +62,12 @@ type (
 	}
 )
 
-func (t *exactEntryType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactEntryType); ok {
-		return (*mapEntry)(t).Equals((*mapEntry)(ot))
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactEntryType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactEntryType); ok {
-		return (*mapEntry)(t).Equals((*mapEntry)(ot))
-	}
-	return false
-}
-
 func (t *exactEntryType) Generic() dgo.Type {
 	return DefaultAnyType
 }
 
-func (t *exactEntryType) HashCode() int {
-	return (*mapEntry)(t).HashCode()
-}
-
-func (t *exactEntryType) Instance(value interface{}) bool {
-	if ot, ok := value.(dgo.MapEntry); ok {
-		return (*mapEntry)(t).Equals(ot)
-	}
-	return false
-}
-
 func (t *exactEntryType) ReflectType() reflect.Type {
 	return reflect.TypeOf((*dgo.MapEntry)(nil)).Elem()
-}
-
-func (t *exactEntryType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactEntryType) Type() dgo.Type {
-	return &metaType{t}
 }
 
 func (t *exactEntryType) TypeIdentifier() dgo.TypeIdentifier {
@@ -108,9 +79,8 @@ func NewMapEntry(key, value interface{}) dgo.MapEntry {
 	return &mapEntry{Value(key), Value(value)}
 }
 
-func (t *exactEntryType) Value() dgo.Value {
-	v := (*mapEntry)(t)
-	return v
+func (t *exactEntryType) ExactValue() dgo.Value {
+	return t.value
 }
 
 func (v *mapEntry) AppendTo(w dgo.Indenter) {
@@ -181,7 +151,9 @@ func (v *mapEntry) String() string {
 }
 
 func (v *mapEntry) Type() dgo.Type {
-	return (*exactEntryType)(v)
+	ea := &exactEntryType{value: v}
+	ea.ExactType = ea
+	return ea
 }
 
 func (v *mapEntry) Value() dgo.Value {
@@ -894,7 +866,9 @@ func (g *hashMap) WithoutAll(keys dgo.Array) dgo.Map {
 
 func (g *hashMap) Type() dgo.Type {
 	if g.typ == nil {
-		return &exactMapType{g}
+		et := &exactMapType{value: g}
+		et.ExactType = et
+		return et
 	}
 	return g.typ
 }
@@ -1105,9 +1079,9 @@ func (t *sizedMapType) Assignable(other dgo.Type) bool {
 }
 
 func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	if ot, ok := other.(*sizedMapType); ok {
-		return t.min <= ot.min && ot.max <= t.max &&
-			Assignable(guard, t.keyType, ot.keyType) && Assignable(guard, t.valueType, ot.valueType)
+	if ot, ok := other.(dgo.MapType); ok {
+		return t.min <= ot.Min() && ot.Max() <= t.max &&
+			Assignable(guard, t.keyType, ot.KeyType()) && Assignable(guard, t.valueType, ot.ValueType())
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -1225,7 +1199,7 @@ const DefaultMapType = defaultMapType(0)
 
 func (t defaultMapType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultMapType, *sizedMapType:
+	case defaultMapType, *sizedMapType, *exactMapType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -1288,33 +1262,10 @@ func (t *exactMapType) Additional() bool {
 	return false
 }
 
-func (t *exactMapType) Assignable(other dgo.Type) bool {
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool {
-	switch ot := other.(type) {
-	case defaultMapType:
-		return true
-	case *exactMapType:
-		return t.Equals(ot)
-	case *sizedMapType:
-		return ot.Instance(t.value)
-	}
-	return false
-}
-
 func (t *exactMapType) Each(actor func(dgo.StructMapEntry)) {
 	t.value.EachEntry(func(e dgo.MapEntry) {
 		actor(&structEntry{mapEntry{e.Key().Type(), e.Value().Type()}, true})
 	})
-}
-
-func (t *exactMapType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactMapType); ok {
-		return t.value.Equals(ot.value)
-	}
-	return false
 }
 
 func (t *exactMapType) Generic() dgo.Type {
@@ -1331,17 +1282,6 @@ func (t *exactMapType) Get(key interface{}) dgo.MapEntry {
 		return &structEntry{mapEntry{k.Type(), v.Type()}, true}
 	}
 	return nil
-}
-
-func (t *exactMapType) HashCode() int {
-	return t.value.HashCode()*31 + int(dgo.TiMapExact)
-}
-
-func (t *exactMapType) Instance(value interface{}) bool {
-	if ov, ok := value.(dgo.Map); ok {
-		return t.value.Equals(ov)
-	}
-	return false
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
@@ -1378,14 +1318,6 @@ func (t *exactMapType) Resolve(ap dgo.AliasMap) {
 	}
 }
 
-func (t *exactMapType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactMapType) Type() dgo.Type {
-	return &metaType{t}
-}
-
 func (t *exactMapType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiMapExact
 }
@@ -1398,7 +1330,7 @@ func (t *exactMapType) ValidateVerbose(value interface{}, out dgo.Indenter) bool
 	return validateVerbose(t, value, out)
 }
 
-func (t *exactMapType) Value() dgo.Value {
+func (t *exactMapType) ExactValue() dgo.Value {
 	return t.value
 }
 

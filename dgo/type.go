@@ -154,7 +154,8 @@ type (
 	ExactType interface {
 		Type
 
-		Value() Value
+		// ExactValue returns the value that this type represents
+		ExactValue() Value
 	}
 
 	// Factory provides the New method that types use to create new instances

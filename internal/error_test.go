@@ -14,7 +14,7 @@ func TestErrorType(t *testing.T) {
 	er := errors.New(`some error`)
 	v := vf.Value(er)
 	tp := v.Type()
-	require.Same(t, typ.Error, tp)
+	require.Same(t, typ.Error, typ.Generic(tp))
 	require.Instance(t, tp, v)
 	require.Instance(t, tp, er)
 	require.Assignable(t, tp, tp)

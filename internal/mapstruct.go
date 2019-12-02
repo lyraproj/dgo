@@ -60,7 +60,7 @@ func createExactMap(keys, values []dgo.Value) dgo.StructMapType {
 	l := len(keys)
 	m := MapWithCapacity(l, nil)
 	for i := 0; i < l; i++ {
-		m.Put(keys[i].(dgo.ExactType).Value(), values[i].(dgo.ExactType).Value())
+		m.Put(keys[i].(dgo.ExactType).ExactValue(), values[i].(dgo.ExactType).ExactValue())
 	}
 	return m.Type().(dgo.StructMapType)
 }
@@ -274,7 +274,7 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 		oc := 0
 		for i := range ks {
 			k := ks[i].(dgo.ExactType)
-			if ov := om.Get(k.Value()); ov != nil {
+			if ov := om.Get(k.ExactValue()); ov != nil {
 				oc++
 				if !Instance(guard, vs[i].(dgo.Type), ov) {
 					return false
@@ -395,7 +395,7 @@ func validate(t dgo.StructMapType, keyLabel func(key dgo.Value) string, value in
 		keyLabel = parameterLabel
 	}
 	t.Each(func(e dgo.StructMapEntry) {
-		ek := e.Key().(dgo.ExactType).Value()
+		ek := e.Key().(dgo.ExactType).ExactValue()
 		if v := pm.Get(ek); v != nil {
 			ev := e.Value().(dgo.Type)
 			if !ev.Instance(v) {
@@ -422,7 +422,7 @@ func validateVerbose(t dgo.StructMapType, value interface{}, out dgo.Indenter) b
 
 	inner := out.Indent()
 	t.Each(func(e dgo.StructMapEntry) {
-		ek := e.Key().(dgo.ExactType).Value()
+		ek := e.Key().(dgo.ExactType).ExactValue()
 		ev := e.Value().(dgo.Type)
 		out.Printf(`Validating '%s' against definition %s`, ek, ev)
 		inner.NewLine()
