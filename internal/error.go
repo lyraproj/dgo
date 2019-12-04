@@ -30,7 +30,7 @@ func (t errType) Type() dgo.Type {
 }
 
 func (t errType) Equals(other interface{}) bool {
-	return t == DefaultErrorType
+	return t == other
 }
 
 func (t errType) HashCode() int {
@@ -38,15 +38,20 @@ func (t errType) HashCode() int {
 }
 
 func (t errType) Assignable(other dgo.Type) bool {
-	if DefaultErrorType == other {
-		return true
+	_, ok := other.(errType)
+	if !ok {
+		_, ok = other.(*exactErrorType)
 	}
-	return CheckAssignableTo(nil, other, t)
+	return ok || CheckAssignableTo(nil, other, t)
 }
 
 func (t errType) Instance(value interface{}) bool {
 	_, ok := value.(error)
 	return ok
+}
+
+func (t errType) IsInstance(err error) bool {
+	return true
 }
 
 func (t errType) ReflectType() reflect.Type {

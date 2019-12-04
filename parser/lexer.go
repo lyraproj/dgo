@@ -15,11 +15,11 @@ import (
 
 const (
 	end = iota
-	identifier
 	integer
 	float
-	regexpLiteral
 	stringLiteral
+	regexpLiteral
+	identifier
 	dotdot
 	dotdotdot
 )
@@ -107,9 +107,9 @@ func nextToken(sr *util.StringReader) (t *Token) {
 		case '`':
 			t = &Token{consumeRawString(sr), stringLiteral}
 		case '"':
-			t = &Token{consumeQuotedString(sr), stringLiteral}
+			t = &Token{ConsumeString(sr, r), stringLiteral}
 		case '/':
-			t = &Token{consumeRegexp(sr), regexpLiteral}
+			t = &Token{ConsumeRegexp(sr), regexpLiteral}
 		case '.':
 			if sr.Peek() == '.' {
 				sr.Next()
@@ -131,7 +131,7 @@ func nextToken(sr *util.StringReader) (t *Token) {
 			if r == '-' {
 				util.WriteRune(buf, r)
 			}
-			tkn := consumeNumber(sr, n, buf, integer)
+			tkn := ConsumeNumber(sr, n, buf, integer)
 			return &Token{buf.String(), tkn}
 		default:
 			t = buildToken(r, sr)
@@ -145,7 +145,7 @@ func buildToken(r rune, sr *util.StringReader) *Token {
 	switch {
 	case IsDigit(r):
 		buf := bytes.NewBufferString(``)
-		tkn := consumeNumber(sr, r, buf, integer)
+		tkn := ConsumeNumber(sr, r, buf, integer)
 		return &Token{buf.String(), tkn}
 	case IsIdentifierStart(r):
 		buf := bytes.NewBufferString(``)
@@ -242,7 +242,8 @@ func consumeHexInteger(sr *util.StringReader, buf io.Writer) {
 	}
 }
 
-func consumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int {
+// ConsumeNumber consumes the current number into the given Writer and returns the consumed token type.
+func ConsumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int {
 	util.WriteRune(buf, start)
 	firstZero := t != float && start == '0'
 
@@ -277,7 +278,7 @@ func consumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int 
 				util.WriteRune(buf, r)
 				r = sr.Next()
 				if IsDigit(r) {
-					return consumeNumber(sr, r, buf, float)
+					return ConsumeNumber(sr, r, buf, float)
 				}
 			}
 			panic(badToken(r))
@@ -292,7 +293,9 @@ func consumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int 
 	return t
 }
 
-func consumeRegexp(sr *util.StringReader) string {
+// ConsumeRegexp consumes the current regexp up to the ending '/' character, taking escaped
+// escapes and ends into account.
+func ConsumeRegexp(sr *util.StringReader) string {
 	buf := bytes.NewBufferString(``)
 	for {
 		r := sr.Next()
@@ -317,36 +320,45 @@ func consumeRegexp(sr *util.StringReader) string {
 	}
 }
 
-func consumeQuotedString(sr *util.StringReader) string {
+// ConsumeString consumes the current string up to the given end character while taking
+// escaped nl, cr, tab, escape, and end character into account.
+func ConsumeString(sr *util.StringReader, end rune) string {
 	buf := bytes.NewBufferString(``)
 	for {
 		r := sr.Next()
-		switch r {
-		default:
-			util.WriteRune(buf, r)
-		case 0, '\n':
-			panic(errors.New("unterminated string"))
-		case '"':
+		if r == end {
 			return buf.String()
+		}
+		switch r {
+		case 0:
+			panic(errors.New("unterminated string"))
 		case '\\':
-			r = sr.Next()
-			switch r {
-			default:
-				panic(fmt.Errorf("illegal escape '\\%c'", r))
-			case 0:
-				panic(errors.New("unterminated string"))
-			case 'n':
-				r = '\n'
-			case 'r':
-				r = '\r'
-			case 't':
-				r = '\t'
-			case '"':
-			case '\\':
-			}
+			consumeEscape(sr.Next(), buf, end)
+		case '\n':
+			panic(errors.New("unterminated string"))
+		default:
 			util.WriteRune(buf, r)
 		}
 	}
+}
+
+func consumeEscape(r rune, buf io.Writer, end rune) {
+	switch r {
+	case 0:
+		panic(errors.New("unterminated string"))
+	case 'n':
+		r = '\n'
+	case 'r':
+		r = '\r'
+	case 't':
+		r = '\t'
+	case '\\':
+	default:
+		if r != end {
+			panic(fmt.Errorf("illegal escape '\\%c'", r))
+		}
+	}
+	util.WriteRune(buf, r)
 }
 
 func consumeRawString(sr *util.StringReader) string {

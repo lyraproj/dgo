@@ -28,6 +28,9 @@ func TestAllOfType(t *testing.T) {
 	require.NotEqual(t, tp, tf.AllOf(tf.Enum(`b`, `c`), tf.Enum(`a`, `b`, `c`)))
 	require.NotEqual(t, tp, tf.Enum(`a`, `b`, `c`))
 
+	require.NotEqual(t, tf.AllOf(`b`, `c`), tf.AnyOf(`b`, `c`))
+	require.NotEqual(t, tf.AllOf(`b`, `c`), tf.OneOf(`b`, `c`))
+
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
 
@@ -66,6 +69,14 @@ func TestAllOfType(t *testing.T) {
 	require.Same(t, typ.Any, typ.Generic(a.Type()).(dgo.ArrayType).ElementType())
 }
 
+func TestAllOfValueType(t *testing.T) {
+	tp := vf.Values(`a`, `b`).Type().(dgo.ArrayType).ElementType()
+	require.Equal(t, tf.AllOf(`a`, `b`), tp)
+	require.Equal(t, tp, tf.AllOf(`a`, `b`))
+	require.NotEqual(t, tp, tf.AllOf(`a`, `b`, `c`))
+	require.NotEqual(t, tp, vf.Values(`a`, `b`))
+}
+
 func TestAnyOfType(t *testing.T) {
 	tp := tf.AnyOf(typ.Integer, typ.String)
 	require.Instance(t, tp, `hello`)
@@ -83,6 +94,9 @@ func TestAnyOfType(t *testing.T) {
 	require.Equal(t, tp, tf.AnyOf(typ.Integer, typ.String))
 	require.NotEqual(t, tp, tf.AnyOf(typ.Integer, typ.Boolean))
 	require.NotEqual(t, tp, typ.Integer)
+
+	require.NotEqual(t, tf.AnyOf(`b`, `c`), tf.AllOf(`b`, `c`))
+	require.NotEqual(t, tf.AnyOf(`b`, `c`), tf.OneOf(`b`, `c`))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
@@ -119,6 +133,9 @@ func TestOneOfType(t *testing.T) {
 	require.Equal(t, tp, tf.OneOf(typ.Integer, tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
 	require.NotEqual(t, tp, tf.OneOf(typ.Integer, typ.Boolean))
 	require.NotEqual(t, tp, typ.Integer)
+
+	require.NotEqual(t, tf.OneOf(`b`, `c`), tf.AllOf(`b`, `c`))
+	require.NotEqual(t, tf.OneOf(`b`, `c`), tf.AnyOf(`b`, `c`))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())

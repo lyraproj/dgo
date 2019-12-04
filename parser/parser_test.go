@@ -62,8 +62,8 @@ func TestParse_func(t *testing.T) {
 }
 
 func TestParse_tuple(t *testing.T) {
-	tt := tf.ParseType(`{string,...string[10]}`)
-	require.Equal(t, tf.VariadicTuple(typ.String, tf.String(10)), tt)
+	require.Equal(t, tf.VariadicTuple(typ.String, tf.String(10)), tf.ParseType(`{string,...string[10]}`))
+	require.Equal(t, tf.Function(typ.EmptyTuple, typ.EmptyTuple), tf.ParseType(`func()`))
 }
 
 func TestParse_ciEnum(t *testing.T) {
@@ -232,4 +232,8 @@ func TestParseFile_errors(t *testing.T) {
 	require.Panic(t,
 		func() { tf.ParseFile(nil, `foo.dgo`, `[1 2]`) },
 		`expected one of ',' or '\]', got 2: \(file: foo\.dgo, line: 1, column: 4\)`)
+}
+
+func TestParse_value(t *testing.T) {
+	require.Equal(t, vf.Map(), tf.Parse(`{}`))
 }

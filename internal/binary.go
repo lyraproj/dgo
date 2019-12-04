@@ -40,7 +40,7 @@ func BinaryType(args ...interface{}) dgo.BinaryType {
 		return DefaultBinaryType
 	case 1:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
-			return SizedBinaryType(int(a0.GoInt()), int(a0.GoInt()))
+			return SizedBinaryType(int(a0.GoInt()), math.MaxInt64)
 		}
 		panic(illegalArgument(`BinaryType`, `Integer`, args, 0))
 	case 2:

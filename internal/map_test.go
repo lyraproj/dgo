@@ -6,6 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lyraproj/dgo/parser"
+
+	"github.com/lyraproj/dgo/util"
+
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/internal"
@@ -119,12 +123,12 @@ func TestMap_ExactType(t *testing.T) {
 	m1 := vf.Map(
 		`a`, 3,
 		`b`, 4)
-	t1 := m1.Type().(dgo.MapType)
+	t1 := m1.Type().(dgo.StructMapType)
 	m2 := vf.Map(
 		`a`, 1,
 		`b`, 2)
-	t2 := m2.Type().(dgo.MapType)
-	t3 := vf.Map(`b`, 2).Type().(dgo.MapType)
+	t2 := m2.Type().(dgo.StructMapType)
+	t3 := vf.Map(`b`, 2).Type().(dgo.StructMapType)
 	require.Equal(t, 2, t1.Min())
 	require.Equal(t, 2, t1.Max())
 	require.False(t, t1.Unbounded())
@@ -147,6 +151,9 @@ func TestMap_ExactType(t *testing.T) {
 	require.NotEqual(t, t1, typ.String)
 	require.NotEqual(t, tf.Map(typ.String, typ.Integer), t1)
 
+	require.False(t, t1.Additional())
+	require.Equal(t, 2, t1.Len())
+
 	require.Equal(t, tf.Map(typ.String, typ.Integer), typ.Generic(t1))
 
 	require.True(t, t1.HashCode() > 0)
@@ -155,6 +162,45 @@ func TestMap_ExactType(t *testing.T) {
 	require.Instance(t, vm, t1)
 
 	require.Equal(t, `{"a":3,"b":4}`, t1.String())
+}
+
+func TestMap_ExactType_Each(t *testing.T) {
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	cnt := 0
+	tp.Each(func(e dgo.StructMapEntry) {
+		require.True(t, e.Required())
+		require.Assignable(t, typ.String, e.Key().(dgo.Type))
+		require.Assignable(t, typ.Integer, e.Value().(dgo.Type))
+		cnt++
+	})
+	require.Equal(t, 2, cnt)
+}
+
+func TestMap_ExactType_Get(t *testing.T) {
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	me := tp.Get(`a`)
+	require.Equal(t, tf.StructMapEntry(`a`, 3, true), me)
+
+	me = tp.Get(vf.String(`a`).Type())
+	require.Equal(t, tf.StructMapEntry(`a`, 3, true), me)
+
+	require.Nil(t, tp.Get(`c`))
+}
+
+func TestMap_ExactType_Validate(t *testing.T) {
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	es := tp.Validate(nil, vf.Map(`a`, 3, `b`, 4))
+	require.Equal(t, 0, len(es))
+
+	es = tp.Validate(nil, vf.Map(`a`, 2, `b`, 4))
+	require.Equal(t, 1, len(es))
+}
+
+func TestMap_ExactType_ValidateVerbose(t *testing.T) {
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	out := util.NewIndenter(``)
+	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
+	require.Equal(t, `value is not a Map`, out.String())
 }
 
 func TestMap_SizedType(t *testing.T) {
@@ -973,6 +1019,15 @@ func TestMap_Values(t *testing.T) {
 
 func TestMap_String(t *testing.T) {
 	require.Equal(t, `{"a":1}`, vf.Map(`a`, 1).String())
+}
+
+func TestMap_Resolve(t *testing.T) {
+	n := vf.String(`b`)
+	m := vf.Map(parser.NewAlias(n), `value`)
+	am := tf.NewAliasMap()
+	am.Add(tf.Integer(0, 255, true), n)
+	m.(dgo.AliasContainer).Resolve(am)
+	require.Equal(t, vf.Map(tf.Integer(0, 255, true), `value`), m)
 }
 
 func TestMapEntry_Equal(t *testing.T) {

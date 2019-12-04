@@ -5,27 +5,48 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lyraproj/dgo/dgo"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
 func TestErrorType(t *testing.T) {
-	er := errors.New(`some error`)
-	v := vf.Value(er)
-	tp := v.Type()
+	tp := typ.Error
 	require.Same(t, typ.Error, typ.Generic(tp))
+	require.Instance(t, tp.Type(), tp)
+	require.Equal(t, tp, tp)
+
+	require.Equal(t, tp.HashCode(), tp.HashCode())
+	require.NotEqual(t, 0, tp.HashCode())
+	require.True(t, reflect.TypeOf((*error)(nil)).Elem().AssignableTo(tp.ReflectType()))
+	require.Equal(t, `error`, tp.String())
+
+	er := errors.New(`some error`)
+	require.True(t, tp.IsInstance(er))
+
+	v := vf.Value(er)
+	tp = v.Type().(dgo.ErrorType)
+	require.Same(t, typ.Error, typ.Generic(tp))
+	require.NotSame(t, tp, typ.Generic(tp))
 	require.Instance(t, tp, v)
 	require.Instance(t, tp, er)
+	require.Instance(t, tp.Type(), tp)
+	require.Assignable(t, typ.Error, tp)
+	require.NotAssignable(t, tp, typ.Error)
 	require.Assignable(t, tp, tp)
 	require.NotAssignable(t, tp, typ.String)
 	require.Equal(t, tp, tp)
+	require.NotEqual(t, typ.Error, tp)
 	require.Instance(t, tp.Type(), tp)
+	require.True(t, tp.IsInstance(er))
+	require.False(t, tp.IsInstance(errors.New(`some other error`)))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
 
-	require.Equal(t, `error`, tp.String())
+	require.Equal(t, `error["some error"]`, tp.String())
 
 	require.True(t, reflect.TypeOf(er).AssignableTo(tp.ReflectType()))
 }

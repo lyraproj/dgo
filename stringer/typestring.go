@@ -312,6 +312,11 @@ var ctm = map[dgo.TypeIdentifier]typeToString{
 			}
 		}
 	},
+	dgo.TiErrorExact: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
+		util.WriteString(sb, `error[`)
+		util.WriteString(sb, strconv.Quote(typ.(dgo.ExactType).ExactValue().String()))
+		util.WriteByte(sb, ']')
+	},
 	dgo.TiNamed: func(seen []dgo.Value, typ dgo.Type, prio int, sb io.Writer) {
 		nt := typ.(dgo.NamedType)
 		util.WriteString(sb, nt.Name())

@@ -68,6 +68,7 @@ func ExampleParse_entry() {
       fourth => 2.3e-2,
       fifth => 'hello',
       sixth => "world",
+      literals => [true, false, undef],
       type => Foo::Bar[1,'23',Baz[1,2]],
       value => "String\nWith \\Escape",
       array => [a, b, c],
@@ -87,6 +88,11 @@ func ExampleParse_entry() {
 	//     "fourth": 0.023,
 	//     "fifth": "hello",
 	//     "sixth": "world",
+	//     "literals": {
+	//       true,
+	//       false,
+	//       nil
+	//     },
 	//     "type": foo.bar[1,"23",type[baz[1,2]]],
 	//     "value": "String\nWith \\Escape",
 	//     "array": {
@@ -105,10 +111,25 @@ func ExampleParse_hash() {
 	// Output: {"value":-1}
 }
 
+func TestParse_call(t *testing.T) {
+	v := pcore.Parse(`String(23)`)
+	require.Equal(t, vf.New(typ.String, vf.Integer(23)), v)
+}
+
+func TestParse_emptyHash(t *testing.T) {
+	v := pcore.Parse(`{}`)
+	require.Equal(t, vf.Map(), v)
+}
+
 func TestParse_emptyTypeArgs(t *testing.T) {
 	require.Panic(t,
 		func() { pcore.Parse(`String[]`) },
 		`illegal number of arguments for String\. Expected 1 or 2, got 0: \(column: 8\)`)
+}
+
+func TestParse_identifier(t *testing.T) {
+	v := pcore.Parse(`m`)
+	require.Equal(t, `m`, v)
 }
 
 func TestParse_default(t *testing.T) {
@@ -135,11 +156,6 @@ func TestParse_exact(t *testing.T) {
 	require.Equal(t, vf.Value(3.14), pcore.Parse(`3.14`))
 	require.Equal(t, vf.Value("pelle"), pcore.Parse(`"pelle"`))
 	require.Equal(t, vf.Values("pelle", 3.14, typ.Boolean), pcore.Parse(`["pelle", 3.14, Boolean]`))
-
-	st := pcore.Parse(`Struct[a => Integer[1, 5], Optional[b] => Integer[2,2]]`)
-	require.Equal(t, tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
-		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 }
 
 func TestParse_func(t *testing.T) {
@@ -160,9 +176,11 @@ func testB(m string, vs ...int) string {
 func TestFunctionType(t *testing.T) {
 	ft := tf.Function(typ.Tuple, typ.Tuple)
 	require.Equal(t, pcore.ParseType(`Callable`), ft)
+	require.Equal(t, ft.String(), `func(...any) (...any)`)
 
 	ft = tf.Function(typ.EmptyTuple, tf.Tuple(typ.Any))
-	require.Equal(t, pcore.ParseType(`Callable[0,0]`), ft)
+	require.Equal(t, ft.String(), `func() any`)
+	require.Equal(t, pcore.ParseType(`Callable[[0,0],Any]`), ft)
 
 	ft = pcore.Parse(`Callable[String,String,1]`).(dgo.FunctionType)
 	require.Assignable(t, typ.Any, ft)
@@ -173,7 +191,7 @@ func TestFunctionType(t *testing.T) {
 	require.Panic(t, func() { ft.ReflectType() }, `unable to build`)
 	require.Equal(t, ft, ft)
 	require.Equal(t, ft, pcore.ParseType(`Callable[String,String,1]`))
-	require.Equal(t, ft.String(), `func(string,...string) any`)
+	require.Equal(t, ft.String(), `func(string,...string)`)
 	require.NotEqual(t, ft, pcore.ParseType(`Callable[Integer,String,1]`))
 	require.NotEqual(t, ft, pcore.ParseType(`Callable[String,Array[String],1]`))
 	require.NotEqual(t, ft, pcore.ParseType(`Callable[[String,String,1], String]`))
@@ -193,11 +211,15 @@ func TestFunctionType(t *testing.T) {
 	require.Instance(t, ft, testB)
 	require.NotInstance(t, ft, testA)
 	require.NotInstance(t, ft, ft)
-}
 
-func TestParse_tuple(t *testing.T) {
-	tt := pcore.Parse(`Tuple[String,String[10],1]`)
-	require.Equal(t, tf.VariadicTuple(typ.String, tf.String(10)), tt)
+	ft = pcore.ParseType(`Callable[[String,1,1,Callable], String]`).(dgo.FunctionType)
+	require.Equal(t, `func(func(...any) (...any),string) string`, ft.String())
+
+	ft = pcore.ParseType(`Callable[[String,default,1,Callable], String]`).(dgo.FunctionType)
+	require.Equal(t, `func(func(...any) (...any),...string) string`, ft.String())
+
+	ft = pcore.ParseType(`Callable[[String,1,Callable], String]`).(dgo.FunctionType)
+	require.Equal(t, `func(func(...any) (...any),...string) string`, ft.String())
 }
 
 func TestParse_ciEnum(t *testing.T) {
@@ -209,9 +231,19 @@ func TestParse_ciEnum(t *testing.T) {
 func TestParse_sized(t *testing.T) {
 	require.Equal(t, tf.String(1), pcore.Parse(`String[1]`))
 	require.Equal(t, tf.String(1, 10), pcore.Parse(`String[1,10]`))
+	require.Equal(t, tf.Array(1), pcore.Parse(`Array[1]`))
+	require.Equal(t, tf.Array(1, 10), pcore.Parse(`Array[1,10]`))
 	require.Equal(t, tf.Array(1), pcore.Parse(`Array[Any,1]`))
+	require.Equal(t, tf.Binary(1), pcore.Parse(`Binary[1]`))
+	require.Equal(t, tf.Binary(1, 10), pcore.Parse(`Binary[1,10]`))
+	require.Equal(t, tf.Map(1), pcore.Parse(`Hash[1]`))
 	require.Equal(t, tf.Map(1), pcore.Parse(`Hash[Any,Any,1]`))
+	require.Equal(t, tf.Map(typ.String, typ.Integer, 1, 10), pcore.Parse(`Hash[String,Integer,1,10]`))
+	require.Equal(t, tf.Map(1, 10), pcore.Parse(`Hash[1,10]`))
+	require.Equal(t, tf.Map(typ.Any, typ.Any), pcore.Parse(`Hash[Any,Any]`))
 	require.Equal(t, tf.Pattern(regexp.MustCompile(`a.*`)), pcore.Parse(`Pattern[/a.*/]`))
+	require.Panic(t,
+		func() { pcore.Parse(`Integer[2, x]`) }, `Expected int, got x`)
 }
 
 func TestParse_nestedSized(t *testing.T) {
@@ -223,6 +255,72 @@ func TestParse_nestedSized(t *testing.T) {
 		pcore.Parse(`Hash[Hash[String,Integer],String[1,10],2,5]`))
 }
 
+func TestParse_notUndef(t *testing.T) {
+	require.Equal(t, tf.Not(typ.Nil), pcore.Parse(`NotUndef`))
+	require.Equal(t, tf.Not(typ.Nil), pcore.Parse(`NotUndef[Any]`))
+	require.Equal(t, tf.AllOf(tf.Not(typ.Nil), tf.AnyOf(typ.Nil, typ.String)), pcore.Parse(`NotUndef[Variant[Undef,String]]`))
+}
+
+func TestParse_number(t *testing.T) {
+	require.Equal(t, tf.AnyOf(typ.Integer, typ.Float), pcore.Parse(`Number`))
+	require.Equal(t, tf.AnyOf(tf.Integer(3, math.MaxInt64, true), tf.Float(3, math.MaxFloat64, true)), pcore.Parse(`Number[3]`))
+	require.Equal(t, tf.AnyOf(tf.Integer(3, 3, true), tf.Float(3, 3, true)), pcore.Parse(`Number[3,3]`))
+}
+
+func TestParse_optional(t *testing.T) {
+	require.Equal(t, typ.Any, pcore.Parse(`Optional`))
+	require.Equal(t, tf.AnyOf(typ.Nil, typ.String), pcore.Parse(`Optional[String]`))
+	require.Equal(t, tf.AnyOf(typ.Nil, vf.String(`hello`).Type()), pcore.Parse(`Optional[hello]`))
+}
+
+func TestParse_pattern(t *testing.T) {
+	require.Equal(t, typ.String, pcore.Parse(`Pattern`))
+	require.Equal(t, tf.Pattern(regexp.MustCompile(`a.*`)), pcore.Parse(`Pattern[/a.*/]`))
+	require.Equal(t, tf.Pattern(regexp.MustCompile(`a.*`)), pcore.Parse(`Pattern["a.*"]`))
+	require.Panic(t,
+		func() { pcore.Parse(`Pattern[String]`) }, `a value of type type\[string\] cannot be assigned to a variable of type string\|regexp`)
+}
+
+func TestParse_regexp(t *testing.T) {
+	require.Equal(t, typ.Regexp, pcore.Parse(`Regexp`))
+	require.Equal(t, vf.Regexp(regexp.MustCompile(`a.*`)).Type(), pcore.Parse(`Regexp[/a.*/]`))
+	require.Equal(t, vf.Regexp(regexp.MustCompile(`a.*`)).Type(), pcore.Parse(`Regexp["a.*"]`))
+}
+
+func TestParse_sensitive(t *testing.T) {
+	require.Equal(t, typ.Sensitive, pcore.Parse(`Sensitive`))
+	require.Equal(t, tf.Sensitive(typ.String), pcore.Parse(`Sensitive[String]`))
+}
+
+func TestParse_struct(t *testing.T) {
+	require.Equal(t, tf.StructMap(true), pcore.Parse(`Struct`))
+	require.Equal(t, tf.StructMap(false), pcore.Parse(`Struct[{}]`))
+
+	st := pcore.Parse(`Struct[a => Integer[1, 5], Optional[b] => Integer[2,2]]`)
+	require.Equal(t, tf.StructMap(false,
+		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
+		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
+}
+
+func TestParse_tuple(t *testing.T) {
+	require.Equal(t, typ.Tuple, pcore.Parse(`Tuple`))
+	require.Equal(t, tf.Tuple(typ.String), pcore.Parse(`Tuple[String]`))
+	require.Equal(t, tf.Tuple(typ.String), pcore.Parse(`Tuple[String,1,1]`))
+	require.Equal(t, tf.Tuple(typ.String), pcore.Parse(`Tuple[String,default,default]`))
+	require.Equal(t, tf.VariadicTuple(typ.String), pcore.Parse(`Tuple[String,default,10]`))
+	require.Equal(t, tf.VariadicTuple(typ.String), pcore.Parse(`Tuple[String,default]`))
+	require.Equal(t, tf.VariadicTuple(typ.String), pcore.Parse(`Tuple[String,1]`))
+	require.Equal(t, tf.VariadicTuple(typ.String, tf.String(10)), pcore.Parse(`Tuple[String,String[10],1]`))
+	require.Panic(t,
+		func() { pcore.Parse(`Tuple[1,1,1]`) }, `the value 1 cannot be assigned to a variable of type type`)
+}
+
+func TestParse_variant(t *testing.T) {
+	require.Equal(t, typ.AnyOf, pcore.Parse(`Variant`))
+	require.Panic(t,
+		func() { pcore.Parse(`Variant[2, 3]`) }, `the value 2 cannot be assigned to a variable of type type`)
+}
+
 func TestParse_aliasBad(t *testing.T) {
 	require.Panic(t,
 		func() { pcore.Parse(`f=Hash[String,Integer]`) }, `expected end of expression, got '='`)
@@ -230,6 +328,7 @@ func TestParse_aliasBad(t *testing.T) {
 		func() { pcore.Parse(`type m=Hash[String,Variant[Integer,M]]`) }, `expected end of expression, got m`)
 	require.Panic(t,
 		func() { pcore.Parse(`type Integer=Hash[String,Integer]`) }, `attempt to redeclare identifier 'Integer'`)
+	require.Panic(t, func() { pcore.Parse(`MyType`) }, `reference to unresolved type 'myType'`)
 }
 
 func TestParse_aliasInUnary(t *testing.T) {
@@ -272,6 +371,12 @@ func TestParse_ternary(t *testing.T) {
 	require.Equal(t, tf.Enum(`a`, `b`, `c`), pcore.Parse(`Enum[a, b, c]`))
 }
 
+func TestParse_map(t *testing.T) {
+	require.Equal(t, vf.Map(`a`, 10), pcore.Parse(`{a => 10}`))
+	require.Equal(t, vf.Values(1, vf.Map(`a`, 10), 23), pcore.Parse(`[1, a => 10, 23]`))
+	require.Panic(t, func() { pcore.Parse(`{]`) }, `expected a literal, got '\]'`)
+}
+
 func TestParse_string(t *testing.T) {
 	require.Equal(t, vf.String("\r"), pcore.Parse(`"\r"`))
 	require.Equal(t, vf.String("\n"), pcore.Parse(`"\n"`))
@@ -307,6 +412,14 @@ func TestParse_errors(t *testing.T) {
 	require.Panic(t, func() { pcore.Parse(`/\/`) }, `unterminated regexp`)
 	require.Panic(t, func() { pcore.Parse(`Pattern[/\//`) }, `expected one of ',' or '\]', got EOT`)
 	require.Panic(t, func() { pcore.Parse(`Pattern[/\t/`) }, `expected one of ',' or '\]', got EOT`)
+	require.Panic(t, func() { pcore.Parse(`{1, 2}`) }, `expected '=>', got ','`)
+	require.Panic(t, func() { pcore.Parse(`{1 => 2 3}`) }, `expected one of ',' or '\}', got 3`)
+	require.Panic(t, func() { pcore.Parse(`?`) }, `expected a literal, got '\?'`)
+	require.Panic(t, func() { pcore.Parse(`type Foo {}`) }, `expected '=', got Foo`)
+	require.Panic(t, func() { pcore.Parse(`Foo(a b)`) }, `expected one of ',' or '\)', got b`)
+	require.Panic(t, func() { pcore.Parse(`+x`) }, `unexpected character '\+'`)
+	require.Panic(t, func() { pcore.Parse(`A:B`) }, `unexpected character 'B'`)
+	require.Panic(t, func() { pcore.Parse(`a:b`) }, `unexpected character 'b'`)
 }
 
 func TestParseFile_errors(t *testing.T) {

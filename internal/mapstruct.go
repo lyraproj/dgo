@@ -114,7 +114,7 @@ func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 
 	exact := !additional
 	entries.EachEntry(func(e dgo.MapEntry) {
-		rq := false
+		rq := true
 		kt := e.Key().Type()
 		var vt dgo.Type
 		if vm, ok := e.Value().(dgo.Map); ok {
@@ -288,7 +288,7 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 	return false
 }
 
-func (t *structType) Get(key interface{}) dgo.MapEntry {
+func (t *structType) Get(key interface{}) dgo.StructMapEntry {
 	kv := Value(key)
 	if _, ok := kv.(dgo.Type); !ok {
 		kv = kv.Type()
@@ -487,8 +487,10 @@ func (t *structEntry) Equals(other interface{}) bool {
 }
 
 func (t *structEntry) deepEqual(seen []dgo.Value, other deepEqual) bool {
-	if ot, ok := other.(*structEntry); ok {
-		return t.required == ot.required && equals(seen, &t.mapEntry, &ot.mapEntry)
+	if ot, ok := other.(dgo.StructMapEntry); ok {
+		return t.required == ot.Required() &&
+			equals(seen, t.mapEntry.key, ot.Key()) &&
+			equals(seen, t.mapEntry.value, ot.Value())
 	}
 	return false
 }

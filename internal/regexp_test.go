@@ -16,6 +16,7 @@ func TestRegexpDefault(t *testing.T) {
 	tp := typ.Regexp
 	r := regexp.MustCompile(`[a-z]+`)
 	require.Instance(t, tp, r)
+	require.True(t, tp.IsInstance(r))
 	require.NotInstance(t, tp, `r`)
 	require.Assignable(t, tp, tp)
 	require.NotAssignable(t, tp, typ.String)
@@ -34,9 +35,11 @@ func TestRegexpDefault(t *testing.T) {
 }
 
 func TestRegexpExact(t *testing.T) {
-	r := vf.Value(regexp.MustCompile(`[a-z]+`))
-	tp := r.Type()
+	rx := regexp.MustCompile(`[a-z]+`)
+	r := vf.Value(rx)
+	tp := r.Type().(dgo.RegexpType)
 	require.Instance(t, tp, r)
+	require.True(t, tp.IsInstance(rx))
 	require.NotInstance(t, tp, regexp.MustCompile(`[a-z]*`))
 	require.NotInstance(t, tp, `[a-z]*`)
 	require.Assignable(t, typ.Regexp, tp)

@@ -163,6 +163,8 @@ func TestStructType(t *testing.T) {
 	tp = tf.StructMap(false,
 		tf.StructMapEntry(`a`, typ.Integer, true))
 	require.Equal(t, tp, tf.ParseType(`{a:int}`))
+	require.NotEqual(t, tp, tf.ParseType(`{a?:int}`))
+	require.NotEqual(t, tp, tf.ParseType(`{a:int,b:int}`))
 	require.Assignable(t, tp, tf.ParseType(`{a:0..5}`))
 	require.Assignable(t, tp, tf.AnyOf(tf.ParseType(`{a:0..5}`), tf.ParseType(`{a:10..15}`)))
 	require.NotAssignable(t, tp, tf.ParseType(`{a:float}`))
@@ -274,10 +276,10 @@ func TestStructFromMap(t *testing.T) {
 	}, `cannot be assigned to a variable of type map`)
 
 	tp := tf.StructMapFromMap(false, vf.Map(`first`, typ.String))
-	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, false)))
+	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, true)))
 
 	tp = tf.StructMapFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String)))
-	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, false)))
+	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, true)))
 
 	tp = tf.StructMapFromMap(false, vf.Map(`first`, vf.Map(`type`, typ.String, `required`, true)))
 	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, true)))
@@ -287,4 +289,19 @@ func TestStructFromMap(t *testing.T) {
 
 	tp = tf.StructMapFromMap(false, vf.Map(`first`, vf.Map(`type`, `string`, `required`, false)))
 	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, false)))
+
+	tp = tf.StructMapFromMap(false, vf.Map(`first`, `string`))
+	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, typ.String, true)))
+
+	tp = tf.StructMapFromMap(false, vf.Map(`first`, `"x"`))
+	require.Equal(t, tp, tf.StructMap(false, tf.StructMapEntry(`first`, vf.String(`x`).Type(), true)))
+
+	tp = tf.StructMapFromMap(false, vf.Map())
+	require.Equal(t, tp, tf.StructMap(false))
+	require.False(t, tp.Unbounded())
+
+	tp = tf.StructMapFromMap(true, vf.Map())
+	require.Equal(t, typ.Any, tp.KeyType())
+	require.Equal(t, typ.Any, tp.ValueType())
+	require.True(t, tp.Unbounded())
 }

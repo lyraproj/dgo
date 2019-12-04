@@ -164,8 +164,8 @@ type (
 		// Each iterates over each entry of the StructMapType
 		Each(actor func(StructMapEntry))
 
-		// Get returns the MapEntry that is identified with the given key
-		Get(key interface{}) MapEntry
+		// Get returns the StructMapEntry that is identified with the given key
+		Get(key interface{}) StructMapEntry
 
 		// Len returns the number of StructEntrys in this StructMapType
 		Len() int

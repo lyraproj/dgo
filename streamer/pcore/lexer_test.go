@@ -2,6 +2,9 @@ package pcore
 
 import (
 	"fmt"
+	"testing"
+
+	require "github.com/lyraproj/dgo/dgo_test"
 
 	"github.com/lyraproj/dgo/util"
 )
@@ -15,6 +18,8 @@ func Example_nextToken() {
     fourth => 2.3e-2,
     fifth => 'hello',
     sixth => "world",
+    rx => /a.*/,
+    ident => a::b::_c,
     type => Foo::Bar,
     value => "String\nWith \\Escape",
     array => [a, b, c],
@@ -56,6 +61,14 @@ func Example_nextToken() {
 	//rocket: '=>'
 	//string: 'world'
 	//,: ''
+	//identifier: 'rx'
+	//rocket: '=>'
+	//regexp: 'a.*'
+	//,: ''
+	//identifier: 'ident'
+	//rocket: '=>'
+	//identifier: 'a::b::_c'
+	//,: ''
 	//identifier: 'type'
 	//rocket: '=>'
 	//name: 'Foo::Bar'
@@ -84,4 +97,8 @@ func Example_nextToken() {
 	//integer: '3'
 	//): ''
 	//}: ''
+}
+
+func Test_tokenTypeString(t *testing.T) {
+	require.Equal(t, `end`, tokenTypeString(end))
 }

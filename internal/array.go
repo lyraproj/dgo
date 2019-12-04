@@ -660,17 +660,6 @@ func (t *tupleType) Unbounded() bool {
 	return t.variadic
 }
 
-func (t *tupleType) ExactValue() dgo.Value {
-	a := util.SliceCopy(t.types)
-	for i := range a {
-		e := a[i]
-		if et, ok := e.(dgo.ExactType); ok {
-			a[i] = et.ExactValue()
-		}
-	}
-	return &array{slice: a, frozen: true}
-}
-
 func (t *tupleType) Variadic() bool {
 	return t.variadic
 }

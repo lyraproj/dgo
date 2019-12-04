@@ -63,7 +63,7 @@ var Function dgo.FunctionType = internal.DefaultFunctionType
 var Integer dgo.IntegerType = internal.DefaultIntegerType
 
 // Regexp is a type that represents all regexps
-var Regexp dgo.Type = internal.DefaultRegexpType
+var Regexp dgo.RegexpType = internal.DefaultRegexpType
 
 // Time is a type that represents all timestamps
 var Time dgo.Type = internal.DefaultTimeType
@@ -78,7 +78,7 @@ var String dgo.StringType = internal.DefaultStringType
 var DgoString dgo.StringType = internal.DefaultDgoStringType
 
 // Error is a type that represents all implementation of error
-var Error dgo.Type = internal.DefaultErrorType
+var Error dgo.ErrorType = internal.DefaultErrorType
 
 // Native is a type that represents all Native values
 var Native dgo.Type = internal.DefaultNativeType

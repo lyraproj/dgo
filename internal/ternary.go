@@ -33,11 +33,11 @@ func AllOfType(types []interface{}) dgo.Type {
 		// And of no types is an unconstrained type
 		return DefaultAnyType
 	case 1:
-		return types[0].(dgo.Type)
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i].(dgo.Type)
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &allOfType{slice: ts, frozen: true}
 }
@@ -80,6 +80,9 @@ func (t *allOfType) Equals(other interface{}) bool {
 func (t *allOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfType); ok {
 		return (*array)(t).SameValues((*array)(ot))
+	}
+	if ot, ok := other.(*allOfValueType); ok {
+		return sameValues((*array)(t), (*array)(ot), valueAsType)
 	}
 	return false
 }
@@ -186,6 +189,9 @@ func (t *allOfValueType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfValueType); ok {
 		return (*array)(t).SameValues((*array)(ot))
 	}
+	if ot, ok := other.(*allOfType); ok {
+		return sameValues((*array)(ot), (*array)(t), valueAsType)
+	}
 	return false
 }
 
@@ -249,11 +255,11 @@ func AnyOfType(types []interface{}) dgo.Type {
 		// Or of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0].(dgo.Type)
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i].(dgo.Type)
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
@@ -358,11 +364,11 @@ func OneOfType(types []interface{}) dgo.Type {
 		// One of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0].(dgo.Type)
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i].(dgo.Type)
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &oneOfType{slice: ts, frozen: true}
 }
@@ -519,6 +525,13 @@ func typeSlice(s []dgo.Value, fc func(dgo.Value) dgo.Type) []dgo.Type {
 		ts[i] = fc(s[i])
 	}
 	return ts
+}
+
+func sameValues(a, b dgo.Array, fc func(dgo.Value) dgo.Type) bool {
+	if a.Len() == b.Len() {
+		return a.ContainsAll(b.Map(func(e dgo.Value) interface{} { return fc(e) }))
+	}
+	return false
 }
 
 // lessRestrictive is true if slice 'a' is less restrictive than slice 'b'

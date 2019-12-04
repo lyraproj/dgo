@@ -1276,8 +1276,11 @@ func (t *exactMapType) Generic() dgo.Type {
 		max:       math.MaxInt64}
 }
 
-func (t *exactMapType) Get(key interface{}) dgo.MapEntry {
+func (t *exactMapType) Get(key interface{}) dgo.StructMapEntry {
 	k := Value(key)
+	if et, ok := k.(dgo.ExactType); ok {
+		k = et.ExactValue()
+	}
 	if v := t.value.Get(k); v != nil {
 		return &structEntry{mapEntry{k.Type(), v.Type()}, true}
 	}

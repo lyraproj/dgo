@@ -3,6 +3,7 @@ package dgo
 import (
 	"reflect"
 	"regexp"
+	"time"
 )
 
 type (
@@ -82,6 +83,14 @@ type (
 		IsInstance(regexp *regexp.Regexp) bool
 	}
 
+	// TimeType matches time values
+	TimeType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(tm time.Time) bool
+	}
+
 	// SizedType is implemented by types that may have a size constraint
 	// such as String, Array, or Map
 	SizedType interface {
@@ -108,6 +117,14 @@ type (
 
 		// GoType returns the reflect.Type
 		GoType() reflect.Type
+	}
+
+	// ErrorType is the type for all error values
+	ErrorType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(error) bool
 	}
 
 	// AliasContainer is implemented by types and values that can contain other types.

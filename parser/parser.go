@@ -78,8 +78,8 @@ func expect(state int) (s string) {
 	return
 }
 
-func (p *parser) badSyntax(t *Token, state int) error {
-	return fmt.Errorf(`expected %s, got %s`, expect(state), p.TokenString(t))
+func badSyntax(t *Token, state int) error {
+	return fmt.Errorf(`expected %s, got %s`, expect(state), tokenString(t))
 }
 
 type (
@@ -105,9 +105,6 @@ type (
 
 		// StringReader returns the reader in use by this parser
 		StringReader() *util.StringReader
-
-		// TokenString returns the string representation of the given token
-		TokenString(*Token) string
 	}
 
 	// Base provides all methods of the Parser interface except the
@@ -258,13 +255,8 @@ func (p *parser) Parse(t *Token) {
 	p.anyOf(t)
 	tk := p.NextToken()
 	if tk.Type != end {
-		panic(p.badSyntax(tk, exEnd))
+		panic(badSyntax(tk, exEnd))
 	}
-}
-
-// TokenString returns the string representation of the given token
-func (p *parser) TokenString(t *Token) string {
-	return tokenString(t)
 }
 
 func (p *parser) list(endChar int) {
@@ -283,7 +275,7 @@ func (p *parser) list(endChar int) {
 				break
 			}
 			if expectEntry == 2 {
-				panic(p.badSyntax(t, exListEnd))
+				panic(badSyntax(t, exListEnd))
 			}
 			expectEntry = 0
 			p.anyOf(t)
@@ -302,7 +294,7 @@ func (p *parser) list(endChar int) {
 			break
 		}
 		if t.Type != ',' {
-			panic(p.badSyntax(t, exListComma))
+			panic(badSyntax(t, exListComma))
 		}
 	}
 
@@ -317,7 +309,7 @@ func (p *parser) list(endChar int) {
 		}
 	} else {
 		if expectEntry == 0 {
-			tv = internal.DefaultTupleType
+			tv = internal.EmptyTupleType
 		} else {
 			tv = makeStructType(nil, ellipsis)
 		}
@@ -384,7 +376,7 @@ func (p *parser) params() {
 			break
 		}
 		if t.Type != ',' {
-			panic(p.badSyntax(t, exParamsComma))
+			panic(badSyntax(t, exParamsComma))
 		}
 	}
 	as := p.From(szp)
@@ -498,7 +490,7 @@ func (p *parser) unary(t *Token) {
 		if s, ok := p.PopLast().(dgo.String); ok {
 			p.Append(internal.CiStringType(s))
 		} else {
-			panic(p.badSyntax(t, exStringLiteral))
+			panic(badSyntax(t, exStringLiteral))
 		}
 	}
 	if negate {
@@ -510,7 +502,7 @@ func (p *parser) unary(t *Token) {
 func (p *parser) mapExpression() dgo.Value {
 	n := p.NextToken()
 	if n.Type != '[' {
-		panic(p.badSyntax(n, exLeftBracket))
+		panic(badSyntax(n, exLeftBracket))
 	}
 
 	// Deal with key type and size constraint
@@ -524,7 +516,7 @@ func (p *parser) mapExpression() dgo.Value {
 		p.params()
 		szc = p.PopLast().(dgo.Array)
 	} else if n.Type != ']' {
-		panic(p.badSyntax(n, exRightBracket))
+		panic(badSyntax(n, exRightBracket))
 	}
 
 	p.typeExpression(p.NextToken())
@@ -546,7 +538,7 @@ func (p *parser) meta() dgo.Value {
 	tp := p.PopLastType()
 	t := p.NextToken()
 	if t.Type != ']' {
-		panic(p.badSyntax(t, exRightBracket))
+		panic(badSyntax(t, exRightBracket))
 	}
 	return internal.MetaType(tp)
 }
@@ -580,7 +572,7 @@ func (p *parser) sensitive() dgo.Value {
 func (p *parser) funcExpression() dgo.Value {
 	t := p.NextToken()
 	if t.Type != '(' {
-		panic(p.badSyntax(t, exLeftParen))
+		panic(badSyntax(t, exLeftParen))
 	}
 	p.list(')')
 	args := p.PopLastType().(dgo.TupleType)
@@ -707,7 +699,7 @@ func (p *parser) dotRange(t *Token) dgo.Value {
 		p.NextToken()
 		tp = internal.FloatType(-math.MaxFloat64, tokenFloat(n), inclusive)
 	default:
-		panic(p.badSyntax(n, exIntOrFloat))
+		panic(badSyntax(n, exIntOrFloat))
 	}
 	return tp
 }
@@ -722,7 +714,7 @@ func (p *parser) array() dgo.Value {
 
 func (p *parser) aliasReference(t *Token) dgo.Value {
 	if t.Type != identifier {
-		panic(p.badSyntax(t, exAliasRef))
+		panic(badSyntax(t, exAliasRef))
 	}
 	if tp := internal.NamedType(t.Value); tp != nil {
 		return tp
@@ -762,7 +754,7 @@ func (p *parser) typeExpression(t *Token) {
 		p.anyOf(p.NextToken())
 		n := p.NextToken()
 		if n.Type != ')' {
-			panic(p.badSyntax(n, exRightParen))
+			panic(badSyntax(n, exRightParen))
 		}
 		return
 	case '[':
@@ -771,7 +763,7 @@ func (p *parser) typeExpression(t *Token) {
 		tp = p.aliasReference(p.NextToken())
 		n := p.NextToken()
 		if n.Type != '>' {
-			panic(p.badSyntax(n, exRightAngle))
+			panic(badSyntax(n, exRightAngle))
 		}
 	case integer:
 		tp = p.integer(t)
@@ -790,7 +782,7 @@ func (p *parser) typeExpression(t *Token) {
 	case regexpLiteral:
 		tp = internal.PatternType(regexp.MustCompile(t.Value))
 	default:
-		panic(p.badSyntax(t, exTypeExpression))
+		panic(badSyntax(t, exTypeExpression))
 	}
 	p.Append(tp)
 }

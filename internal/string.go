@@ -67,10 +67,8 @@ func newString(t dgo.Type, arg dgo.Value) dgo.String {
 		switch arg := arg.(type) {
 		case dgo.String:
 			s = arg
-		case fmt.Stringer:
-			s = String(arg.String())
 		default:
-			panic(fmt.Errorf(`a value of type '%s' cannot be converted to an int`, arg.Type()))
+			s = String(arg.String())
 		}
 	}
 

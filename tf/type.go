@@ -23,7 +23,7 @@ func ParseType(content string) dgo.Type {
 
 // Parse parses the given content into a dgo.Value.
 func Parse(content string) dgo.Value {
-	return parser.Parse(content)
+	return internal.ExactValue(parser.Parse(content))
 }
 
 // ParseFile parses the given content into a dgo.Type. The filename is used in error messages.

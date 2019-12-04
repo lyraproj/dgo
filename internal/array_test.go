@@ -168,13 +168,18 @@ func TestExactArrayType(t *testing.T) {
 	require.NotAssignable(t, tp, typ.Array)
 	require.NotAssignable(t, tp, tf.Array(et, 1, 1))
 
+	require.Equal(t, vf.String(`a`).Type(), tp.Element(0))
+	require.Equal(t, vf.String(`b`).Type(), tp.Element(1))
+
 	require.Assignable(t, tp, tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type()))
 	require.NotAssignable(t, tp, tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type(), vf.String(`c`).Type()))
 	require.NotAssignable(t, tp, tf.Tuple(vf.String(`a`).Type(), typ.String))
 
+	require.Equal(t, 2, tp.Len())
 	require.Equal(t, 2, tp.Min())
 	require.Equal(t, 2, tp.Max())
 	require.False(t, tp.Unbounded())
+	require.False(t, tp.Variadic())
 
 	require.Equal(t, tf.Array(typ.String), typ.Generic(tp))
 
@@ -325,13 +330,11 @@ func TestTupleType(t *testing.T) {
 
 	tt = tf.Tuple(typ.String, typ.String)
 	require.Equal(t, tf.Array(typ.String), typ.Generic(tt))
-	require.Equal(t, vf.Values(typ.String, typ.String), typ.ExactValue(tt))
 
 	te := tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type())
 	require.Assignable(t, tt, te)
 	require.NotAssignable(t, te, tt)
 	require.Equal(t, tf.Array(typ.String), typ.Generic(te))
-	require.Equal(t, vf.Strings(`a`, `b`), typ.ExactValue(te))
 }
 
 func TestTupleType_selfReference(t *testing.T) {

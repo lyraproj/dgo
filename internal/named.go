@@ -127,14 +127,7 @@ func (t *named) Assignable(other dgo.Type) bool {
 }
 
 func (t *named) New(arg dgo.Value) dgo.Value {
-	if t.ctor == nil {
-		panic(fmt.Errorf(`creating new instances of %s is not possible`, t.name))
-	}
-	v := t.ctor(arg)
-	if t.asgChecker == nil || t.asgChecker(t, v.Type()) {
-		return v
-	}
-	panic(IllegalAssignment(t, v))
+	return newNamed(t, arg)
 }
 
 func (t *named) Equals(other interface{}) bool {
@@ -156,9 +149,6 @@ func (t *named) ExtractInitArg(value dgo.Value) dgo.Value {
 }
 
 func (t *named) Instance(value interface{}) bool {
-	if t.asgChecker == nil {
-		return reflect.TypeOf(value).AssignableTo(t.AssignableType())
-	}
 	return t.Assignable(Value(value).Type())
 }
 
@@ -215,12 +205,20 @@ func (t *parameterized) Equals(other interface{}) bool {
 	return false
 }
 
+func (t *parameterized) Generic() dgo.Type {
+	return t.NamedType
+}
+
 func (t *parameterized) HashCode() int {
 	return t.NamedType.HashCode()*31 + t.params.HashCode()
 }
 
 func (t *parameterized) Instance(value interface{}) bool {
 	return t.Assignable(Value(value).Type())
+}
+
+func (t *parameterized) New(arg dgo.Value) dgo.Value {
+	return newNamed(t, arg)
 }
 
 func (t *parameterized) Parameters() dgo.Array {
@@ -239,6 +237,10 @@ func (t *exactNamed) Generic() dgo.Type {
 	return t.NamedTypeExtension.(dgo.Type)
 }
 
+func (t *exactNamed) New(arg dgo.Value) dgo.Value {
+	return newNamed(t, arg)
+}
+
 func (t *exactNamed) ReflectType() reflect.Type {
 	return t.Generic().ReflectType()
 }
@@ -249,4 +251,16 @@ func (t *exactNamed) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *exactNamed) ExactValue() dgo.Value {
 	return t.value
+}
+
+func newNamed(rt dgo.NamedType, arg dgo.Value) dgo.Value {
+	t := Generic(rt).(*named)
+	if t.ctor == nil {
+		panic(fmt.Errorf(`creating new instances of %s is not possible`, rt.Name()))
+	}
+	v := t.ctor(arg)
+	if t.asgChecker == nil || t.asgChecker(rt, v.Type()) {
+		return v
+	}
+	panic(IllegalAssignment(rt, v))
 }

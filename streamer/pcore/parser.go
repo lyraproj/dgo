@@ -16,21 +16,14 @@ import (
 
 // States:
 const (
-	exElement     = 0 // Expect value literal
-	exParam       = 1 // Expect value literal
-	exKey         = 2 // Expect exKey or end of hash
-	exValue       = 3 // Expect value
-	exEntryValue  = 4 // Expect value
-	exRocket      = 5 // Expect rocket
-	exListComma   = 6 // Expect comma or end of array
-	exParamsComma = 7 // Expect comma or end of parameter list
-	exHashComma   = 8 // Expect comma or end of hash
-	exName        = 9
-	exEqual       = 10
-	exListFirst   = 11
-	exHashFirst   = 12
-	exParamsFirst = 13
-	exEnd         = 14
+	exElement     = iota // Expect value literal
+	exParam              // Expect value literal
+	exRocket             // Expect rocket
+	exListComma          // Expect comma or end of array
+	exParamsComma        // Expect comma or end of parameter list
+	exHashComma          // Expect comma or end of hash
+	exEqual
+	exEnd
 )
 
 const defaultLiteral = `default`
@@ -39,10 +32,6 @@ func expect(state int) (s string) {
 	switch state {
 	case exElement, exParam:
 		s = `a literal`
-	case exKey:
-		s = `a hash key`
-	case exValue, exEntryValue:
-		s = `a hash value`
 	case exRocket:
 		s = `'=>'`
 	case exListComma:
@@ -51,16 +40,8 @@ func expect(state int) (s string) {
 		s = `one of ',' or ')'`
 	case exHashComma:
 		s = `one of ',' or '}'`
-	case exName:
-		s = `a type name`
 	case exEqual:
 		s = `'='`
-	case exListFirst:
-		s = `']' or a literal`
-	case exParamsFirst:
-		s = `')' or a literal`
-	case exHashFirst:
-		s = `'}' or a hash key`
 	case exEnd:
 		s = `end of expression`
 	}
@@ -118,10 +99,6 @@ func (p *pcoreParser) Parse(t *parser.Token) {
 	if tk.Type != end {
 		panic(badSyntax(tk, exEnd))
 	}
-}
-
-func (p *pcoreParser) TokenString(t *parser.Token) string {
-	return tokenString(t)
 }
 
 func (p *pcoreParser) array() {
@@ -230,19 +207,11 @@ func (p *pcoreParser) element(t *parser.Token) {
 		p.hash()
 	case '[':
 		p.array()
-	case '(':
-		p.params()
 	case integer:
-		i, err := strconv.ParseInt(t.Value, 0, 64)
-		if err != nil {
-			panic(err)
-		}
+		i, _ := strconv.ParseInt(t.Value, 0, 64)
 		p.Append(vf.Integer(i))
 	case float:
-		f, err := strconv.ParseFloat(t.Value, 64)
-		if err != nil {
-			panic(err)
-		}
+		f, _ := strconv.ParseFloat(t.Value, 64)
 		p.Append(vf.Float(f))
 	case identifier:
 		p.identifier(t)
@@ -288,9 +257,9 @@ func arrayType(p *pcoreParser) dgo.Value {
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Array`, 1, 3)
 
-		var et dgo.Type
 		var min int64 = 0
 		var max int64 = math.MaxInt64
+		et := typ.Any
 		argc := args.Len()
 		switch argc {
 		case 1, 2:
@@ -341,39 +310,39 @@ func callableType(p *pcoreParser) dgo.Value {
 	// get size arguments
 	p.NextToken()
 	p.array()
-	args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
-	args.AssertSize(`Callable`, 1, 3)
+	args := p.PopLast().(dgo.Array)
+	if args.Len() == 2 {
+		if params, ok := args.Get(0).(dgo.Array); ok {
+			rt = args.Get(1).(dgo.Type)
+			args = params
+		}
+	}
+
 	argc := args.Len()
-	first := args.Get(0)
-	if params, ok := first.(dgo.TupleType); ok {
-		var blockType dgo.Type
+	if block, ok := args.Get(argc - 1).(dgo.FunctionType); ok && argc > 1 {
+		// In Puppet, if the last argument is a Function, then it is considered
+		// to be a block. Such a block is not a proper argument and may hence
+		// be preceded with one or two arguments denoting the argument tuple size.
+		//
+		// In dgo, there's no notion of a "block" but it is possible to pass
+		// a function as a parameter. To enable such passing, and still enable
+		// varargs, we pass the "block" function as the very first argument.
 		if argc > 1 {
-			blockType, ok = args.Get(1).(dgo.Type)
-			if argc > 2 {
-				rt, ok = args.Get(2).(dgo.Type)
+			args.Pop() // pop block
+			var n int64
+			if n, ok = getIfInt(args, argc-2, -1); ok {
+				if n != -1 {
+					args.Set(argc-2, n+1)
+				}
+				if argc > 3 {
+					var n2 int64
+					if n2, ok = getIfInt(args, argc-3, 0); ok {
+						args.Set(argc-3, n2+1)
+					}
+				}
 			}
+			args.Insert(0, block)
 		}
-
-		if ok {
-			if blockType != nil {
-				params = paramsWithBlock(params, blockType)
-			}
-			return tf.Function(params, returnType(rt))
-		}
-	}
-
-	if argc == 1 || argc == 2 {
-		// check for [[params, block], return]
-		if iv, ok := first.(dgo.Array); ok {
-			if argc == 2 {
-				rt = args.Arg(`Callable`, 1, typ.Type).(dgo.Type)
-			}
-			args = vf.ArgumentsFromArray(iv)
-		}
-	}
-
-	if rt == nil {
-		rt = typ.Any
 	}
 	return tf.Function(tupleFromArgs(args), returnType(rt))
 }
@@ -483,10 +452,12 @@ func notUndefType(p *pcoreParser) dgo.Value {
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`NotUndef`, 1, 1)
 		tp := args.Arg(`Type`, 0, typ.Type).(dgo.Type)
-		if tp.Assignable(typ.Nil) {
-			tp = tf.AllOf(tf.Not(typ.Nil), tp)
+		if tp != typ.Any {
+			if tp.Assignable(typ.Nil) {
+				tp = tf.AllOf(tf.Not(typ.Nil), tp)
+			}
+			return tp
 		}
-		return tp
 	}
 	return tf.Not(typ.Nil)
 }
@@ -527,19 +498,26 @@ func tupleFromArgs(args dgo.Array) dgo.TupleType {
 	l := args.Len()
 	var min int64
 	var max int64
-	if n, ok := getIfInt(args, l-1, math.MaxInt64); ok {
+	if n, ok := getIfInt(args, l-1, -1); ok {
 		args.Pop()
 		l--
-		if min, ok = getIfInt(args, l-1, int64(l-2)); ok {
+		if min, ok = getIfInt(args, l-1, -1); ok {
 			args.Pop()
 			l--
 			max = n
+			if min == -1 {
+				min = int64(l)
+			}
+			if max == -1 {
+				max = int64(l)
+			}
 		} else {
-			if n == math.MaxInt64 {
-				min = 0
+			if n == -1 {
+				min = int64(l)
 			} else {
 				min = n
 			}
+			max = math.MaxInt64
 		}
 	} else {
 		min = int64(l)
@@ -565,7 +543,7 @@ func tupleType(p *pcoreParser) dgo.Value {
 		p.array()
 		return tupleFromArgs(p.PopLast().(dgo.Array))
 	}
-	return typ.Array
+	return typ.Tuple
 }
 
 func patternType(p *pcoreParser) dgo.Value {
@@ -622,7 +600,7 @@ func structType(p *pcoreParser) dgo.Value {
 		})
 		return tf.StructMap(false, entries...)
 	}
-	return typ.Map
+	return tf.StructMap(true)
 }
 
 func typeType(p *pcoreParser) dgo.Value {
@@ -700,10 +678,17 @@ func (p *pcoreParser) knownType(t *parser.Token) dgo.Value {
 }
 
 func (p *pcoreParser) name(t *parser.Token) dgo.Value {
-	if tp := p.knownType(t); tp != nil {
-		return tp
+	var tp dgo.Value
+	tp = p.knownType(t)
+	if tp == nil {
+		tp = p.namedType(t.Value)
 	}
-	return p.namedType(t.Value)
+	if p.PeekToken().Type == '(' {
+		p.NextToken()
+		p.params()
+		tp = parser.NewCall(tp.(dgo.Type), vf.ArgumentsFromArray(p.PopLast().(dgo.Array)))
+	}
+	return tp
 }
 
 func (p *pcoreParser) namedType(n string) dgo.Value {
@@ -714,13 +699,7 @@ func (p *pcoreParser) namedType(n string) dgo.Value {
 	}
 
 	n = toDgoName(n)
-	tp := p.aliasReference(n)
-	if p.PeekToken().Type == '(' {
-		p.NextToken()
-		p.params()
-		tp = parser.NewCall(tp, vf.ArgumentsFromArray(p.PopLast().(dgo.Array)))
-	}
-	return tp
+	return p.aliasReference(n)
 }
 
 func (p *pcoreParser) aliasReference(n string) dgo.Type {
@@ -812,34 +791,12 @@ func optionalValue(v dgo.Value) (dgo.Value, bool) {
 	if tt, ok := v.(dgo.TernaryType); ok {
 		if tt.Operator() == dgo.OpOr {
 			ops := tt.Operands()
-			if ops.Len() == 2 {
-				if typ.Nil.Equals(ops.Get(0)) {
-					return ops.Get(1), true
-				}
-				if typ.Nil.Equals(ops.Get(1)) {
-					return ops.Get(0), true
-				}
+			if ops.Len() == 2 && typ.Nil.Equals(ops.Get(0)) {
+				return ops.Get(1), true
 			}
 		}
 	}
 	return v, false
-}
-
-func paramsWithBlock(params dgo.TupleType, block dgo.Type) dgo.TupleType {
-	tva := params.ElementTypes().InterfaceSlice()
-	ln := len(tva) - 1
-	tvc := make([]interface{}, ln+1)
-	copy(tvc, tva)
-	if params.Variadic() {
-		// Move variadic type to new last pos
-		tvc[ln] = tvc[ln-1]
-		tvc[ln-1] = block
-		params = tf.VariadicTuple(tvc...)
-	} else {
-		tvc[ln] = block
-		params = tf.Tuple(tvc...)
-	}
-	return params
 }
 
 func returnType(rt dgo.Type) dgo.TupleType {
@@ -853,12 +810,6 @@ func returnType(rt dgo.Type) dgo.TupleType {
 }
 
 func toDgoName(pcoreName string) string {
-	switch pcoreName {
-	case `Integer`:
-		return `int`
-	case `Boolean`:
-		return `bool`
-	}
 	ns := strings.Split(pcoreName, `::`)
 	for i := range ns {
 		n := ns[i]

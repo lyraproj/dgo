@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lyraproj/dgo/dgo"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
@@ -49,8 +51,9 @@ func TestTimeType_New(t *testing.T) {
 func TestTimeExact(t *testing.T) {
 	now := time.Now()
 	ts := vf.Value(now)
-	tp := ts.Type()
+	tp := ts.Type().(dgo.TimeType)
 	require.Instance(t, tp, ts)
+	require.True(t, tp.IsInstance(now))
 	require.NotInstance(t, tp, now.Add(1))
 	require.NotInstance(t, tp, now.String())
 	require.Assignable(t, typ.Time, tp)
