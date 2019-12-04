@@ -79,10 +79,10 @@ func (t *allOfType) Equals(other interface{}) bool {
 
 func (t *allOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	if ot, ok := other.(*allOfValueType); ok {
-		return sameValues((*array)(t), (*array)(ot), valueAsType)
+		return sameValues(seen, (*array)(t), (*array)(ot), valueAsType)
 	}
 	return false
 }
@@ -187,10 +187,10 @@ func (t *allOfValueType) Equals(other interface{}) bool {
 
 func (t *allOfValueType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfValueType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	if ot, ok := other.(*allOfType); ok {
-		return sameValues((*array)(ot), (*array)(t), valueAsType)
+		return sameValues(seen, (*array)(ot), (*array)(t), valueAsType)
 	}
 	return false
 }
@@ -298,7 +298,7 @@ func (t *anyOfType) Equals(other interface{}) bool {
 
 func (t *anyOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*anyOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	return false
 }
@@ -416,7 +416,7 @@ func (t *oneOfType) Equals(other interface{}) bool {
 
 func (t *oneOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*oneOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	return false
 }
@@ -527,9 +527,12 @@ func typeSlice(s []dgo.Value, fc func(dgo.Value) dgo.Type) []dgo.Type {
 	return ts
 }
 
-func sameValues(a, b dgo.Array, fc func(dgo.Value) dgo.Type) bool {
+func sameValues(seen []dgo.Value, a, b dgo.Array, fc func(dgo.Value) dgo.Type) bool {
 	if a.Len() == b.Len() {
-		return a.ContainsAll(b.Map(func(e dgo.Value) interface{} { return fc(e) }))
+		if fc != nil {
+			b = b.Map(func(e dgo.Value) interface{} { return fc(e) })
+		}
+		return a.(*array).deepContainsAll(seen, b)
 	}
 	return false
 }

@@ -181,7 +181,7 @@ func (v *exactBinaryType) ExactValue() dgo.Value {
 
 var encType = EnumType([]string{`%B`, `%b`, `%u`, `%s`, `%r`})
 
-func newBinary(t dgo.Type, arg dgo.Value) (b dgo.Value) {
+func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 	enc := `%B`
 	if args, ok := arg.(dgo.Arguments); ok {
 		args.AssertSize(`binary`, 1, 2)
@@ -192,6 +192,7 @@ func newBinary(t dgo.Type, arg dgo.Value) (b dgo.Value) {
 			arg = args.Get(0)
 		}
 	}
+	var b dgo.Value
 	switch arg := arg.(type) {
 	case dgo.Binary:
 		b = arg
@@ -213,7 +214,7 @@ func newBinary(t dgo.Type, arg dgo.Value) (b dgo.Value) {
 	if !t.Instance(b) {
 		panic(IllegalAssignment(t, b))
 	}
-	return
+	return b
 }
 
 // Binary creates a new Binary based on the given slice. If frozen is true, the
@@ -284,9 +285,10 @@ func (v *binary) Copy(frozen bool) dgo.Binary {
 	return &binary{bytes: cp, frozen: frozen}
 }
 
-func (v *binary) CompareTo(other interface{}) (r int, ok bool) {
+func (v *binary) CompareTo(other interface{}) (int, bool) {
 	var b []byte
 	var ob *binary
+	var ok bool
 	if ob, ok = other.(*binary); ok {
 		if v == ob {
 			return 0, true
@@ -304,7 +306,7 @@ func (v *binary) CompareTo(other interface{}) (r int, ok bool) {
 	a := v.bytes
 	top := len(a)
 	max := len(b)
-	r = 0
+	r := 0
 	if top < max {
 		r = -1
 		max = top
@@ -322,7 +324,7 @@ func (v *binary) CompareTo(other interface{}) (r int, ok bool) {
 			break
 		}
 	}
-	return
+	return r, ok
 }
 
 func (v *binary) Encode() string {

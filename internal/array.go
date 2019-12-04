@@ -1031,6 +1031,10 @@ func (v *array) Copy(frozen bool) dgo.Array {
 }
 
 func (v *array) ContainsAll(other dgo.Iterable) bool {
+	return v.deepContainsAll(nil, other)
+}
+
+func (v *array) deepContainsAll(seen []dgo.Value, other dgo.Iterable) bool {
 	a := v.slice
 	l := len(a)
 	if l < other.Len() {
@@ -1055,7 +1059,7 @@ func (v *array) ContainsAll(other dgo.Iterable) bool {
 		f := false
 		for j := range vs {
 			if be := vs[j]; be != nil {
-				if be.Equals(ea) {
+				if equals(seen, be, ea) {
 					vs[j] = nil
 					f = true
 					break

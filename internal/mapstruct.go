@@ -506,7 +506,7 @@ func boolsHash(s []bool) int {
 		if s[i] {
 			m = 3
 		}
-		h = h * m
+		h *= m
 	}
 	return h
 }
