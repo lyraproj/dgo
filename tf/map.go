@@ -22,6 +22,6 @@ func StructMap(additional bool, entries ...dgo.StructMapEntry) dgo.StructMapType
 }
 
 // StructMapFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
-func StructMapFromMap(additional bool, entries dgo.Map) dgo.MapType {
+func StructMapFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 	return internal.StructMapTypeFromMap(additional, entries)
 }
