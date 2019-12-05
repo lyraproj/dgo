@@ -28,6 +28,9 @@ func TestAllOfType(t *testing.T) {
 	require.NotEqual(t, tp, tf.AllOf(tf.Enum(`b`, `c`), tf.Enum(`a`, `b`, `c`)))
 	require.NotEqual(t, tp, tf.Enum(`a`, `b`, `c`))
 
+	require.NotEqual(t, tf.AllOf(`b`, `c`), tf.AnyOf(`b`, `c`))
+	require.NotEqual(t, tf.AllOf(`b`, `c`), tf.OneOf(`b`, `c`))
+
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
 
@@ -42,23 +45,36 @@ func TestAllOfType(t *testing.T) {
 
 	require.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 
-	tp = tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`)))
+	tp = tf.AllOf(
+		tf.Pattern(regexp.MustCompile(`a`)),
+		tf.Pattern(regexp.MustCompile(`b`)),
+		tf.Pattern(regexp.MustCompile(`c`)))
 	require.Instance(t, tp, `abc`)
 	require.NotInstance(t, tp, `c`)
 
-	require.Assignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`))))
+	require.Assignable(t, tp, tf.AllOf(
+		tf.Pattern(regexp.MustCompile(`a`)),
+		tf.Pattern(regexp.MustCompile(`b`)), tf.Pattern(regexp.MustCompile(`c`))))
 	require.NotAssignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
 	require.Assignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type()))
 	require.NotAssignable(t, tp, tf.AllOf(tf.Pattern(regexp.MustCompile(`a`)), vf.Value(`abc`).Type(), typ.String))
 
 	require.Assignable(t, tp, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType())
 	require.NotAssignable(t, vf.Values("abc", "bca").Type().(dgo.ArrayType).ElementType(), tp)
-	require.Assignable(t, tp, tf.Parse(`"abc"^/a/&/b/&/c/`))
-	require.Assignable(t, tf.Parse(`/a/|/b/|/c/`), tp)
+	require.Assignable(t, tp, tf.ParseType(`"abc"^/a/&/b/&/c/`))
+	require.Assignable(t, tf.ParseType(`/a/|/b/|/c/`), tp)
 
 	a := vf.Values(`a`, `b`, nil)
-	require.Same(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).Value(), a)
+	require.Same(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).ExactValue(), a)
 	require.Same(t, typ.Any, typ.Generic(a.Type()).(dgo.ArrayType).ElementType())
+}
+
+func TestAllOfValueType(t *testing.T) {
+	tp := vf.Values(`a`, `b`).Type().(dgo.ArrayType).ElementType()
+	require.Equal(t, tf.AllOf(`a`, `b`), tp)
+	require.Equal(t, tp, tf.AllOf(`a`, `b`))
+	require.NotEqual(t, tp, tf.AllOf(`a`, `b`, `c`))
+	require.NotEqual(t, tp, vf.Values(`a`, `b`))
 }
 
 func TestAnyOfType(t *testing.T) {
@@ -78,6 +94,9 @@ func TestAnyOfType(t *testing.T) {
 	require.Equal(t, tp, tf.AnyOf(typ.Integer, typ.String))
 	require.NotEqual(t, tp, tf.AnyOf(typ.Integer, typ.Boolean))
 	require.NotEqual(t, tp, typ.Integer)
+
+	require.NotEqual(t, tf.AnyOf(`b`, `c`), tf.AllOf(`b`, `c`))
+	require.NotEqual(t, tf.AnyOf(`b`, `c`), tf.OneOf(`b`, `c`))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
@@ -115,13 +134,18 @@ func TestOneOfType(t *testing.T) {
 	require.NotEqual(t, tp, tf.OneOf(typ.Integer, typ.Boolean))
 	require.NotEqual(t, tp, typ.Integer)
 
+	require.NotEqual(t, tf.OneOf(`b`, `c`), tf.AllOf(`b`, `c`))
+	require.NotEqual(t, tf.OneOf(`b`, `c`), tf.AnyOf(`b`, `c`))
+
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
 
 	require.Equal(t, tf.OneOf(), tf.Not(typ.Any))
 	require.Same(t, tf.OneOf(typ.String), typ.String)
 
-	require.Equal(t, tp.(dgo.TernaryType).Operands(), vf.Values(typ.Integer, tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
+	require.Equal(t,
+		tp.(dgo.TernaryType).Operands(),
+		vf.Values(typ.Integer, tf.Pattern(regexp.MustCompile(`a`)), tf.Pattern(regexp.MustCompile(`b`))))
 	require.Equal(t, tp.(dgo.TernaryType).Operator(), dgo.OpOne)
 
 	require.Equal(t, `int^/a/^/b/`, tp.String())
@@ -171,8 +195,8 @@ func TestIntEnum(t *testing.T) {
 	require.Instance(t, tp, 4)
 	require.NotInstance(t, tp, 5)
 	require.Assignable(t, typ.Integer, tp)
-	require.NotAssignable(t, tf.IntegerRange(3, 3, true), tp)
-	require.Assignable(t, tf.IntegerRange(2, 8, true), tp)
+	require.NotAssignable(t, tf.Integer(3, 3, true), tp)
+	require.Assignable(t, tf.Integer(2, 8, true), tp)
 	require.Assignable(t, tp, tf.IntEnum(8))
 	require.Assignable(t, tp, tf.IntEnum(2, 4))
 	require.Assignable(t, tp, tf.IntEnum(8, 2, 4))

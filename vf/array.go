@@ -47,3 +47,8 @@ func Integers(values ...int) dgo.Array {
 func Arguments(values ...interface{}) dgo.Arguments {
 	return internal.Arguments(values)
 }
+
+// ArgumentsFromArray returns an Arguments instance backed by the given array
+func ArgumentsFromArray(values dgo.Array) dgo.Arguments {
+	return internal.ArgumentsFromArray(values)
+}

@@ -21,7 +21,7 @@ import (
 func TestBinaryType(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
-	tp := v.Type().(dgo.BinaryType)
+	tp := tf.Binary(3, 3)
 	require.Assignable(t, typ.Binary, tp)
 	require.NotAssignable(t, tp, typ.Binary)
 	require.NotAssignable(t, tp, typ.String)
@@ -29,7 +29,6 @@ func TestBinaryType(t *testing.T) {
 	require.Instance(t, typ.Binary, v)
 	require.Instance(t, tp, v)
 	require.Instance(t, tp, []byte{1, 2, 3})
-	require.NotInstance(t, tp, []byte{1, 2})
 	require.NotInstance(t, tp, []byte{1, 2})
 	require.NotInstance(t, tf.Binary(1, 5), `abc`)
 
@@ -84,15 +83,52 @@ func TestBinaryType_New_badArg(t *testing.T) {
 }
 
 func TestBinaryType_New_badType(t *testing.T) {
-	require.Panic(t, func() { vf.New(tf.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) }, `cannot be assigned`)
+	require.Panic(t,
+		func() { vf.New(tf.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) },
+		`cannot be assigned`)
 }
 
 func TestBinaryType_New_badBytes(t *testing.T) {
-	require.Panic(t, func() { vf.New(typ.Binary, vf.Values(1, 311, 3)) }, `the value 311 cannot be assigned to a variable of type 0..255`)
+	require.Panic(t,
+		func() { vf.New(typ.Binary, vf.Values(1, 311, 3)) },
+		`the value 311 cannot be assigned to a variable of type 0..255`)
 }
 
 func TestBinaryType_New_badFormat(t *testing.T) {
 	require.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(`hello`, `%x`)) }, `illegal argument`)
+}
+
+func TestExactBinaryType(t *testing.T) {
+	bs := []byte{1, 2, 3}
+	v := vf.Binary(bs, false)
+	tp := v.Type().(dgo.BinaryType)
+	require.Assignable(t, typ.Binary, tp)
+	require.NotAssignable(t, tp, typ.Binary)
+	require.NotAssignable(t, tp, typ.String)
+	require.Instance(t, tp, v)
+	require.Instance(t, tp, bs)
+	require.True(t, tp.IsInstance(bs))
+	require.NotInstance(t, tp, []byte{1, 2})
+	require.NotInstance(t, tp, "AQID")
+	require.False(t, tp.Unbounded())
+
+	require.Assignable(t, tf.Binary(3, 3), tp)
+	require.NotAssignable(t, tp, tf.Binary(3, 3))
+
+	require.NotAssignable(t, tf.Binary(4), tp)
+	require.NotAssignable(t, tf.Binary(0, 2), tp)
+
+	require.NotEqual(t, v.HashCode(), tp.HashCode())
+
+	require.Instance(t, tp.Type(), tp)
+	require.Equal(t, `binary "AQID"`, tp.String())
+	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
+
+	b := vf.New(tp, vf.Arguments(vf.Values(1, 2, 3)))
+	require.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
+	require.Panic(t,
+		func() { vf.New(tp, vf.New(typ.Binary, vf.Value([]byte{1, 2}))) },
+		`cannot be assigned`)
 }
 
 type badReader int
@@ -104,17 +140,17 @@ func (badReader) Read(p []byte) (n int, err error) {
 func TestBinary(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
-	require.Equal(t, `AQID`, v.String())
+	require.Equal(t, `AQID`, v.Encode())
 
 	// Test mutability
 	bs[1] = 4
 	require.Equal(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
-	require.Equal(t, `AQQD`, v.String())
+	require.Equal(t, `AQQD`, v.Encode())
 
 	// Test immutability
 	v = vf.Binary(bs, true)
 	bs[1] = 2
-	require.Equal(t, `AQQD`, v.String())
+	require.Equal(t, `AQQD`, v.Encode())
 	require.NotEqual(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
 
 	// Test panic on bad read
@@ -166,6 +202,11 @@ func TestBinary_CompareTo(t *testing.T) {
 
 	b := vf.Binary([]byte{'a', 'b', 'c'}, false)
 	c, ok = a.CompareTo(b)
+	require.True(t, ok)
+	require.Equal(t, 0, c)
+
+	bs := []byte{'a', 'b', 'c'}
+	c, ok = a.CompareTo(bs)
 	require.True(t, ok)
 	require.Equal(t, 0, c)
 

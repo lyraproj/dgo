@@ -10,7 +10,12 @@ type arguments struct {
 
 // Arguments returns an immutable Arguments instance that represents the given slice
 func Arguments(values []interface{}) dgo.Arguments {
-	a := Values(values).(*array)
+	return ArgumentsFromArray(Values(values))
+}
+
+// ArgumentsFromArray returns an Arguments instance backed by the given array
+func ArgumentsFromArray(values dgo.Array) dgo.Arguments {
+	a := values.(*array)
 	return &arguments{*a}
 }
 
@@ -26,5 +31,5 @@ func (a *arguments) Arg(funcName string, n int, typ dgo.Type) dgo.Value {
 	if typ.Instance(v) {
 		return v
 	}
-	panic(illegalArgument(funcName, typ.String(), sliceToInterfaces(&a.array), n))
+	panic(illegalArgument(funcName, typ, a.InterfaceSlice(), n))
 }

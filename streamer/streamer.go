@@ -165,7 +165,7 @@ func (sc *context) addData(v dgo.Value) {
 
 func (sc *context) emitString(value dgo.String) {
 	// Dedup only if length exceeds stringThreshold
-	str := value.String()
+	str := value.GoString()
 	if len(str) >= sc.consumer.StringDedupThreshold() {
 		sc.process(str, func() {
 			sc.addData(value)

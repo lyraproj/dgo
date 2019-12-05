@@ -6,17 +6,17 @@ import (
 )
 
 // AllOf returns a type that represents all values that matches all of the included types
-func AllOf(types ...dgo.Type) dgo.Type {
+func AllOf(types ...interface{}) dgo.Type {
 	return internal.AllOfType(types)
 }
 
 // AnyOf returns a type that represents all values that matches at least one of the included types
-func AnyOf(types ...dgo.Type) dgo.Type {
+func AnyOf(types ...interface{}) dgo.Type {
 	return internal.AnyOfType(types)
 }
 
 // OneOf returns a type that represents all values that matches exactly one of the included types
-func OneOf(types ...dgo.Type) dgo.Type {
+func OneOf(types ...interface{}) dgo.Type {
 	return internal.OneOfType(types)
 }
 

@@ -89,10 +89,11 @@ var Type = tf.NewNamed(`mapLoader`,
 		return v.(*mapLoader).initMap()
 	},
 	reflect.TypeOf(&mapLoader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *mapLoader) init(im dgo.Map) {
-	l.name = im.Get(`name`).String()
+	l.name = im.Get(`name`).(dgo.String).GoString()
 	l.entries = im.Get(`entries`).(dgo.Map)
 }
 
@@ -170,7 +171,8 @@ var MutableType = tf.NewNamed(`loader`,
 		return v.(*loader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *loader) init(im dgo.Map) {
 	l.mapLoader.init(im)
@@ -227,7 +229,7 @@ func (l *loader) Get(ki interface{}) dgo.Value {
 	v := l.entries.Get(key)
 	l.lock.RUnlock()
 	if v == nil && l.finder != nil {
-		v = vf.Value(l.finder(l, key.String()))
+		v = vf.Value(l.finder(l, key.GoString()))
 		v = l.add(key, v)
 	}
 	if vf.Nil == v {
@@ -299,7 +301,8 @@ var ChildType = tf.NewNamed(`childLoader`,
 		return v.(*childLoader).initMap()
 	},
 	reflect.TypeOf(&loader{}),
-	reflect.TypeOf((*dgo.Loader)(nil)).Elem())
+	reflect.TypeOf((*dgo.Loader)(nil)).Elem(),
+	nil)
 
 func (l *childLoader) init(im dgo.Map) {
 	l.Loader = im.Get(`loader`).(dgo.Loader)

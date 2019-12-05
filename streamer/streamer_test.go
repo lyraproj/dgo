@@ -47,7 +47,9 @@ func TestEncode_sensitive(t *testing.T) {
 
 func TestEncode_unknown(t *testing.T) {
 	c := streamer.NewCollector()
-	require.Panic(t, func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) }, `unable to serialize value`)
+	require.Panic(t,
+		func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) },
+		`unable to serialize value`)
 }
 
 func TestEncode_type(t *testing.T) {
@@ -169,7 +171,7 @@ func TestEncode_namedUsingMap(t *testing.T) {
 		return sm.GoStruct().(dgo.Value)
 	}, func(value dgo.Value) dgo.Value {
 		return vf.Map(value)
-	}, reflect.TypeOf(&testNamed{}), nil)
+	}, reflect.TypeOf(&testNamed{}), nil, nil)
 
 	arg := vf.Map(`A`, `hello`, `B`, 32)
 	s := streamer.New(nil, nil)
@@ -192,7 +194,7 @@ func TestEncode_namedUsingValue(t *testing.T) {
 	}, func(value dgo.Value) dgo.Value {
 		v := value.(*testNamed)
 		return vf.Values(v.A, v.B)
-	}, reflect.TypeOf(&testNamed{}), nil)
+	}, reflect.TypeOf(&testNamed{}), nil, nil)
 
 	arg := vf.Values(`hello`, 32)
 	s := streamer.New(nil, nil)

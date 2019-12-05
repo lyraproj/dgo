@@ -1,4 +1,4 @@
-package internal
+package parser
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 
 func Test_nextToken_unicodeError(t *testing.T) {
 	sr := util.NewStringReader(string([]byte{0x82, 0xff}))
+
 	defer func() {
 		err, ok := recover().(error)
 		if !(ok && err.Error() == `unicode error`) {
@@ -37,10 +38,10 @@ func Example_nextToken() {
 	sr := util.NewStringReader(src)
 	for {
 		tf := nextToken(sr)
-		if tf.i == end {
+		if tf.Type == end {
 			break
 		}
-		fmt.Println(tf)
+		fmt.Println(tokenString(tf))
 	}
 	// Output:
 	//constants

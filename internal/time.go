@@ -11,7 +11,10 @@ import (
 type (
 	timeType int
 
-	exactTimeType time.Time
+	exactTimeType struct {
+		exactType
+		value *timeVal
+	}
 
 	timeVal time.Time
 )
@@ -65,37 +68,12 @@ func (t timeType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiTime
 }
 
-func (t *exactTimeType) Assignable(other dgo.Type) bool {
-	return t.Equals(other)
-}
-
-func (t *exactTimeType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactTimeType); ok {
-		return (*time.Time)(t).Equal(*(*time.Time)(ot))
-	}
-	return false
-}
-
 func (t *exactTimeType) Generic() dgo.Type {
 	return DefaultTimeType
 }
 
-func (t *exactTimeType) HashCode() int {
-	return (*timeVal)(t).HashCode()*31 + int(dgo.TiTimeExact)
-}
-
-func (t *exactTimeType) Instance(value interface{}) bool {
-	switch ov := value.(type) {
-	case *timeVal:
-		return t.IsInstance(*(*time.Time)(ov))
-	case time.Time:
-		return t.IsInstance(ov)
-	}
-	return false
-}
-
 func (t *exactTimeType) IsInstance(tv time.Time) bool {
-	return (*time.Time)(t).Equal(tv)
+	return (*time.Time)(t.value).Equal(tv)
 }
 
 func (t *exactTimeType) New(arg dgo.Value) dgo.Value {
@@ -106,20 +84,12 @@ func (t *exactTimeType) ReflectType() reflect.Type {
 	return reflectTimeType
 }
 
-func (t *exactTimeType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactTimeType) Type() dgo.Type {
-	return &metaType{t}
-}
-
 func (t *exactTimeType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiTimeExact
 }
 
-func (t *exactTimeType) Value() dgo.Value {
-	return (*timeVal)(t)
+func (t *exactTimeType) ExactValue() dgo.Value {
+	return t.value
 }
 
 func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
@@ -181,7 +151,7 @@ func (v *timeVal) SecondsWithFraction() float64 {
 	// Timestamps that represent a date before the year 1678 or after 2262 can
 	// be represented as nanoseconds in an int64.
 	if 1678 < y && y < 2262 {
-		return float64(float64(t.UnixNano()) / 1000000000.0)
+		return float64(t.UnixNano()) / 1000000000.0
 	}
 	// Fall back to microsecond precision
 	us := t.Unix()*1000000 + int64(t.Nanosecond())/1000
@@ -210,5 +180,7 @@ func (v *timeVal) String() string {
 }
 
 func (v *timeVal) Type() dgo.Type {
-	return (*exactTimeType)(v)
+	ea := &exactTimeType{value: v}
+	ea.ExactType = ea
+	return ea
 }

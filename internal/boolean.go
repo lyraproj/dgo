@@ -11,17 +11,16 @@ type (
 	// booleanType represents an boolean without constraints (-1), constrained to false (0) or constrained to true(1)
 	booleanType int
 
+	exactBooleanType struct {
+		exactType
+		value boolean
+	}
+
 	boolean bool
 )
 
 // DefaultBooleanType is the unconstrained Boolean type
-const DefaultBooleanType = booleanType(-1)
-
-// FalseType is the Boolean type that represents false
-const FalseType = booleanType(0)
-
-// TrueType is the Boolean type that represents false
-const TrueType = booleanType(1)
+const DefaultBooleanType = booleanType(0)
 
 // True is the dgo.Value for true
 const True = boolean(true)
@@ -29,11 +28,15 @@ const True = boolean(true)
 // False is the dgo.Value for false
 const False = boolean(false)
 
+// FalseType is the Boolean type that represents false
+var FalseType dgo.BooleanType
+
+// TrueType is the Boolean type that represents false
+var TrueType dgo.BooleanType
+
 func (t booleanType) Assignable(ot dgo.Type) bool {
-	if ob, ok := ot.(booleanType); ok {
-		return t < 0 || t == ob
-	}
-	return CheckAssignableTo(nil, ot, t)
+	_, ok := ot.(dgo.BooleanType)
+	return ok || CheckAssignableTo(nil, ot, t)
 }
 
 func (t booleanType) Equals(v interface{}) bool {
@@ -45,40 +48,20 @@ func (t booleanType) HashCode() int {
 }
 
 func (t booleanType) Instance(v interface{}) bool {
-	if bv, ok := v.(boolean); ok {
-		return t.IsInstance(bool(bv))
+	switch v.(type) {
+	case boolean, bool:
+		return true
+	default:
+		return false
 	}
-	if bv, ok := v.(bool); ok {
-		return t.IsInstance(bv)
-	}
-	return false
 }
 
 func (t booleanType) IsInstance(v bool) bool {
-	return t < 0 || (t == 1) == v
+	return true
 }
 
-var boolStringType = CiEnumType([]string{`true`, `false`, `yes`, `no`, `y`, `n`})
-var trueStringType = CiEnumType([]string{`true`, `yes`, `y`})
-
 func (t booleanType) New(arg dgo.Value) dgo.Value {
-	if args, ok := arg.(dgo.Arguments); ok {
-		args.AssertSize(`bool`, 1, 1)
-		arg = args.Get(0)
-	}
-	switch arg := arg.(type) {
-	case boolean:
-		return arg
-	case intVal:
-		return boolean(arg != 0)
-	case floatVal:
-		return boolean(arg != 0)
-	default:
-		if boolStringType.Instance(arg) {
-			return boolean(trueStringType.Instance(arg))
-		}
-		panic(fmt.Errorf(`unable to create a bool from %s`, arg))
-	}
+	return newBoolean(t, arg)
 }
 
 var reflectBooleanType = reflect.TypeOf(true)
@@ -96,18 +79,31 @@ func (t booleanType) Type() dgo.Type {
 }
 
 func (t booleanType) TypeIdentifier() dgo.TypeIdentifier {
-	switch t {
-	case FalseType:
-		return dgo.TiFalse
-	case TrueType:
-		return dgo.TiTrue
-	default:
-		return dgo.TiBoolean
-	}
+	return dgo.TiBoolean
 }
 
-func (v boolean) GoBool() bool {
-	return bool(v)
+func (t *exactBooleanType) ExactValue() dgo.Value {
+	return t.value
+}
+
+func (t *exactBooleanType) Generic() dgo.Type {
+	return DefaultBooleanType
+}
+
+func (t *exactBooleanType) IsInstance(value bool) bool {
+	return bool(t.value) == value
+}
+
+func (t *exactBooleanType) New(arg dgo.Value) dgo.Value {
+	return newBoolean(t, arg)
+}
+
+func (t *exactBooleanType) ReflectType() reflect.Type {
+	return reflectBooleanType
+}
+
+func (t *exactBooleanType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiBooleanExact
 }
 
 func (v boolean) CompareTo(other interface{}) (r int, ok bool) {
@@ -140,6 +136,10 @@ func (v boolean) Equals(other interface{}) bool {
 	return false
 }
 
+func (v boolean) GoBool() bool {
+	return bool(v)
+}
+
 func (v boolean) HashCode() int {
 	if v {
 		return 1231
@@ -168,7 +168,46 @@ func (v boolean) String() string {
 
 func (v boolean) Type() dgo.Type {
 	if v {
-		return booleanType(1)
+		return TrueType
 	}
-	return booleanType(0)
+	return FalseType
+}
+
+func init() {
+	et := &exactBooleanType{value: boolean(true)}
+	et.ExactType = et
+	TrueType = et
+
+	et = &exactBooleanType{value: boolean(false)}
+	et.ExactType = et
+	FalseType = et
+}
+
+var boolStringType = CiEnumType([]string{`true`, `false`, `yes`, `no`, `y`, `n`})
+var trueStringType = CiEnumType([]string{`true`, `yes`, `y`})
+
+func newBoolean(t dgo.Type, arg dgo.Value) dgo.Value {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`bool`, 1, 1)
+		arg = args.Get(0)
+	}
+	var v dgo.Value
+	switch arg := arg.(type) {
+	case boolean:
+		v = arg
+	case intVal:
+		v = boolean(arg != 0)
+	case floatVal:
+		v = boolean(arg != 0)
+	default:
+		if boolStringType.Instance(arg) {
+			v = boolean(trueStringType.Instance(arg))
+		} else {
+			panic(fmt.Errorf(`unable to create a bool from %s`, arg))
+		}
+	}
+	if !t.Instance(v) {
+		panic(IllegalAssignment(t, v))
+	}
+	return v
 }

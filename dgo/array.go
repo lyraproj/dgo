@@ -1,9 +1,5 @@
 package dgo
 
-import (
-	"github.com/lyraproj/dgo/util"
-)
-
 type (
 	// DoWithIndex performs some task on behalf of an indexed caller
 	DoWithIndex func(value Value, index int)
@@ -49,7 +45,7 @@ type (
 		Iterable
 		Comparable
 		ReflectedValue
-		util.Indentable
+		Indentable
 
 		// Add adds the given value to the end of this array. It panics if the receiver is frozen.
 		Add(val interface{})
@@ -112,6 +108,11 @@ type (
 		// Insert inserts the given value at the given position and moves all values after that position
 		// one step forward. The method panics if the receiver is frozen.
 		Insert(pos int, val interface{})
+
+		// InterfaceSlice returns the values held by the Array as a slice. The slice will
+		// contain dgo.Value instances. The method is intended for cases where an array
+		// must be expanded into a variadic function argument.
+		InterfaceSlice() []interface{}
 
 		// Map returns a new equally sized Array where each value has been replaced using the
 		// given mapper function.

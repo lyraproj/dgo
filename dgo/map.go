@@ -1,9 +1,5 @@
 package dgo
 
-import (
-	"github.com/lyraproj/dgo/util"
-)
-
 type (
 	// MapEntry is a key-value association in a Map
 	MapEntry interface {
@@ -45,7 +41,7 @@ type (
 		Iterable
 		Keyed
 		ReflectedValue
-		util.Indentable
+		Indentable
 
 		// All returns true if the predicate returns true for all entries of this Map.
 		All(predicate EntryPredicate) bool
@@ -165,11 +161,11 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// EachEntry iterates over each entry of the StructMapType
+		// Each iterates over each entry of the StructMapType
 		Each(actor func(StructMapEntry))
 
-		// Get returns the MapEntry that is identified with the given key
-		Get(key interface{}) MapEntry
+		// Get returns the StructMapEntry that is identified with the given key
+		Get(key interface{}) StructMapEntry
 
 		// Len returns the number of StructEntrys in this StructMapType
 		Len() int
@@ -188,6 +184,6 @@ type (
 		// ValidateVerbose checks that the given value represents a Map which is an instance of this struct and returns
 		// a boolean result. During validation, both successful and failing errors are verbosely explained on the given
 		// Indenter.
-		ValidateVerbose(value interface{}, out util.Indenter) bool
+		ValidateVerbose(value interface{}, out Indenter) bool
 	}
 )

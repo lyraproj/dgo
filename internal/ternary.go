@@ -26,18 +26,18 @@ var DefaultAnyOfType = &anyOfType{}
 var DefaultOneOfType = &oneOfType{}
 
 // AllOfType returns a type that represents all values that matches all of the included types
-func AllOfType(types []dgo.Type) dgo.Type {
+func AllOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// And of no types is an unconstrained type
 		return DefaultAnyType
 	case 1:
-		return types[0]
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &allOfType{slice: ts, frozen: true}
 }
@@ -74,8 +74,15 @@ func (t *allOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *allOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *allOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
+	}
+	if ot, ok := other.(*allOfValueType); ok {
+		return sameValues(seen, (*array)(t), (*array)(ot), valueAsType)
 	}
 	return false
 }
@@ -85,7 +92,11 @@ func (t *allOfType) Generic() dgo.Type {
 }
 
 func (t *allOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAllOf)
+	return deepHashCode(nil, t)
+}
+
+func (t *allOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOf)
 }
 
 func (t *allOfType) Instance(value interface{}) bool {
@@ -114,7 +125,7 @@ func (t *allOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *allOfType) Resolve(ap dgo.AliasProvider) {
+func (t *allOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)
@@ -171,14 +182,25 @@ func (t *allOfValueType) Generic() dgo.Type {
 }
 
 func (t *allOfValueType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *allOfValueType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*allOfValueType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
+	}
+	if ot, ok := other.(*allOfType); ok {
+		return sameValues(seen, (*array)(ot), (*array)(t), valueAsType)
 	}
 	return false
 }
 
 func (t *allOfValueType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAllOfValue)
+	return deepHashCode(nil, t)
+}
+
+func (t *allOfValueType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOfValue)
 }
 
 func (t *allOfValueType) Instance(value interface{}) bool {
@@ -219,25 +241,25 @@ func (t *allOfValueType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiAllOfValue
 }
 
-func (t *allOfValueType) Value() dgo.Value {
+func (t *allOfValueType) ExactValue() dgo.Value {
 	return (*array)(t)
 }
 
 var notAnyType = &notType{DefaultAnyType}
 
 // AnyOfType returns a type that represents all values that matches at least one of the included types
-func AnyOfType(types []dgo.Type) dgo.Type {
+func AnyOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// Or of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0]
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
@@ -271,14 +293,22 @@ func (t *anyOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *anyOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *anyOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*anyOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	return false
 }
 
 func (t *anyOfType) HashCode() int {
-	return (*array)(t).HashCode()*7 + int(dgo.TiAnyOf)
+	return deepHashCode(nil, t)
+}
+
+func (t *anyOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAnyOf)
 }
 
 func (t *anyOfType) Instance(value interface{}) bool {
@@ -307,7 +337,7 @@ func (t *anyOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *anyOfType) Resolve(ap dgo.AliasProvider) {
+func (t *anyOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)
@@ -327,18 +357,18 @@ func (t *anyOfType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 // OneOfType returns a type that represents all values that matches exactly one of the included types
-func OneOfType(types []dgo.Type) dgo.Type {
+func OneOfType(types []interface{}) dgo.Type {
 	l := len(types)
 	switch l {
 	case 0:
 		// One of no types doesn't represent any values at all
 		return notAnyType
 	case 1:
-		return types[0]
+		return AsType(Value(types[0]))
 	}
 	ts := make([]dgo.Value, l)
 	for i := range types {
-		ts[i] = types[i]
+		ts[i] = AsType(Value(types[i]))
 	}
 	return &oneOfType{slice: ts, frozen: true}
 }
@@ -381,14 +411,22 @@ func (t *oneOfType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool 
 }
 
 func (t *oneOfType) Equals(other interface{}) bool {
+	return equals(nil, t, other)
+}
+
+func (t *oneOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	if ot, ok := other.(*oneOfType); ok {
-		return (*array)(t).SameValues((*array)(ot))
+		return sameValues(seen, (*array)(t), (*array)(ot), nil)
 	}
 	return false
 }
 
 func (t *oneOfType) HashCode() int {
-	return (*array)(t).HashCode()
+	return deepHashCode(nil, t)
+}
+
+func (t *oneOfType) deepHashCode(seen []dgo.Value) int {
+	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiOneOf)
 }
 
 func (t *oneOfType) Instance(value interface{}) bool {
@@ -422,7 +460,7 @@ func (t *oneOfType) ReflectType() reflect.Type {
 	return commonReflectTo(t.slice, typeAsType)
 }
 
-func (t *oneOfType) Resolve(ap dgo.AliasProvider) {
+func (t *oneOfType) Resolve(ap dgo.AliasMap) {
 	s := t.slice
 	t.slice = nil
 	resolveSlice(s, ap)
@@ -489,6 +527,16 @@ func typeSlice(s []dgo.Value, fc func(dgo.Value) dgo.Type) []dgo.Type {
 	return ts
 }
 
+func sameValues(seen []dgo.Value, a, b dgo.Array, fc func(dgo.Value) dgo.Type) bool {
+	if a.Len() == b.Len() {
+		if fc != nil {
+			b = b.Map(func(e dgo.Value) interface{} { return fc(e) })
+		}
+		return a.(*array).deepContainsAll(seen, b)
+	}
+	return false
+}
+
 // lessRestrictive is true if slice 'a' is less restrictive than slice 'b'
 //
 // This is true if:
@@ -534,4 +582,12 @@ nextA:
 		}
 	}
 	return true
+}
+
+func typeAsType(v dgo.Value) dgo.Type {
+	return v.(dgo.Type)
+}
+
+func valueAsType(v dgo.Value) dgo.Type {
+	return v.Type()
 }

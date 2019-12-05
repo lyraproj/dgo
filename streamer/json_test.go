@@ -63,7 +63,9 @@ func TestJSON_ComplexKeys(t *testing.T) {
 	v := vf.Map(vf.BinaryFromString(`AQID`), `value of binary`, `hey`, `value of hey`)
 	b := bytes.Buffer{}
 	streamer.New(nil, streamer.DefaultOptions()).Stream(v, streamer.JSON(&b))
-	require.Equal(t, `{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`, b.String())
+	require.Equal(t,
+		`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`,
+		b.String())
 }
 
 func TestUnmarshalJSON_complexKeys(t *testing.T) {

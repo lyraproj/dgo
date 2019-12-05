@@ -11,26 +11,34 @@ import (
 
 type (
 	named struct {
-		name      string
-		ctor      dgo.Constructor
-		extractor dgo.InitArgExtractor
-		implType  reflect.Type
-		ifdType   reflect.Type
+		name       string
+		ctor       dgo.Constructor
+		extractor  dgo.InitArgExtractor
+		implType   reflect.Type
+		ifdType    reflect.Type
+		asgChecker dgo.AssignableChecker
+	}
+
+	parameterized struct {
+		dgo.NamedType
+		params dgo.Array
 	}
 
 	exactNamed struct {
-		privNamedType
+		exactType
+		dgo.NamedTypeExtension
 		value dgo.Value
-	}
-
-	privNamedType interface {
-		dgo.NamedType
-
-		assignableType() reflect.Type
 	}
 )
 
 var namedTypes = sync.Map{}
+
+func defaultAsgChecker(t dgo.NamedType, other dgo.Type) bool {
+	if ot, ok := other.(dgo.NamedType); ok {
+		return ot.ReflectType().AssignableTo(t.AssignableType())
+	}
+	return false
+}
 
 // RemoveNamedType removes a named type from the global type registry. It is primarily intended for
 // testing purposes.
@@ -38,10 +46,29 @@ func RemoveNamedType(name string) {
 	namedTypes.Delete(name)
 }
 
-// NewNamedType registers a new named type under the given name with the global type registry. The method panics
-// if a type has already been registered with the same name.
-func NewNamedType(name string, ctor dgo.Constructor, extractor dgo.InitArgExtractor, implType, ifdType reflect.Type) dgo.NamedType {
-	t, loaded := namedTypes.LoadOrStore(name, &named{name: name, ctor: ctor, extractor: extractor, implType: implType, ifdType: ifdType})
+// NewNamedType registers a new named and optionally parameterized type under the given name with the global type registry.
+// The method panics if a type has already been registered with the same name.
+//
+// name: name of the type
+//
+// ctor: optional constructor that creates new values of this type
+//
+// extractor: optional extractor of the value used when serializing/deserializing this type
+//
+// implType optional reflected zero value type of implementation
+//
+// ifdType optional reflected nil value of interface type
+//
+// asgChecker optional function to check what other types that are assignable to this type
+func NewNamedType(
+	name string,
+	ctor dgo.Constructor,
+	extractor dgo.InitArgExtractor,
+	implType,
+	ifdType reflect.Type,
+	asgChecker dgo.AssignableChecker) dgo.NamedType {
+	t, loaded := namedTypes.LoadOrStore(name,
+		&named{name: name, ctor: ctor, extractor: extractor, implType: implType, ifdType: ifdType, asgChecker: asgChecker})
 	if loaded {
 		panic(fmt.Errorf(`attempt to redefine named type '%s'`, name))
 	}
@@ -50,7 +77,9 @@ func NewNamedType(name string, ctor dgo.Constructor, extractor dgo.InitArgExtrac
 
 // ExactNamedType returns the exact NamedType that represents the given value.
 func ExactNamedType(namedType dgo.NamedType, value dgo.Value) dgo.NamedType {
-	return &exactNamed{privNamedType: namedType.(privNamedType), value: value}
+	ea := &exactNamed{NamedTypeExtension: namedType, value: value}
+	ea.ExactType = ea
+	return ea
 }
 
 // NamedType returns the type with the given name from the global type registry. The function returns
@@ -60,6 +89,11 @@ func NamedType(name string) dgo.NamedType {
 		return t.(*named)
 	}
 	return nil
+}
+
+// ParameterizedType returns the named type amended with the given parameters.
+func ParameterizedType(named dgo.NamedType, params dgo.Array) dgo.NamedType {
+	return &parameterized{named, params}
 }
 
 // NamedTypeFromReflected returns the named type for the reflected implementation type from the global type
@@ -77,7 +111,7 @@ func NamedTypeFromReflected(rt reflect.Type) dgo.NamedType {
 	return t
 }
 
-func (t *named) assignableType() reflect.Type {
+func (t *named) AssignableType() reflect.Type {
 	if t.ifdType != nil {
 		return t.ifdType
 	}
@@ -85,17 +119,15 @@ func (t *named) assignableType() reflect.Type {
 }
 
 func (t *named) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(privNamedType); ok {
-		return ot.ReflectType().AssignableTo(t.assignableType())
+	f := t.asgChecker
+	if f == nil {
+		f = defaultAsgChecker
 	}
-	return CheckAssignableTo(nil, other, t)
+	return f(t, other) || CheckAssignableTo(nil, other, t)
 }
 
 func (t *named) New(arg dgo.Value) dgo.Value {
-	if t.ctor == nil {
-		panic(fmt.Errorf(`creating new instances of %s is not possible`, t.name))
-	}
-	return t.ctor(arg)
+	return newNamed(t, arg)
 }
 
 func (t *named) Equals(other interface{}) bool {
@@ -117,11 +149,15 @@ func (t *named) ExtractInitArg(value dgo.Value) dgo.Value {
 }
 
 func (t *named) Instance(value interface{}) bool {
-	return reflect.TypeOf(value).AssignableTo(t.assignableType())
+	return t.Assignable(Value(value).Type())
 }
 
 func (t *named) Name() string {
 	return t.name
+}
+
+func (t *named) Parameters() dgo.Array {
+	return nil
 }
 
 func (t *named) ReflectType() reflect.Type {
@@ -141,7 +177,7 @@ func (t *named) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *named) ValueString(v dgo.Value) string {
-	b := NewERPIndenter(``)
+	b := util.NewERPIndenter(``)
 	util.WriteString(b, t.name)
 	if t.extractor != nil {
 		switch t.extractor(v).(type) {
@@ -154,44 +190,77 @@ func (t *named) ValueString(v dgo.Value) string {
 	return b.String()
 }
 
-func (t *exactNamed) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactNamed); ok {
-		return t.value.Equals(ot.value)
+func (t *parameterized) Assignable(other dgo.Type) bool {
+	f := t.NamedType.(*named).asgChecker
+	if f == nil {
+		f = defaultAsgChecker
 	}
-	return CheckAssignableTo(nil, other, t)
+	return f(t, other) || CheckAssignableTo(nil, other, t)
 }
 
-func (t *exactNamed) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactNamed); ok {
-		return t.value.Equals(ot.value)
+func (t *parameterized) Equals(other interface{}) bool {
+	if ot, ok := other.(*parameterized); ok {
+		return t.NamedType.Equals(ot.NamedType) && t.params.Equals(ot.params)
 	}
 	return false
 }
 
-func (t *exactNamed) HashCode() int {
-	return t.value.HashCode()*7 + int(dgo.TiNamedExact)
+func (t *parameterized) Generic() dgo.Type {
+	return t.NamedType
 }
 
-func (t *exactNamed) Generic() dgo.Type {
-	return t.privNamedType
+func (t *parameterized) HashCode() int {
+	return t.NamedType.HashCode()*31 + t.params.HashCode()
 }
 
-func (t *exactNamed) Instance(other interface{}) bool {
-	return t.value.Equals(other)
+func (t *parameterized) Instance(value interface{}) bool {
+	return t.Assignable(Value(value).Type())
 }
 
-func (t *exactNamed) String() string {
+func (t *parameterized) New(arg dgo.Value) dgo.Value {
+	return newNamed(t, arg)
+}
+
+func (t *parameterized) Parameters() dgo.Array {
+	return t.params
+}
+
+func (t *parameterized) String() string {
 	return TypeString(t)
 }
 
-func (t *exactNamed) Type() dgo.Type {
+func (t *parameterized) Type() dgo.Type {
 	return &metaType{t}
+}
+
+func (t *exactNamed) Generic() dgo.Type {
+	return t.NamedTypeExtension.(dgo.Type)
+}
+
+func (t *exactNamed) New(arg dgo.Value) dgo.Value {
+	return newNamed(t, arg)
+}
+
+func (t *exactNamed) ReflectType() reflect.Type {
+	return t.Generic().ReflectType()
 }
 
 func (t *exactNamed) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiNamedExact
 }
 
-func (t *exactNamed) Value() dgo.Value {
+func (t *exactNamed) ExactValue() dgo.Value {
 	return t.value
+}
+
+func newNamed(rt dgo.NamedType, arg dgo.Value) dgo.Value {
+	t := Generic(rt).(*named)
+	if t.ctor == nil {
+		panic(fmt.Errorf(`creating new instances of %s is not possible`, rt.Name()))
+	}
+	v := t.ctor(arg)
+	if t.asgChecker == nil || t.asgChecker(rt, v.Type()) {
+		return v
+	}
+	panic(IllegalAssignment(rt, v))
 }

@@ -17,6 +17,7 @@ func TestMeta(t *testing.T) {
 	require.Instance(t, tp, typ.Any)
 	require.Instance(t, tp, typ.Boolean)
 	require.NotInstance(t, tp, 3)
+	require.Same(t, typ.Any, tp.(dgo.Meta).Describes())
 
 	require.Equal(t, typ.Any.Type(), tp)
 	require.NotEqual(t, typ.Boolean.Type(), tp)
@@ -39,6 +40,8 @@ func TestMetaType_New(t *testing.T) {
 	require.Same(t, m, vf.New(m.Type(), m))
 	require.Same(t, m, vf.New(m.Type(), vf.Arguments(m)))
 	require.Equal(t, m, vf.New(typ.String.Type(), vf.String(`string[1, 10]`)))
+
+	require.Equal(t, vf.String("x").Type(), vf.New(typ.String.Type(), vf.String(`"x"`)))
 
 	require.Panic(t, func() { vf.New(typ.Integer.Type(), vf.String(`string[1, 10]`)) }, `cannot be assigned`)
 	require.Panic(t, func() { vf.New(typ.Integer.Type(), vf.Integer(5)) }, `illegal argument`)

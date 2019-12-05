@@ -18,6 +18,11 @@ func TestBooleanDefault(t *testing.T) {
 	require.NotAssignable(t, meta, tp)
 	require.Assignable(t, tp, tp)
 	require.NotAssignable(t, tp, meta)
+	require.True(t, tp.IsInstance(true))
+	require.True(t, tp.IsInstance(false))
+	require.Equal(t, reflect.TypeOf(true), tp.ReflectType())
+	require.Equal(t, reflect.TypeOf(false), tp.ReflectType())
+	require.Same(t, tp, typ.Generic(tp))
 }
 
 func TestBooleanType(t *testing.T) {
@@ -61,6 +66,7 @@ func TestBooleanType(t *testing.T) {
 	require.Equal(t, `bool`, typ.Boolean.String())
 
 	require.Equal(t, reflect.TypeOf(false), typ.True.ReflectType())
+	require.NotSame(t, tp, typ.Generic(tp))
 }
 
 func TestNew_bool(t *testing.T) {
@@ -80,6 +86,8 @@ func TestNew_bool(t *testing.T) {
 	require.Equal(t, vf.True, vf.New(typ.Boolean, vf.Arguments(vf.True)))
 	require.Panic(t, func() { vf.New(typ.Boolean, vf.String(`unhappy`)) }, `unable to create a bool from unhappy`)
 	require.Panic(t, func() { vf.New(typ.Boolean, vf.Arguments(vf.True, vf.True)) }, `illegal number of arguments`)
+
+	require.Panic(t, func() { vf.New(typ.False, vf.True) }, `the value true cannot be assigned to a variable of type false`)
 }
 
 func TestBoolean(t *testing.T) {
