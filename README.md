@@ -3,6 +3,7 @@
 [![](https://goreportcard.com/badge/github.com/lyraproj/dgo)](https://goreportcard.com/report/github.com/lyraproj/dgo)
 [![](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/lyraproj/dgo)
 [![](https://github.com/lyraproj/dgo/workflows/Dgo%20Build/badge.svg)](https://github.com/lyraproj/dgo/actions)
+[![](https://coveralls.io/repos/github/lyraproj/dgo/badge.svg)](https://coveralls.io/github/lyraproj/dgo)
 
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
 and Performance. It is designed to make working with dynamic values an effortless and type safe task.
