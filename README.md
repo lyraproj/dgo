@@ -32,19 +32,28 @@ import (
 
 ## Type Constraints
 
-### What's wrong with Go's type system?
+### Dgo types versus Go's native types
 Go is a typed language but the types are not very descriptive. It is for instance not possible to declare a type
-that corresponds only to a specific range of integers, a string that must confirm to a specific pattern, or a slice
-that can contain only integers or floats. The only generic type provided by Go is the empty interface `interface{}`
-which corresponds to every possible value in the system. A slice containing ints and floats must be declared as
-`[]interface{}` but doing so creates a list that can also contain any other type of value. What's needed is a type
-such as `[](int|float)`. Other examples can be `map[string](string|int)` (string keyed map of string
-and int values), or `[]0..15` (slice of integers ranging from 0 - 15).
+that corresponds only to a specific range of integers, a string that must confirm to a specific pattern. All such
+constraints must be expressed as code wherever a value of the type is assigned. In dgo a type describing a range
+of integers can be declared as `0..15` and a pattern constrained string can be declared as `/^[a-z]+$/`.
 
-In many situations it is desirable to declare more restrictive type constraints.
-[TypeScript](https://www.typescriptlang.org/docs/handbook/basic-types.html) has good model for such constraints.
-Others can be found in [Python Type Hints](https://www.python.org/dev/peps/pep-0484/) and
-[Puppet Types](/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md).
+It is also not possible to declare type combinations such as a slice that can contain only integers or floats. If
+a value can be of more than one of go's native types, then it must be declared as an `interface{}` which corresponds
+to every possible value in the system. This means that a slice containing ints and floats must be declared as
+`[]interface{}` wich is a declaration of a slice that may contain any type of value. In dgo, such a type can be
+declared as `[](int|float)`. Other examples:
+ 
+- `map[string](string|int)` (string keyed map of string
+- `[]0..15` (slice of integers ranging from 0 - 15).
+- `"red"|"green"|"blue"` (enumeration of strings)
+- `2|8|10|16` (enumeration of integers)
+
+Dgo is influenced by restrictive type constraint languages such as:
+- [CUE](https://cue.googlesource.com/cue/+/HEAD/doc/ref/spec.md)
+- [TypeScript](https://www.typescriptlang.org/docs/handbook/basic-types.html)
+- [Python Type Hints](https://www.python.org/dev/peps/pep-0484/)
+- [Puppet Types](/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md)
 
 ### Language syntax
 Dgo defines a [type language of its own](docs/types.md) which is designed to be close to Go itself. A parser
@@ -58,7 +67,7 @@ any other type that restricts a string. A length constrained `string[10,20]` is 
 
 ### Type Instance check
 A type can be used to validate if a value is an instance of that type. The integer `3` is an instance of the
-range type `1..4`, the string `"abc"` is an instance of the pattern type `/b/`, etc.
+range type `1..8`, the string `"abc"` is an instance of the pattern type `/b/`, etc.
 
 ### The type of a value
 All values have a type that is backed by the value itself. The type will consider its value, and only that value,
@@ -100,7 +109,7 @@ Transformations between dgo and [cty](https://github.com/zclconf/go-cty) is prov
 [dgocty](https://github.com/lyraproj/dgocty) module 
 
 Transformations between dgo and [pcore](https://github.com/lyraproj/pcore) is provided by the
-[dgocty](https://github.com/lyraproj/dgopcore) module 
+[pcore](https://github.com/lyraproj/dgopcore) module 
 
 ## Encapsulation
 
