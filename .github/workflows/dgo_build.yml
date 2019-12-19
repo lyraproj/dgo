@@ -29,3 +29,9 @@ jobs:
       run: |
         COV=$(go tool cover -func=coverage.tmp | grep -e '^total:\s*(statements)' | awk '{ print $3 }')
         test $COV = '100.0%' || (echo "Expected 100% test coverage, got $COV" && exit 1)
+
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-profile: coverage.tmp
