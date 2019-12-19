@@ -1,16 +1,15 @@
 package internal
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+
+	"github.com/lyraproj/dgo/dgo"
 )
 
 const initialCapacity = 1 << 4
@@ -23,6 +22,7 @@ type (
 
 	// exactMapType represents a map exactly
 	exactMapType struct {
+		deepExactType
 		value dgo.Map
 	}
 
@@ -39,7 +39,10 @@ type (
 		value dgo.Value
 	}
 
-	exactEntryType mapEntry
+	exactEntryType struct {
+		deepExactType
+		value *mapEntry
+	}
 
 	hashNode struct {
 		mapEntry
@@ -59,62 +62,28 @@ type (
 	}
 )
 
-func (t *exactEntryType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactEntryType); ok {
-		return (*mapEntry)(t).Equals((*mapEntry)(ot))
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactEntryType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactEntryType); ok {
-		return (*mapEntry)(t).Equals((*mapEntry)(ot))
-	}
-	return false
-}
-
 func (t *exactEntryType) Generic() dgo.Type {
 	return DefaultAnyType
-}
-
-func (t *exactEntryType) HashCode() int {
-	return (*mapEntry)(t).HashCode()
-}
-
-func (t *exactEntryType) Instance(value interface{}) bool {
-	if ot, ok := value.(dgo.MapEntry); ok {
-		return (*mapEntry)(t).Equals(ot)
-	}
-	return false
 }
 
 func (t *exactEntryType) ReflectType() reflect.Type {
 	return reflect.TypeOf((*dgo.MapEntry)(nil)).Elem()
 }
 
-func (t *exactEntryType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactEntryType) Type() dgo.Type {
-	return &metaType{t}
-}
-
 func (t *exactEntryType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiMapEntryExact
 }
 
-// NewMapEntry is for testing purposes only
+// NewMapEntry returns a new MapEntry instance with the given key and value
 func NewMapEntry(key, value interface{}) dgo.MapEntry {
 	return &mapEntry{Value(key), Value(value)}
 }
 
-func (t *exactEntryType) Value() dgo.Value {
-	v := (*mapEntry)(t)
-	return v
+func (t *exactEntryType) ExactValue() dgo.Value {
+	return t.value
 }
 
-func (v *mapEntry) AppendTo(w util.Indenter) {
+func (v *mapEntry) AppendTo(w dgo.Indenter) {
 	w.AppendValue(v.key)
 	w.Append(`:`)
 	if w.Indenting() {
@@ -178,11 +147,13 @@ func (v *mapEntry) Key() dgo.Value {
 }
 
 func (v *mapEntry) String() string {
-	return ToStringERP(v)
+	return util.ToStringERP(v)
 }
 
 func (v *mapEntry) Type() dgo.Type {
-	return (*exactEntryType)(v)
+	ea := &exactEntryType{value: v}
+	ea.ExactType = ea
+	return ea
 }
 
 func (v *mapEntry) Value() dgo.Value {
@@ -206,19 +177,60 @@ var emptyMap = &hashMap{frozen: true}
 //
 // An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
 func Map(args []interface{}) dgo.Map {
+	return mapFromArgs(args, true)
+}
+
+// MutableMap creates a mutable dgo.Map from the given slice which must have 0, 1, or an
+// even number of elements.
+//
+// Zero elements: the empty map is returned.
+//
+// One element: must be a go map, a go struct, or an Array with an even number of elements.
+//
+// An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
+func MutableMap(args []interface{}) dgo.Map {
+	return mapFromArgs(args, false)
+}
+
+func newMap(t dgo.Type, arg dgo.Value) dgo.Map {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`map`, 1, 1)
+		arg = args.Get(0)
+	}
+	m, ok := arg.(dgo.Map)
+	if ok {
+		m = m.FrozenCopy().(dgo.Map)
+	} else {
+		m = mapFromArgs([]interface{}{arg}, true)
+	}
+	if !t.Instance(m) {
+		panic(IllegalAssignment(t, m))
+	}
+	return m
+}
+
+func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 	l := len(args)
 	switch {
 	case l == 0:
-		return emptyMap
+		if frozen {
+			return emptyMap
+		}
+		return MapWithCapacity(0, nil)
 	case l == 1:
 		a0 := args[0]
-		if ar, ok := a0.(*array); ok && ar.Len()%2 == 0 {
-			return ar.ToMap()
+		if ar, ok := a0.(dgo.Array); ok && ar.Len()%2 == 0 {
+			if frozen {
+				return ar.FrozenCopy().(dgo.Array).ToMap()
+			}
+			m := ar.ToMap().(*hashMap)
+			m.frozen = false
+			return m
 		}
 		rm := reflect.ValueOf(a0)
 		switch rm.Kind() {
 		case reflect.Map:
-			return FromReflectedMap(rm, true).(dgo.Map)
+			return FromReflectedMap(rm, frozen).(dgo.Map)
 		case reflect.Ptr:
 			re := rm.Elem()
 			if re.Kind() == reflect.Struct {
@@ -229,7 +241,10 @@ func Map(args []interface{}) dgo.Map {
 		}
 		panic(fmt.Errorf(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
-		return Values(args).ToMap()
+		if frozen {
+			return Values(args).ToMap()
+		}
+		return MutableValues(args).ToMap()
 	default:
 		panic(fmt.Errorf(`the number of arguments to Map must be 1 or an even number, got: %d`, l))
 	}
@@ -299,33 +314,34 @@ func FromReflectedStruct(rv reflect.Value) dgo.Struct {
 	return &structVal{rs: rv, frozen: false}
 }
 
-// MapWithCapacity creates an empty dgo.Map with the given capacity. The map can be optionally constrained
-// by the given type which can be nil, the zero value of a go map, or a dgo.MapType
+// MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries. The map can be optionally
+// constrained by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MapWithCapacity(capacity int, typ interface{}) dgo.Map {
 	if capacity <= 0 {
 		capacity = initialCapacity
 	}
+	capacity = int(float64(capacity) / loadFactor)
+	return &hashMap{table: make([]*hashNode, tableSizeFor(capacity)), len: 0, typ: asMapType(typ), frozen: false}
+}
 
-	parseMapType := func(s string) dgo.MapType {
-		if t, ok := Parse(s).(dgo.MapType); ok {
-			return t
-		}
-		panic(fmt.Errorf("expression '%s' does not evaluate to a map type", s))
+func asMapType(ti interface{}) (mt dgo.MapType) {
+	ok := false
+	switch ti := ti.(type) {
+	case dgo.Type:
+		mt, ok = ti.(dgo.MapType)
+	case dgo.String:
+		mt, ok = Parse(ti.GoString()).(dgo.MapType)
+	case string:
+		mt, ok = Parse(ti).(dgo.MapType)
+	case nil:
+		ok = true
+	default:
+		mt, ok = TypeFromReflected(reflect.TypeOf(ti)).(dgo.MapType)
 	}
-	var mt dgo.MapType
-	if typ != nil {
-		switch typ := typ.(type) {
-		case dgo.MapType:
-			mt = typ
-		case string:
-			mt = parseMapType(typ)
-		case dgo.String:
-			mt = parseMapType(typ.GoString())
-		default:
-			mt = TypeFromReflected(reflect.TypeOf(typ)).(dgo.MapType)
-		}
+	if !ok {
+		panic(errors.New(`Map.SetType: argument does not evaluate to a map type`))
 	}
-	return &hashMap{table: make([]*hashNode, tableSizeFor(capacity)), len: 0, typ: mt, frozen: false}
+	return
 }
 
 func (g *hashMap) All(predicate dgo.EntryPredicate) bool {
@@ -382,11 +398,11 @@ func (g *hashMap) AnyValue(predicate dgo.Predicate) bool {
 	return false
 }
 
-func (g *hashMap) AppendTo(w util.Indenter) {
+func (g *hashMap) AppendTo(w dgo.Indenter) {
 	appendMapTo(g, w)
 }
 
-func appendMapTo(m dgo.Map, w util.Indenter) {
+func appendMapTo(m dgo.Map, w dgo.Indenter) {
 	w.AppendRune('{')
 	ew := w.Indent()
 	first := true
@@ -401,6 +417,10 @@ func appendMapTo(m dgo.Map, w util.Indenter) {
 	})
 	w.NewLine()
 	w.AppendRune('}')
+}
+
+func (g *hashMap) ContainsKey(key interface{}) bool {
+	return g.Get(key) != nil
 }
 
 func (g *hashMap) Copy(frozen bool) dgo.Map {
@@ -418,7 +438,7 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 	return c
 }
 
-func (g *hashMap) Each(actor dgo.Actor) {
+func (g *hashMap) Each(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e)
 	}
@@ -430,13 +450,13 @@ func (g *hashMap) EachEntry(actor dgo.EntryActor) {
 	}
 }
 
-func (g *hashMap) EachKey(actor dgo.Actor) {
+func (g *hashMap) EachKey(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e.key)
 	}
 }
 
-func (g *hashMap) EachValue(actor dgo.Actor) {
+func (g *hashMap) EachValue(actor dgo.Consumer) {
 	for e := g.first; e != nil; e = e.next {
 		actor(e.value)
 	}
@@ -557,41 +577,6 @@ func (g *hashMap) Map(mapper dgo.EntryMapper) dgo.Map {
 		e.value = Value(mapper(e))
 	}
 	return c
-}
-
-func (g *hashMap) MarshalJSON() ([]byte, error) {
-	// JSON is the default Indentable string format, so this one is easy
-	return []byte(ToStringERP(g)), nil
-}
-
-func (g *hashMap) UnmarshalJSON(b []byte) error {
-	if g.frozen {
-		panic(frozenMap(`UnmarshalJSON`))
-	}
-	dec := json.NewDecoder(bytes.NewReader(b))
-	dec.UseNumber()
-	t, err := dec.Token()
-	if err == nil {
-		if delim, ok := t.(json.Delim); !ok || delim != '{' {
-			return errors.New("expecting data to be a map")
-		}
-		var m *hashMap
-		m, err = jsonDecodeMap(dec)
-		if err == nil {
-			g.assignFrom(m)
-		}
-	}
-	return err
-}
-
-func (g *hashMap) assignFrom(m *hashMap) {
-	if g.typ != nil {
-		*g = hashMap{typ: g.typ}
-		g.PutAll(m)
-		g.frozen = m.frozen
-	} else {
-		*g = *m
-	}
 }
 
 func (g *hashMap) Merge(associations dgo.Map) dgo.Map {
@@ -792,28 +777,26 @@ func (g *hashMap) RemoveAll(keys dgo.Array) {
 	})
 }
 
+func (g *hashMap) Resolve(ap dgo.AliasMap) {
+	needRehash := false
+	for e := g.first; e != nil; e = e.next {
+		if rk := ap.Replace(e.key); rk != e.key {
+			e.key = rk
+			needRehash = true
+		}
+		e.value = ap.Replace(e.value)
+	}
+
+	if needRehash {
+		g.resize(g, 0)
+	}
+}
+
 func (g *hashMap) SetType(ti interface{}) {
 	if g.frozen {
 		panic(frozenMap(`SetType`))
 	}
-
-	var mt dgo.MapType
-	ok := false
-	switch ti := ti.(type) {
-	case dgo.Type:
-		mt, ok = ti.(dgo.MapType)
-	case dgo.String:
-		mt, ok = Parse(ti.String()).(dgo.MapType)
-	case string:
-		mt, ok = Parse(ti).(dgo.MapType)
-	case nil:
-		ok = true
-	}
-
-	if !ok {
-		panic(errors.New(`Map.SetType: argument does not evaluate to a MapType`))
-	}
-
+	mt := asMapType(ti)
 	if mt == nil || mt.Instance(g) {
 		g.typ = mt
 		return
@@ -822,7 +805,7 @@ func (g *hashMap) SetType(ti interface{}) {
 }
 
 func (g *hashMap) String() string {
-	return ToStringERP(g)
+	return util.ToStringERP(g)
 }
 
 func (g *hashMap) StringKeys() bool {
@@ -883,7 +866,9 @@ func (g *hashMap) WithoutAll(keys dgo.Array) dgo.Map {
 
 func (g *hashMap) Type() dgo.Type {
 	if g.typ == nil {
-		return &exactMapType{g}
+		et := &exactMapType{value: g}
+		et.ExactType = et
+		return et
 	}
 	return g.typ
 }
@@ -1045,7 +1030,7 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 }
 
 // MapType returns a type that represents an Map value
-func MapType(args ...interface{}) dgo.MapType {
+func MapType(args []interface{}) dgo.MapType {
 	switch len(args) {
 	case 0:
 		return DefaultMapType
@@ -1058,7 +1043,7 @@ func MapType(args ...interface{}) dgo.MapType {
 	case 4:
 		return mapTypeFour(args)
 	default:
-		panic(fmt.Errorf(`illegal number of arguments for MapType. Expected 0 - 4, got %d`, len(args)))
+		panic(illegalArgumentCount(`MapType`, 0, 4, len(args)))
 	}
 }
 
@@ -1094,8 +1079,9 @@ func (t *sizedMapType) Assignable(other dgo.Type) bool {
 }
 
 func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	if ot, ok := other.(*sizedMapType); ok {
-		return t.min <= ot.min && ot.max <= t.max && Assignable(guard, t.keyType, ot.keyType) && Assignable(guard, t.valueType, ot.valueType)
+	if ot, ok := other.(dgo.MapType); ok {
+		return t.min <= ot.Min() && ot.Max() <= t.max &&
+			Assignable(guard, t.keyType, ot.KeyType()) && Assignable(guard, t.valueType, ot.ValueType())
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -1169,13 +1155,23 @@ func (t *sizedMapType) Min() int {
 	return t.min
 }
 
+func (t *sizedMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
+}
+
 func (t *sizedMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *sizedMapType) Resolve(ap dgo.AliasProvider) {
-	t.keyType = ap.Replace(t.keyType)
-	t.valueType = ap.Replace(t.valueType)
+func (t *sizedMapType) Resolve(ap dgo.AliasMap) {
+	kt := t.keyType
+	vt := t.valueType
+	t.keyType = DefaultAnyType
+	t.valueType = DefaultAnyType
+	kt = ap.Replace(kt).(dgo.Type)
+	vt = ap.Replace(vt).(dgo.Type)
+	t.keyType = kt
+	t.valueType = vt
 }
 
 func (t *sizedMapType) String() string {
@@ -1203,7 +1199,7 @@ const DefaultMapType = defaultMapType(0)
 
 func (t defaultMapType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultMapType, *sizedMapType:
+	case defaultMapType, *sizedMapType, *exactMapType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -1234,6 +1230,10 @@ func (t defaultMapType) Min() int {
 	return 0
 }
 
+func (t defaultMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
+}
+
 func (t defaultMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(reflectAnyType, reflectAnyType)
 }
@@ -1258,50 +1258,45 @@ func (t defaultMapType) Unbounded() bool {
 	return true
 }
 
-func (t *exactMapType) Assignable(other dgo.Type) bool {
-	return CheckAssignableTo(nil, other, t)
+func (t *exactMapType) Additional() bool {
+	return false
 }
 
-func (t *exactMapType) AssignableTo(guard dgo.RecursionGuard, other dgo.Type) bool {
-	switch ot := other.(type) {
-	case defaultMapType:
-		return true
-	case *exactMapType:
-		return t.Equals(ot)
-	case *sizedMapType:
-		return ot.Instance(t.value)
-	}
-	return false
+func (t *exactMapType) Each(actor func(dgo.StructMapEntry)) {
+	t.value.EachEntry(func(e dgo.MapEntry) {
+		actor(&structEntry{mapEntry{e.Key().Type(), e.Value().Type()}, true})
+	})
 }
 
 func (t *exactMapType) Generic() dgo.Type {
 	return &sizedMapType{
-		keyType:   t.KeyType().(dgo.ExactType).Generic(),
-		valueType: t.ValueType().(dgo.ExactType).Generic(),
+		keyType:   Generic(t.KeyType()),
+		valueType: Generic(t.ValueType()),
 		min:       0,
 		max:       math.MaxInt64}
 }
 
-func (t *exactMapType) Equals(other interface{}) bool {
-	if ot, ok := other.(*exactMapType); ok {
-		return t.value.Equals(ot.value)
+func (t *exactMapType) Get(key interface{}) dgo.StructMapEntry {
+	k := Value(key)
+	if et, ok := k.(dgo.ExactType); ok {
+		k = et.ExactValue()
 	}
-	return false
-}
-
-func (t *exactMapType) HashCode() int {
-	return t.value.HashCode()*31 + int(dgo.TiMapExact)
-}
-
-func (t *exactMapType) Instance(value interface{}) bool {
-	if ov, ok := value.(dgo.Map); ok {
-		return t.value.Equals(ov)
+	if v := t.value.Get(k); v != nil {
+		return &structEntry{mapEntry{k.Type(), v.Type()}, true}
 	}
-	return false
+	return nil
 }
 
 func (t *exactMapType) KeyType() dgo.Type {
-	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachKey))
+	l := t.value.Len()
+	if l == 0 {
+		return DefaultAnyType
+	}
+	return (*allOfValueType)(arrayFromIterator(l, t.value.EachKey))
+}
+
+func (t *exactMapType) Len() int {
+	return t.value.Len()
 }
 
 func (t *exactMapType) Max() int {
@@ -1312,28 +1307,42 @@ func (t *exactMapType) Min() int {
 	return t.value.Len()
 }
 
+func (t *exactMapType) New(arg dgo.Value) dgo.Value {
+	return newMap(t, arg)
+}
+
 func (t *exactMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *exactMapType) String() string {
-	return TypeString(t)
-}
-
-func (t *exactMapType) Type() dgo.Type {
-	return &metaType{t}
+func (t *exactMapType) Resolve(ap dgo.AliasMap) {
+	if ac, ok := t.value.(dgo.AliasContainer); ok {
+		ac.Resolve(ap)
+	}
 }
 
 func (t *exactMapType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiMapExact
 }
 
-func (t *exactMapType) Value() dgo.Value {
+func (t *exactMapType) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
+	return validate(t, keyLabel, value)
+}
+
+func (t *exactMapType) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
+	return validateVerbose(t, value, out)
+}
+
+func (t *exactMapType) ExactValue() dgo.Value {
 	return t.value
 }
 
 func (t *exactMapType) ValueType() dgo.Type {
-	return (*allOfValueType)(arrayFromIterator(t.value.Len(), t.value.EachValue))
+	l := t.value.Len()
+	if l == 0 {
+		return DefaultAnyType
+	}
+	return (*allOfValueType)(arrayFromIterator(l, t.value.EachValue))
 }
 
 func frozenMap(f string) error {

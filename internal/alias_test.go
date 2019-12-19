@@ -6,12 +6,12 @@ import (
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 )
 
 func TestAliasMap_Get(t *testing.T) {
-	am := newtype.NewAliasMap()
-	newtype.ParseFile(am, `example.dgo`, `a=string[1]`)
-	require.Equal(t, `a`, am.GetName(newtype.String(1)))
+	am := tf.NewAliasMap()
+	tf.ParseFile(am, `example.dgo`, `a=string[1]`)
+	require.Equal(t, `a`, am.GetName(tf.String(1)))
 	require.Nil(t, am.GetName(typ.String))
 }

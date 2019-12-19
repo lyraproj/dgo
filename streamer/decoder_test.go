@@ -5,7 +5,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/streamer"
@@ -48,9 +48,9 @@ func TestDataDecoder_bad_type(t *testing.T) {
 }
 
 func TestDataDecoder_selfref(t *testing.T) {
-	m := vf.MutableMap(nil)
+	m := vf.MutableMap()
 	m.Put(typ.Integer, vf.Values(`a`, `b`))
-	m.Put(typ.String, vf.MutableValues(nil, vf.Sensitive(m)))
+	m.Put(typ.String, vf.MutableValues(vf.Sensitive(m)))
 
 	// Transform rich data to plain data
 	c := streamer.DataCollector()
@@ -68,18 +68,18 @@ func TestDataDecoder_selfref(t *testing.T) {
 }
 
 func TestDataDecoder_alias(t *testing.T) {
-	aliasMap := newtype.NewAliasMap()
-	newtype.ParseFile(aliasMap, ``, `ne=string[1]`)
-	a := vf.Values(newtype.String(1))
+	aliasMap := tf.NewAliasMap()
+	tf.ParseFile(aliasMap, ``, `ne=string[1]`)
+	a := vf.Values(tf.String(1))
 
 	// Transform rich data to plain data
 	c := streamer.DataCollector()
 	streamer.New(aliasMap, nil).Stream(a, c)
 
 	// Transform back to plain data
-	aliasMap = newtype.NewAliasMap()
+	aliasMap = tf.NewAliasMap()
 	d := streamer.DataDecoder(aliasMap, nil)
 	streamer.New(nil, nil).Stream(c.Value(), d)
 
-	require.Equal(t, `ne`, aliasMap.GetName(newtype.String(1)))
+	require.Equal(t, `ne`, aliasMap.GetName(tf.String(1)))
 }

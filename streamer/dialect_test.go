@@ -5,7 +5,7 @@ import (
 
 	"github.com/lyraproj/dgo/vf"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 
 	"github.com/lyraproj/dgo/streamer"
@@ -31,5 +31,5 @@ func TestDgoDialect_names(t *testing.T) {
 }
 
 func TestDgoDialect_ParseType(t *testing.T) {
-	require.Equal(t, newtype.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(vf.String(`[3,8]string`)))
+	require.Equal(t, tf.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
 }

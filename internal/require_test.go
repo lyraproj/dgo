@@ -7,6 +7,7 @@ import (
 
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func ensureFailed(t *testing.T, f func(t *testing.T)) {
@@ -45,8 +46,14 @@ func TestTheTester(t *testing.T) {
 		require.Match(ft, 23, `bar`)
 	})
 	ensureFailed(t, func(ft *testing.T) {
+		require.Match(ft, `bar`, 23)
+	})
+	require.Match(t, `xyz`, `has xyz in it`)
+	require.Match(t, vf.String(`xyz`), `has xyz in it`)
+	ensureFailed(t, func(ft *testing.T) {
 		require.NoMatch(ft, `bar`, `bar`)
 	})
+	require.NoMatch(t, `abc`, `has xyz in it`)
 	ensureFailed(t, func(ft *testing.T) {
 		require.Ok(ft, errors.New(`nope`))
 	})

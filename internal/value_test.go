@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"encoding/json"
 	"math"
 	"reflect"
 	"regexp"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/tf"
+	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -28,47 +31,47 @@ func TestValue(t *testing.T) {
 	v = vf.Value(int8(42))
 	i, ok := v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(int16(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(int32(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(int64(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint8(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint16(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint32(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint64(42))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	require.Panic(t, func() { vf.Value(uint(math.MaxUint64)) }, `overflows`)
 	require.Panic(t, func() { vf.Value(uint64(math.MaxUint64)) }, `overflows`)
@@ -81,10 +84,12 @@ func TestValue(t *testing.T) {
 	v = vf.Value(3.14)
 	f, ok = v.(dgo.Float)
 	require.True(t, ok)
-	require.True(t, 3.14 == f.GoFloat())
+	require.True(t, f.GoFloat() == 3.14)
 
 	v = vf.Value(struct{ A int }{10})
 	require.Equal(t, struct{ A int }{10}, v)
+
+	require.Panic(t, func() { vf.Value(json.Number(`not a float`)) }, `invalid`)
 }
 
 func TestValue_reflected(t *testing.T) {
@@ -109,47 +114,47 @@ func TestValue_reflected(t *testing.T) {
 	v = vf.Value(reflect.ValueOf(int8(42)))
 	i, ok := v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(int16(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(int32(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(int64(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint8(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint16(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint32(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint64(42)))
 	i, ok = v.(dgo.Integer)
 	require.True(t, ok)
-	require.True(t, 42 == i.GoInt())
+	require.True(t, i.GoInt() == 42)
 
 	require.Panic(t, func() { vf.Value(reflect.ValueOf(uint(math.MaxUint64))) }, `overflows`)
 	require.Panic(t, func() { vf.Value(reflect.ValueOf(uint64(math.MaxUint64))) }, `overflows`)
@@ -162,16 +167,14 @@ func TestValue_reflected(t *testing.T) {
 	v = vf.Value(reflect.ValueOf(3.14))
 	f, ok = v.(dgo.Float)
 	require.True(t, ok)
-	require.True(t, 3.14 == f.GoFloat())
+	require.True(t, f.GoFloat() == 3.14)
 
 	v = vf.Value(reflect.ValueOf(reflect.ValueOf))
-	_, ok = v.(dgo.Native)
+	_, ok = v.(dgo.Function)
 	require.True(t, ok)
 
 	v = vf.Value([]interface{}{map[string]interface{}{`a`: 1}})
 	require.Equal(t, []map[string]int{{`a`: 1}}, v)
-
-	require.Panic(t, func() { vf.Value(reflect.ValueOf(struct{ bar int }{bar: 1}).Field(0)) }, `field or method`)
 }
 
 func TestFromValue(t *testing.T) {
@@ -185,4 +188,11 @@ func TestFromValue_notPointer(t *testing.T) {
 	v := vf.Integer(32)
 	var vc int
 	require.Panic(t, func() { vf.FromValue(v, vc) }, `not a pointer`)
+}
+
+func TestNew(t *testing.T) {
+	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Nil))
+	require.Same(t, vf.Nil, vf.New(typ.Any, vf.Arguments(vf.Nil)))
+	require.Panic(t, func() { vf.New(typ.Any, vf.Arguments(vf.Nil, vf.Nil)) }, `unable to create`)
+	require.Panic(t, func() { vf.New(tf.Not(typ.Nil), vf.Nil) }, `unable to create`)
 }

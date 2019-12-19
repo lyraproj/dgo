@@ -13,11 +13,14 @@ type (
 	// intVal is an int64 that implements the dgo.Value interface
 	intVal int64
 
-	integerType int
+	defaultIntegerType int
 
-	exactIntegerType int64
+	exactIntegerType struct {
+		exactType
+		value intVal
+	}
 
-	integerRange struct {
+	integerType struct {
 		min       int64
 		max       int64
 		inclusive bool
@@ -25,18 +28,18 @@ type (
 )
 
 // DefaultIntegerType is the unconstrained Integer type
-const DefaultIntegerType = integerType(0)
+const DefaultIntegerType = defaultIntegerType(0)
 
 var reflectIntegerType = reflect.TypeOf(int64(0))
 
-// IntegerRangeType returns a dgo.IntegerRangeType that is limited to the inclusive range given by min and max
+// IntegerType returns a dgo.IntegerType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerRangeType {
+func IntegerType(min, max int64, inclusive bool) dgo.IntegerType {
 	if min == max {
 		if !inclusive {
 			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
 		}
-		return exactIntegerType(min)
+		return intVal(min).Type().(dgo.IntegerType)
 	}
 	if max < min {
 		t := max
@@ -46,14 +49,29 @@ func IntegerRangeType(min, max int64, inclusive bool) dgo.IntegerRangeType {
 	if min == math.MinInt64 && max == math.MaxInt64 {
 		return DefaultIntegerType
 	}
-	return &integerRange{min: min, max: max, inclusive: inclusive}
+	return &integerType{min: min, max: max, inclusive: inclusive}
 }
 
-func (t *integerRange) Assignable(other dgo.Type) bool {
+// IntEnumType returns a Type that represents any of the given integers
+func IntEnumType(ints []int) dgo.Type {
+	switch len(ints) {
+	case 0:
+		return &notType{DefaultAnyType}
+	case 1:
+		return intVal(ints[0]).Type()
+	}
+	ts := make([]dgo.Value, len(ints))
+	for i := range ints {
+		ts[i] = intVal(ints[i]).Type()
+	}
+	return &anyOfType{slice: ts, frozen: true}
+}
+
+func (t *integerType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
-	case exactIntegerType:
-		return t.IsInstance(int64(ot))
-	case *integerRange:
+	case *exactIntegerType:
+		return t.IsInstance(int64(ot.value))
+	case *integerType:
 		if t.min > ot.min {
 			return false
 		}
@@ -70,14 +88,14 @@ func (t *integerRange) Assignable(other dgo.Type) bool {
 	return CheckAssignableTo(nil, other, t)
 }
 
-func (t *integerRange) Equals(other interface{}) bool {
-	if ot, ok := other.(*integerRange); ok {
+func (t *integerType) Equals(other interface{}) bool {
+	if ot, ok := other.(*integerType); ok {
 		return *t == *ot
 	}
 	return false
 }
 
-func (t *integerRange) HashCode() int {
+func (t *integerType) HashCode() int {
 	h := int(dgo.TiIntegerRange)
 	if t.min > 0 {
 		h = h*31 + int(t.min)
@@ -91,14 +109,14 @@ func (t *integerRange) HashCode() int {
 	return h
 }
 
-func (t *integerRange) Instance(value interface{}) bool {
+func (t *integerType) Instance(value interface{}) bool {
 	if ov, ok := ToInt(value); ok {
 		return t.IsInstance(ov)
 	}
 	return false
 }
 
-func (t *integerRange) IsInstance(value int64) bool {
+func (t *integerType) IsInstance(value int64) bool {
 	if t.min <= value {
 		if t.inclusive {
 			return value <= t.max
@@ -108,112 +126,92 @@ func (t *integerRange) IsInstance(value int64) bool {
 	return false
 }
 
-func (t *integerRange) Inclusive() bool {
+func (t *integerType) Inclusive() bool {
 	return t.inclusive
 }
 
-func (t *integerRange) Max() int64 {
+func (t *integerType) Max() int64 {
 	return t.max
 }
 
-func (t *integerRange) Min() int64 {
+func (t *integerType) Min() int64 {
 	return t.min
 }
 
-func (t *integerRange) ReflectType() reflect.Type {
+func (t *integerType) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
+}
+
+func (t *integerType) ReflectType() reflect.Type {
 	return reflectIntegerType
 }
 
-func (t *integerRange) String() string {
+func (t *integerType) String() string {
 	return TypeString(t)
 }
 
-func (t *integerRange) Type() dgo.Type {
+func (t *integerType) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t *integerRange) TypeIdentifier() dgo.TypeIdentifier {
+func (t *integerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerRange
 }
 
-func (t exactIntegerType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(exactIntegerType); ok {
-		return t == ot
+func (t *exactIntegerType) Generic() dgo.Type {
+	return DefaultIntegerType
+}
+
+func (t *exactIntegerType) Inclusive() bool {
+	return true
+}
+
+func (t *exactIntegerType) IsInstance(value int64) bool {
+	return int64(t.value) == value
+}
+
+func (t *exactIntegerType) Max() int64 {
+	return int64(t.value)
+}
+
+func (t *exactIntegerType) Min() int64 {
+	return int64(t.value)
+}
+
+func (t *exactIntegerType) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
+}
+
+func (t *exactIntegerType) ReflectType() reflect.Type {
+	return reflectIntegerType
+}
+
+func (t *exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiIntegerExact
+}
+
+func (t *exactIntegerType) ExactValue() dgo.Value {
+	return t.value
+}
+
+func (t defaultIntegerType) Assignable(other dgo.Type) bool {
+	switch other.(type) {
+	case defaultIntegerType, *exactIntegerType, *integerType:
+		return true
 	}
 	return CheckAssignableTo(nil, other, t)
 }
 
-func (t exactIntegerType) Equals(other interface{}) bool {
-	return t == other
-}
-
-func (t exactIntegerType) Generic() dgo.Type {
-	return DefaultIntegerType
-}
-
-func (t exactIntegerType) HashCode() int {
-	return intVal(t).HashCode() * 5
-}
-
-func (t exactIntegerType) Inclusive() bool {
-	return true
-}
-
-func (t exactIntegerType) Instance(value interface{}) bool {
-	ov, ok := ToInt(value)
-	return ok && int64(t) == ov
-}
-
-func (t exactIntegerType) IsInstance(value int64) bool {
-	return int64(t) == value
-}
-
-func (t exactIntegerType) Max() int64 {
-	return int64(t)
-}
-
-func (t exactIntegerType) Min() int64 {
-	return int64(t)
-}
-
-func (t exactIntegerType) ReflectType() reflect.Type {
-	return reflectIntegerType
-}
-
-func (t exactIntegerType) String() string {
-	return TypeString(t)
-}
-
-func (t exactIntegerType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiIntegerExact
-}
-
-func (t exactIntegerType) Value() dgo.Value {
-	return intVal(t)
-}
-
-func (t integerType) Assignable(other dgo.Type) bool {
-	switch other.(type) {
-	case integerType, exactIntegerType, *integerRange:
-		return true
-	}
-	return false
-}
-
-func (t integerType) Equals(other interface{}) bool {
-	_, ok := other.(integerType)
+func (t defaultIntegerType) Equals(other interface{}) bool {
+	_, ok := other.(defaultIntegerType)
 	return ok
 }
 
-func (t integerType) HashCode() int {
+func (t defaultIntegerType) HashCode() int {
 	return int(dgo.TiInteger)
 }
 
-func (t integerType) Instance(value interface{}) bool {
+func (t defaultIntegerType) Instance(value interface{}) bool {
 	switch value.(type) {
 	case dgo.Integer, int, int64, int32, int16, int8, uint, uint64, uint32, uint16, uint8:
 		return true
@@ -221,35 +219,39 @@ func (t integerType) Instance(value interface{}) bool {
 	return false
 }
 
-func (t integerType) Inclusive() bool {
+func (t defaultIntegerType) Inclusive() bool {
 	return true
 }
 
-func (t integerType) IsInstance(value int64) bool {
+func (t defaultIntegerType) IsInstance(value int64) bool {
 	return true
 }
 
-func (t integerType) Max() int64 {
+func (t defaultIntegerType) Max() int64 {
 	return math.MaxInt64
 }
 
-func (t integerType) Min() int64 {
+func (t defaultIntegerType) Min() int64 {
 	return math.MinInt64
 }
 
-func (t integerType) ReflectType() reflect.Type {
+func (t defaultIntegerType) New(arg dgo.Value) dgo.Value {
+	return newInt(t, arg)
+}
+
+func (t defaultIntegerType) ReflectType() reflect.Type {
 	return reflectIntegerType
 }
 
-func (t integerType) String() string {
+func (t defaultIntegerType) String() string {
 	return TypeString(t)
 }
 
-func (t integerType) Type() dgo.Type {
+func (t defaultIntegerType) Type() dgo.Type {
 	return &metaType{t}
 }
 
-func (t integerType) TypeIdentifier() dgo.TypeIdentifier {
+func (t defaultIntegerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiInteger
 }
 
@@ -258,8 +260,8 @@ func Integer(v int64) dgo.Integer {
 	return intVal(v)
 }
 
-func (v intVal) CompareTo(other interface{}) (r int, ok bool) {
-	ok = true
+func (v intVal) CompareTo(other interface{}) (int, bool) {
+	r := 0
 	if oi, isInt := ToInt(other); isInt {
 		mv := int64(v)
 		switch {
@@ -267,11 +269,10 @@ func (v intVal) CompareTo(other interface{}) (r int, ok bool) {
 			r = 1
 		case mv < oi:
 			r = -1
-		default:
-			r = 0
 		}
-		return
+		return r, true
 	}
+
 	if ov, isFloat := ToFloat(other); isFloat {
 		fv := float64(v)
 		switch {
@@ -279,17 +280,14 @@ func (v intVal) CompareTo(other interface{}) (r int, ok bool) {
 			r = 1
 		case fv < ov:
 			r = -1
-		default:
-			r = 0
 		}
-		return
+		return r, true
 	}
+
 	if other == Nil || other == nil {
-		r = 1
-	} else {
-		ok = false
+		return 1, true
 	}
-	return
+	return 0, false
 }
 
 func (v intVal) Equals(other interface{}) bool {
@@ -368,13 +366,16 @@ func (v intVal) ToInt() int64 {
 }
 
 func (v intVal) Type() dgo.Type {
-	return exactIntegerType(v)
+	et := &exactIntegerType{value: v}
+	et.ExactType = et
+	return et
 }
 
 // ToInt returns the given value as a int64 if, and only if, the value type is one of the go int types. An
 // additional boolean is returned to indicate if that was the case or not.
-func ToInt(value interface{}) (v int64, ok bool) {
-	ok = true
+func ToInt(value interface{}) (int64, bool) {
+	ok := true
+	v := int64(0)
 	switch value := value.(type) {
 	case intVal:
 		v = int64(value)
@@ -407,5 +408,45 @@ func ToInt(value interface{}) (v int64, ok bool) {
 	default:
 		ok = false
 	}
-	return
+	return v, ok
+}
+
+var radixType = IntEnumType([]int{2, 8, 10, 16})
+
+func newInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`int`, 1, 2)
+		if args.Len() == 2 {
+			i = Integer(intFromConvertible(args.Get(0), int(args.Arg(`int`, 1, radixType).(dgo.Integer).GoInt())))
+		} else {
+			i = Integer(intFromConvertible(args.Get(0), 10))
+		}
+	} else {
+		i = Integer(intFromConvertible(arg, 10))
+	}
+	if !t.Instance(i) {
+		panic(IllegalAssignment(t, i))
+	}
+	return i
+}
+
+func intFromConvertible(from dgo.Value, radix int) int64 {
+	switch from := from.(type) {
+	case dgo.Integer:
+		return from.GoInt()
+	case dgo.Float:
+		return int64(from.GoFloat())
+	case *timeVal:
+		return from.GoTime().Unix()
+	case dgo.Boolean:
+		if from.GoBool() {
+			return 1
+		}
+		return 0
+	case dgo.String:
+		if i, err := strconv.ParseInt(from.GoString(), radix, 64); err == nil {
+			return i
+		}
+	}
+	panic(fmt.Errorf(`the value '%s' cannot be converted to an int`, from))
 }

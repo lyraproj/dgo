@@ -2,13 +2,14 @@ package streamer_test
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
 	"github.com/lyraproj/dgo/streamer"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -46,12 +47,14 @@ func TestEncode_sensitive(t *testing.T) {
 
 func TestEncode_unknown(t *testing.T) {
 	c := streamer.NewCollector()
-	require.Panic(t, func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) }, `unable to serialize value`)
+	require.Panic(t,
+		func() { streamer.New(nil, nil).Stream(vf.Value(struct{ A string }{A: `hello`}), c) },
+		`unable to serialize value`)
 }
 
 func TestEncode_type(t *testing.T) {
 	c := streamer.NewCollector()
-	streamer.New(nil, nil).Stream(newtype.String(1), c)
+	streamer.New(nil, nil).Stream(tf.String(1), c)
 	require.Equal(t, vf.Map(`__type`, `string[1]`), c.Value())
 }
 
@@ -70,8 +73,8 @@ func TestEncode_time(t *testing.T) {
 }
 
 func TestEncode_alias(t *testing.T) {
-	am := newtype.NewAliasMap()
-	tp := newtype.ParseFile(am, ``, `ne=string[1]`)
+	am := tf.NewAliasMap()
+	tp := tf.ParseFile(am, ``, `ne=string[1]`)
 	c := streamer.NewCollector()
 	streamer.New(am, nil).Stream(tp, c)
 	require.Equal(t, vf.Map(`__type`, `alias`, `__value`, vf.Strings(`ne`, `string[1]`)), c.Value())
@@ -134,4 +137,78 @@ func TestEncode_dedup_string_keys(t *testing.T) {
 	ac.Get(0).(dgo.Map).EachEntry(func(e dgo.MapEntry) { aes = append(aes, e) })
 	ac.Get(1).(dgo.Map).EachEntry(func(e dgo.MapEntry) { bes = append(bes, e) })
 	require.Same(t, aes[0].Key(), bes[0].Key())
+}
+
+type testNamed struct {
+	A string
+	B int64
+}
+
+func (v *testNamed) String() string {
+	return v.Type().(dgo.NamedType).ValueString(v)
+}
+
+func (v *testNamed) Type() dgo.Type {
+	return tf.ExactNamed(tf.Named(`testNamed`), v)
+}
+
+func (v *testNamed) Equals(other interface{}) bool {
+	if ov, ok := other.(*testNamed); ok {
+		return *v == *ov
+	}
+	return false
+}
+
+func (v *testNamed) HashCode() int {
+	return int(reflect.ValueOf(v).Pointer())
+}
+
+func TestEncode_namedUsingMap(t *testing.T) {
+	defer tf.RemoveNamed(`testNamed`)
+	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
+		sm := vf.Map(&testNamed{}).(dgo.Struct)
+		sm.PutAll(arg.(dgo.Map))
+		return sm.GoStruct().(dgo.Value)
+	}, func(value dgo.Value) dgo.Value {
+		return vf.Map(value)
+	}, reflect.TypeOf(&testNamed{}), nil, nil)
+
+	arg := vf.Map(`A`, `hello`, `B`, 32)
+	s := streamer.New(nil, nil)
+
+	v := tp.New(arg)
+	c := streamer.NewCollector()
+	s.Stream(v, c)
+	require.Equal(t, arg.With(`__type`, `testNamed`), c.Value())
+
+	c = streamer.DataDecoder(nil, nil)
+	s.Stream(v, c)
+	require.Equal(t, v, c.Value())
+}
+
+func TestEncode_namedUsingValue(t *testing.T) {
+	defer tf.RemoveNamed(`testNamed`)
+	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
+		a := arg.(dgo.Array)
+		return &testNamed{A: a.Get(0).(dgo.String).GoString(), B: a.Get(1).(dgo.Integer).GoInt()}
+	}, func(value dgo.Value) dgo.Value {
+		v := value.(*testNamed)
+		return vf.Values(v.A, v.B)
+	}, reflect.TypeOf(&testNamed{}), nil, nil)
+
+	arg := vf.Values(`hello`, 32)
+	s := streamer.New(nil, nil)
+
+	v := tp.New(arg)
+	c := streamer.NewCollector()
+	s.Stream(v, c)
+	require.Equal(t, vf.Map(`__type`, `testNamed`, `__value`, arg), c.Value())
+
+	c = streamer.DataDecoder(nil, nil)
+	s.Stream(v, c)
+	require.Equal(t, v, c.Value())
+
+	c = streamer.DataDecoder(nil, nil)
+	s.Stream(vf.Map(`__type`, `testNamed`), c)
+	require.Same(t, tp, c.Value())
 }

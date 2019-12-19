@@ -4,10 +4,11 @@ import (
 	"math"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
@@ -16,10 +17,10 @@ func TestInteger(t *testing.T) {
 	require.Instance(t, typ.Integer, 3)
 	require.NotInstance(t, typ.Integer, true)
 	require.Assignable(t, typ.Integer, typ.Integer)
-	require.Assignable(t, typ.Integer, newtype.IntegerRange(3, 5, true))
+	require.Assignable(t, typ.Integer, tf.Integer(3, 5, true))
 	require.Assignable(t, typ.Integer, vf.Integer(4).Type())
 	require.Equal(t, typ.Integer, typ.Integer)
-	require.Equal(t, typ.Integer, newtype.IntegerRange(math.MinInt64, math.MaxInt64, true))
+	require.Equal(t, typ.Integer, tf.Integer(math.MinInt64, math.MaxInt64, true))
 	require.Instance(t, typ.Integer.Type(), typ.Integer)
 	require.True(t, typ.Integer.IsInstance(1234))
 	require.Equal(t, typ.Integer.Min(), math.MinInt64)
@@ -32,15 +33,15 @@ func TestInteger(t *testing.T) {
 }
 
 func TestIntegerExact(t *testing.T) {
-	tp := vf.Integer(3).Type().(dgo.IntegerRangeType)
+	tp := vf.Integer(3).Type().(dgo.IntegerType)
 	require.Instance(t, tp, 3)
 	require.NotInstance(t, tp, 2)
 	require.NotInstance(t, tp, true)
-	require.Assignable(t, newtype.IntegerRange(3, 5, true), tp)
-	require.Assignable(t, tp, newtype.IntegerRange(3, 3, true))
+	require.Assignable(t, tf.Integer(3, 5, true), tp)
+	require.Assignable(t, tp, tf.Integer(3, 3, true))
 	require.NotAssignable(t, tp, typ.Integer)
-	require.Equal(t, tp, newtype.IntegerRange(3, 3, true))
-	require.NotEqual(t, tp, newtype.IntegerRange(2, 5, true))
+	require.Equal(t, tp, tf.Integer(3, 3, true))
+	require.NotEqual(t, tp, tf.Integer(2, 5, true))
 	require.Equal(t, tp.Min(), 3)
 	require.Equal(t, tp.Max(), 3)
 	require.True(t, tp.Inclusive())
@@ -59,23 +60,23 @@ func TestIntegerExact(t *testing.T) {
 }
 
 func TestIntegerRange(t *testing.T) {
-	tp := newtype.IntegerRange(3, 5, true)
+	tp := tf.Integer(3, 5, true)
 	require.Instance(t, tp, 3)
 	require.NotInstance(t, tp, 2)
 	require.NotInstance(t, tp, true)
-	require.Assignable(t, tp, newtype.IntegerRange(3, 5, true))
-	require.Assignable(t, tp, newtype.IntegerRange(4, 4, true))
+	require.Assignable(t, tp, tf.Integer(3, 5, true))
+	require.Assignable(t, tp, tf.Integer(4, 4, true))
 	require.Assignable(t, tp, vf.Integer(4).Type())
-	require.NotAssignable(t, tp, newtype.IntegerRange(2, 5, true))
-	require.NotAssignable(t, tp, newtype.IntegerRange(3, 6, true))
+	require.NotAssignable(t, tp, tf.Integer(2, 5, true))
+	require.NotAssignable(t, tp, tf.Integer(3, 6, true))
 	require.NotAssignable(t, tp, vf.Integer(6).Type())
-	require.Equal(t, tp, newtype.IntegerRange(5, 3, true))
-	require.NotEqual(t, tp, newtype.IntegerRange(2, 5, true))
-	require.NotEqual(t, tp, newtype.IntegerRange(3, 4, true))
+	require.Equal(t, tp, tf.Integer(5, 3, true))
+	require.NotEqual(t, tp, tf.Integer(2, 5, true))
+	require.NotEqual(t, tp, tf.Integer(3, 4, true))
 	require.NotEqual(t, tp, typ.Integer)
 	require.Equal(t, tp.Min(), 3)
 	require.Equal(t, tp.Max(), 5)
-	require.Equal(t, vf.Integer(4).Type(), newtype.IntegerRange(4, 4, true))
+	require.Equal(t, vf.Integer(4).Type(), tf.Integer(4, 4, true))
 
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
@@ -84,18 +85,32 @@ func TestIntegerRange(t *testing.T) {
 
 	require.Instance(t, tp.Type(), tp)
 
-	tp = newtype.IntegerRange(3, 5, false)
+	tp = tf.Integer(3, 5, false)
 	require.Instance(t, tp, 4)
 	require.NotInstance(t, tp, 5)
-	require.Assignable(t, tp, newtype.IntegerRange(3, 5, false))
-	require.NotAssignable(t, tp, newtype.IntegerRange(3, 5, true))
-	require.Assignable(t, newtype.IntegerRange(3, 5, true), tp)
-	require.Assignable(t, tp, newtype.IntegerRange(3, 4, true))
-	require.Assignable(t, newtype.IntegerRange(3, 4, true), tp)
+	require.Assignable(t, tp, tf.Integer(3, 5, false))
+	require.NotAssignable(t, tp, tf.Integer(3, 5, true))
+	require.Assignable(t, tf.Integer(3, 5, true), tp)
+	require.Assignable(t, tp, tf.Integer(3, 4, true))
+	require.Assignable(t, tf.Integer(3, 4, true), tp)
 
-	require.Panic(t, func() { newtype.IntegerRange(4, 4, false) }, `cannot have equal min and max`)
+	require.Panic(t, func() { tf.Integer(4, 4, false) }, `cannot have equal min and max`)
 
 	require.Same(t, tp.ReflectType(), typ.Integer.ReflectType())
+}
+
+func TestIntegerType_New(t *testing.T) {
+	require.Equal(t, 17, vf.New(typ.Integer, vf.Arguments(`11`, 16)))
+	require.Equal(t, 17, vf.New(typ.Integer, vf.Float(17)))
+	require.Equal(t, 0, vf.New(typ.Integer, vf.False))
+	require.Equal(t, 1, vf.New(typ.Integer, vf.True))
+
+	now := time.Now()
+	require.Equal(t, now.Unix(), vf.New(typ.Integer, vf.Arguments(vf.Time(now))))
+
+	require.Panic(t, func() { vf.New(typ.Integer, vf.String(`true`)) }, `cannot be converted`)
+	require.Panic(t, func() { vf.New(vf.Integer(4).Type(), vf.Integer(5)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(tf.Integer(1, 4, true), vf.Integer(5)) }, `cannot be assigned`)
 }
 
 func TestInteger_CompareTo(t *testing.T) {

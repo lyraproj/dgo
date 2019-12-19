@@ -4,6 +4,7 @@ type (
 	// BinaryType is the type that represents a Binary value
 	BinaryType interface {
 		SizedType
+		Factory
 
 		IsInstance([]byte) bool
 	}
@@ -19,6 +20,9 @@ type (
 		// the given argument. A request to create a frozen copy of an already frozen Binary
 		// is a no-op that returns the receiver.
 		Copy(frozen bool) Binary
+
+		// Encode returns the strict base64 encoding of the given bytes
+		Encode() string
 
 		// GoBytes returns a copy of the internal array to ensure immutability
 		GoBytes() []byte

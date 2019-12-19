@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lyraproj/dgo/dgo"
+
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
@@ -31,11 +33,27 @@ func TestTimeDefault(t *testing.T) {
 	require.True(t, reflect.ValueOf(ts).Type().AssignableTo(tp.ReflectType()))
 }
 
+func TestTimeType_New(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, `2019-11-11T17:57:00-00:00`)
+	tv := vf.Time(ts)
+	require.Same(t, tv, vf.New(typ.Time, tv))
+	require.Same(t, tv, vf.New(tv.Type(), tv))
+	require.Same(t, tv, vf.New(tv.Type(), vf.Arguments(tv)))
+	require.Equal(t, tv, vf.New(typ.Time, vf.Integer(tv.GoTime().Unix())))
+	require.Equal(t, tv, vf.New(typ.Time, vf.Float(tv.SecondsWithFraction())))
+
+	require.Equal(t, tv, vf.New(typ.Time, vf.String(`2019-11-11T17:57:00-00:00`)))
+
+	require.Panic(t, func() { vf.New(tv.Type(), vf.String(`2019-10-06T07:15:00-07:00`)) }, `cannot be assigned`)
+	require.Panic(t, func() { vf.New(typ.Time, vf.Sensitive(5)) }, `illegal argument`)
+}
+
 func TestTimeExact(t *testing.T) {
 	now := time.Now()
 	ts := vf.Value(now)
-	tp := ts.Type()
+	tp := ts.Type().(dgo.TimeType)
 	require.Instance(t, tp, ts)
+	require.True(t, tp.IsInstance(now))
 	require.NotInstance(t, tp, now.Add(1))
 	require.NotInstance(t, tp, now.String())
 	require.Assignable(t, typ.Time, tp)
@@ -69,6 +87,13 @@ func TestTime(t *testing.T) {
 	require.NotEqual(t, v, ot)
 	require.NotEqual(t, v, `2019-10-06:16:15:00-01:00`)
 	require.Equal(t, v, v.GoTime())
+
+	ts, _ = time.Parse(time.RFC3339, `1628-08-10T17:15:00.123456-07:00`)
+	ot = ts.AddDate(400, 0, 0)
+	v = vf.Time(ts)
+	v2 := vf.Time(ot)
+	dv := ot.Unix() - ts.Unix()
+	require.Equal(t, float64(dv), v2.SecondsWithFraction()-v.SecondsWithFraction())
 }
 
 func TestTimeFromString(t *testing.T) {

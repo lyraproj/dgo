@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -9,9 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lyraproj/dgo/util"
-
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (
@@ -29,7 +27,10 @@ type (
 	defaultDgoStringType int
 
 	// exactStringType only represents its own string
-	exactStringType hstring
+	exactStringType struct {
+		exactType
+		value *hstring
+	}
 
 	ciStringType struct {
 		exactStringType
@@ -46,6 +47,36 @@ type (
 		h int
 	}
 )
+
+var formatPattern = PatternType(regexp.MustCompile(`\A%([\s\[+#0{<(|-]*)([1-9][0-9]*)?(?:\.([0-9]+))?([a-zA-Z])\z`))
+
+func newString(t dgo.Type, arg dgo.Value) dgo.String {
+	var s dgo.String
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`string`, 1, 2)
+		if args.Len() == 2 {
+			var v interface{}
+			FromValue(args.Get(0), &v)
+			s = String(fmt.Sprintf(args.Arg(`string`, 1, formatPattern).(dgo.String).GoString(), v))
+		} else {
+			arg = args.Get(0)
+		}
+	}
+
+	if s == nil {
+		switch arg := arg.(type) {
+		case dgo.String:
+			s = arg
+		default:
+			s = String(arg.String())
+		}
+	}
+
+	if !t.Instance(s) {
+		panic(IllegalAssignment(t, s))
+	}
+	return s
+}
 
 func (t defaultDgoStringType) String() string {
 	return TypeString(t)
@@ -68,7 +99,7 @@ func (t defaultDgoStringType) Assignable(other dgo.Type) bool {
 		return true
 	}
 	if ot, ok := other.(*exactStringType); ok {
-		return t.Instance(ot.s)
+		return t.Instance(ot.value)
 	}
 	return CheckAssignableTo(nil, other, t)
 }
@@ -94,6 +125,10 @@ func (t defaultDgoStringType) Instance(value interface{}) (ok bool) {
 		}
 	}
 	return
+}
+
+func (t defaultDgoStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t defaultDgoStringType) ReflectType() reflect.Type {
@@ -130,11 +165,11 @@ func EnumType(strings []string) dgo.Type {
 	case 0:
 		return &notType{DefaultAnyType}
 	case 1:
-		return (*exactStringType)(makeHString(strings[0]))
+		return makeHString(strings[0]).Type()
 	}
 	ts := make([]dgo.Value, len(strings))
 	for i := range strings {
-		ts[i] = (*exactStringType)(makeHString(strings[i]))
+		ts[i] = makeHString(strings[i]).Type()
 	}
 	return &anyOfType{slice: ts, frozen: true}
 }
@@ -194,6 +229,10 @@ func (t defaultStringType) Min() int {
 	return 0
 }
 
+func (t defaultStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
+}
+
 func (t defaultStringType) String() string {
 	return TypeString(t)
 }
@@ -214,56 +253,24 @@ func (t defaultStringType) Unbounded() bool {
 	return true
 }
 
-func (t *exactStringType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*exactStringType); ok {
-		return t.s == ot.s
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *exactStringType) Equals(v interface{}) bool {
-	if ov, ok := v.(*exactStringType); ok {
-		return t.s == ov.s
-	}
-	return false
-}
-
 func (t *exactStringType) Generic() dgo.Type {
 	return DefaultStringType
 }
 
-func (t *exactStringType) HashCode() int {
-	return (*hstring)(t).HashCode() * 5
-}
-
-func (t *exactStringType) Instance(v interface{}) bool {
-	if ov, ok := v.(*hstring); ok {
-		return t.s == ov.s
-	}
-	if ov, ok := v.(string); ok {
-		return t.s == ov
-	}
-	return false
-}
-
 func (t *exactStringType) Max() int {
-	return len(t.s)
+	return len(t.value.s)
 }
 
 func (t *exactStringType) Min() int {
-	return len(t.s)
+	return len(t.value.s)
 }
 
-func (t *exactStringType) String() string {
-	return TypeString(t)
+func (t *exactStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *exactStringType) ReflectType() reflect.Type {
 	return reflectStringType
-}
-
-func (t *exactStringType) Type() dgo.Type {
-	return &metaType{t}
 }
 
 func (t *exactStringType) TypeIdentifier() dgo.TypeIdentifier {
@@ -274,8 +281,8 @@ func (t *exactStringType) Unbounded() bool {
 	return false
 }
 
-func (t *exactStringType) Value() dgo.Value {
-	return makeHString(t.s)
+func (t *exactStringType) ExactValue() dgo.Value {
+	return t.value
 }
 
 // CiStringType returns a StringType that is constrained to strings that are equal to the given string under
@@ -287,38 +294,30 @@ func CiStringType(si interface{}) dgo.StringType {
 	} else {
 		s = si.(string)
 	}
-	return &ciStringType{exactStringType: exactStringType{s: strings.ToLower(s)}}
+	et := &ciStringType{exactStringType: exactStringType{value: makeHString(strings.ToLower(s))}}
+	et.ExactType = et
+	return et
 }
 
 func (t *ciStringType) Assignable(other dgo.Type) bool {
 	if ot, ok := other.(*exactStringType); ok {
-		return strings.EqualFold(t.s, ot.s)
+		return strings.EqualFold(t.value.s, ot.value.s)
 	}
-	if ot, ok := other.(*ciStringType); ok {
-		return t.s == ot.s
-	}
-	return CheckAssignableTo(nil, other, t)
-}
-
-func (t *ciStringType) Equals(v interface{}) bool {
-	if ot, ok := v.(*ciStringType); ok {
-		return t.s == ot.s
-	}
-	return false
+	return t.exactType.Assignable(other)
 }
 
 func (t *ciStringType) Instance(v interface{}) bool {
 	if ov, ok := v.(*hstring); ok {
-		return strings.EqualFold(t.s, ov.s)
+		return strings.EqualFold(t.value.s, ov.s)
 	}
 	if ov, ok := v.(string); ok {
-		return strings.EqualFold(t.s, ov)
+		return strings.EqualFold(t.value.s, ov)
 	}
 	return false
 }
 
-func (t *ciStringType) Type() dgo.Type {
-	return &metaType{t}
+func (t *ciStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *ciStringType) TypeIdentifier() dgo.TypeIdentifier {
@@ -336,7 +335,7 @@ func PatternType(pattern *regexp.Regexp) dgo.Type {
 //
 // The method can also be called with one string parameter. The returned type will then match that exact
 // string and nothing else.
-func StringType(args ...interface{}) dgo.StringType {
+func StringType(args []interface{}) dgo.StringType {
 	switch len(args) {
 	case 0:
 		return DefaultStringType
@@ -358,13 +357,13 @@ func StringType(args ...interface{}) dgo.StringType {
 		}
 		panic(illegalArgument(`StringType`, `Integer`, args, 0))
 	}
-	panic(fmt.Errorf(`illegal number of arguments for StringType. Expected 0 - 2, got %d`, len(args)))
+	panic(illegalArgumentCount(`StringType`, 0, 2, len(args)))
 }
 
 func (t *patternType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case *exactStringType:
-		return t.IsInstance(ot.s)
+		return t.IsInstance(ot.value.s)
 	case *patternType:
 		return t.String() == ot.String()
 	}
@@ -383,7 +382,7 @@ func (t *patternType) Generic() dgo.Type {
 }
 
 func (t *patternType) HashCode() int {
-	return stringHash(t.String())
+	return util.StringHash(t.String())
 }
 
 func (t *patternType) Instance(v interface{}) bool {
@@ -398,6 +397,18 @@ func (t *patternType) Instance(v interface{}) bool {
 
 func (t *patternType) IsInstance(v string) bool {
 	return t.MatchString(v)
+}
+
+func (t *patternType) Max() int {
+	return math.MaxInt64
+}
+
+func (t *patternType) Min() int {
+	return 0
+}
+
+func (t *patternType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
 }
 
 func (t *patternType) ReflectType() reflect.Type {
@@ -416,7 +427,11 @@ func (t *patternType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiStringPattern
 }
 
-func (t *patternType) Value() dgo.Value {
+func (t *patternType) Unbounded() bool {
+	return true
+}
+
+func (t *patternType) ExactValue() dgo.Value {
 	return (*regexpVal)(t.Regexp)
 }
 
@@ -442,9 +457,9 @@ func (t *sizedStringType) Assignable(other dgo.Type) bool {
 	case defaultDgoStringType:
 		return t.min <= 1
 	case *exactStringType:
-		return t.IsInstance(ot.s)
+		return t.IsInstance(ot.value.s)
 	case *ciStringType:
-		return t.IsInstance(ot.s)
+		return t.IsInstance(ot.value.s)
 	case *sizedStringType:
 		return t.min <= ot.min && t.max >= ot.max
 	}
@@ -492,6 +507,10 @@ func (t *sizedStringType) Min() int {
 	return t.min
 }
 
+func (t *sizedStringType) New(arg dgo.Value) dgo.Value {
+	return newString(t, arg)
+}
+
 func (t *sizedStringType) ReflectType() reflect.Type {
 	return reflectStringType
 }
@@ -512,19 +531,11 @@ func (t *sizedStringType) Unbounded() bool {
 	return t.min == 0 && t.max == math.MaxInt64
 }
 
-func stringHash(s string) int {
-	h := 1
-	for i := range s {
-		h = 31*h + int(s[i])
-	}
-	return h
-}
-
 func makeHString(s string) *hstring {
 	return &hstring{s: s}
 }
 
-func (v *hstring) AppendTo(w util.Indenter) {
+func (v *hstring) AppendTo(w dgo.Indenter) {
 	w.Append(strconv.Quote(v.s))
 }
 
@@ -575,13 +586,9 @@ func (v *hstring) GoString() string {
 
 func (v *hstring) HashCode() int {
 	if v.h == 0 {
-		v.h = stringHash(v.s)
+		v.h = util.StringHash(v.s)
 	}
 	return v.h
-}
-
-func (v *hstring) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.s)
 }
 
 func (v *hstring) ReflectTo(value reflect.Value) {
@@ -600,5 +607,7 @@ func (v *hstring) String() string {
 }
 
 func (v *hstring) Type() dgo.Type {
-	return (*exactStringType)(v)
+	et := &exactStringType{value: v}
+	et.ExactType = et
+	return et
 }

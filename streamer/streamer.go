@@ -110,8 +110,34 @@ func (sc *context) emitData(value dgo.Value) {
 	case dgo.Type:
 		sc.emitType(value)
 	default:
+		if sc.config.RichData {
+			if nt, ok := value.Type().(dgo.NamedType); ok {
+				sc.emitNamed(nt, value)
+				break
+			}
+		}
 		panic(sc.unknownSerialization(value))
 	}
+}
+
+func (sc *context) emitNamed(t dgo.NamedType, value dgo.Value) {
+	sc.process(value, func() {
+		v := t.ExtractInitArg(value)
+		d := sc.config.Dialect
+		sc.addMap(2, func() {
+			sc.addData(d.TypeKey())
+			sc.addData(vf.String(t.Name()))
+			if vm, ok := v.(dgo.Map); ok {
+				vm.EachEntry(func(e dgo.MapEntry) {
+					sc.addData(e.Key())
+					sc.emitData(e.Value())
+				})
+			} else {
+				sc.addData(d.ValueKey())
+				sc.emitData(v)
+			}
+		})
+	})
 }
 
 func (sc *context) unknownSerialization(value dgo.Value) error {
@@ -139,7 +165,7 @@ func (sc *context) addData(v dgo.Value) {
 
 func (sc *context) emitString(value dgo.String) {
 	// Dedup only if length exceeds stringThreshold
-	str := value.String()
+	str := value.GoString()
 	if len(str) >= sc.consumer.StringDedupThreshold() {
 		sc.process(str, func() {
 			sc.addData(value)

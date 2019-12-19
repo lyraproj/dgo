@@ -3,6 +3,7 @@ package streamer_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -61,6 +62,39 @@ func TestJSON_CanDoTime(t *testing.T) {
 func TestJSON_ComplexKeys(t *testing.T) {
 	v := vf.Map(vf.BinaryFromString(`AQID`), `value of binary`, `hey`, `value of hey`)
 	b := bytes.Buffer{}
-	streamer.New(nil, nil).Stream(v, streamer.JSON(&b))
-	require.Equal(t, `{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`, b.String())
+	streamer.New(nil, streamer.DefaultOptions()).Stream(v, streamer.JSON(&b))
+	require.Equal(t,
+		`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`,
+		b.String())
+}
+
+func TestUnmarshalJSON_complexKeys(t *testing.T) {
+	v := streamer.UnmarshalJSON(
+		[]byte(`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`),
+		streamer.DgoDialect())
+	v2 := vf.Map(vf.BinaryFromString(`AQID`), `value of binary`, `hey`, `value of hey`)
+	require.Equal(t, v, v2)
+}
+
+func TestUnmarshalJSON_badInput(t *testing.T) {
+	require.Panic(t, func() { streamer.UnmarshalJSON([]byte(`this is not json`), nil) }, `invalid character`)
+}
+
+func ExampleUnmarshalJSON() {
+	v := streamer.UnmarshalJSON([]byte(`["hello",true,1,3.14,null,{"a":1}]`), nil)
+	fmt.Println(v.Equals(vf.Values(`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1})))
+	// Output: true
+}
+
+func ExampleMarshalJSON_slice() {
+	v := streamer.MarshalJSON(vf.Values(
+		`hello`, true, 1, 3.14, nil, map[string]interface{}{"a": 1}), streamer.DgoDialect())
+	fmt.Println(string(v))
+	// Output: ["hello",true,1,3.14,null,{"a":1}]
+}
+
+func ExampleMarshalJSON_string() {
+	v := streamer.MarshalJSON("hello", nil)
+	fmt.Println(string(v))
+	// Output: "hello"
 }

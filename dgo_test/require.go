@@ -89,12 +89,19 @@ func NotSame(t *testing.T, a, b interface{}) {
 }
 
 func isMatch(a, b interface{}) bool {
-	sb := internal.Value(b).String()
-	if r, ok := a.(*regexp.Regexp); ok {
-		return r.MatchString(sb)
-	}
-	if rs, ok := a.(string); ok {
-		return regexp.MustCompile(rs).MatchString(sb)
+	if sv, ok := internal.Value(b).(dgo.String); ok {
+		var rx *regexp.Regexp
+		switch a := a.(type) {
+		case *regexp.Regexp:
+			rx = a
+		case string:
+			rx = regexp.MustCompile(a)
+		case dgo.String:
+			rx = regexp.MustCompile(a.GoString())
+		default:
+			return false
+		}
+		return rx.MatchString(sv.GoString())
 	}
 	return false
 }
@@ -154,7 +161,7 @@ func NotOk(t *testing.T, msg interface{}, err error) {
 // Nil will fail unless v is nil
 func Nil(t *testing.T, v interface{}) {
 	t.Helper()
-	if v != internal.Nil && v != nil {
+	if !(internal.Nil == v || v == nil) {
 		t.Errorf(`%v is not nil`, internal.Value(v))
 	}
 }
@@ -171,6 +178,7 @@ func NotNil(t *testing.T, v interface{}) {
 func Panic(t *testing.T, f func(), v interface{}) {
 	t.Helper()
 	var err error
+
 	func() {
 		defer func() {
 			if r := recover(); r != nil {

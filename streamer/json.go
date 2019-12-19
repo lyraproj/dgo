@@ -1,11 +1,13 @@
 package streamer
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/vf"
 )
 
 const (
@@ -15,6 +17,40 @@ const (
 	afterValue
 	afterKey
 )
+
+// MarshalJSON returns the JSON encoding for the given dgo.Value
+func MarshalJSON(v interface{}, dialect Dialect) []byte {
+	b := bytes.Buffer{}
+	opts := DefaultOptions()
+	if dialect != nil {
+		opts.Dialect = dialect
+	}
+	New(nil, opts).Stream(vf.Value(v), JSON(&b))
+	return b.Bytes()
+}
+
+// UnmarshalJSON decodes the JSON representation of the given bytes into a dgo.Value
+func UnmarshalJSON(b []byte, dialect Dialect) dgo.Value {
+	var iv interface{}
+
+	// Using an explicit decoder enables setting the UseNumber() attribute which in turn
+	// will allow the vf.Value() method to perform the actual decoding of that number and
+	// turn it into an int64 or a float64 depending on the if the string representation can
+	// be parsed into an integer or not.
+	je := json.NewDecoder(bytes.NewReader(b))
+	je.UseNumber()
+	err := je.Decode(&iv)
+	if err != nil {
+		panic(err)
+	}
+	opts := DefaultOptions()
+	if dialect != nil {
+		opts.Dialect = dialect
+	}
+	vc := DataDecoder(nil, opts.Dialect)
+	New(nil, opts).Stream(vf.Value(iv), vc)
+	return vc.Value()
+}
 
 // JSON creates a new Consumer encode everything into JSON
 func JSON(out io.Writer) Consumer {

@@ -14,19 +14,19 @@ import (
 func ExampleToString() {
 	v := vf.Values(`a`, map[string]int{`b`: 3}).(dgo.Array)
 	fmt.Println(util.ToString(v))
-	// Output: ["a",{"b":3}]
+	// Output: {"a",{"b":3}}
 }
 
 func ExampleToIndentedString() {
 	v := vf.Values(`a`, map[string]int{`b`: 3}).(dgo.Array)
 	fmt.Println(util.ToIndentedString(v))
 	// Output:
-	// [
-	//  "a",
-	//  {
-	//   "b": 3
-	//  }
-	// ]
+	// {
+	//   "a",
+	//   {
+	//     "b": 3
+	//   }
+	// }
 }
 
 func TestIndenter_AppendBool(t *testing.T) {

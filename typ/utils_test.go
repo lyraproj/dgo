@@ -15,3 +15,11 @@ func ExampleGeneric() {
 	// {"hello","world"}
 	// []string
 }
+
+func ExampleAsType() {
+	v := vf.String(`hello`)
+	fmt.Println(AsType(v))
+
+	// Output:
+	// "hello"
+}

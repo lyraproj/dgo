@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/newtype"
+	"github.com/lyraproj/dgo/tf"
 
 	"github.com/lyraproj/dgo/dgo"
 
@@ -22,7 +22,7 @@ func TestSensitiveType(t *testing.T) {
 	require.NotAssignable(t, tp, typ.Any)
 	require.Assignable(t, tp, s.Type())
 	require.NotAssignable(t, s.Type(), tp)
-	require.Assignable(t, newtype.Sensitive(typ.Integer), s.Type())
+	require.Assignable(t, tf.Sensitive(typ.Integer), s.Type())
 	require.Instance(t, tp.Type(), s.Type())
 
 	tp = s.Type()
@@ -30,7 +30,7 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
 	require.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
 	require.NotEqual(t, tp, typ.Any)
-	require.NotEqual(t, tp, newtype.Array(typ.String))
+	require.NotEqual(t, tp, tf.Array(typ.String))
 
 	require.NotEqual(t, 0, tp.HashCode())
 	require.Equal(t, tp.HashCode(), tp.HashCode())
@@ -41,6 +41,23 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
 	require.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
 	require.Equal(t, `sensitive[int]`, s.Type().String())
+
+	require.Equal(t, tf.Sensitive(), tf.ParseType(`sensitive`))
+	require.Equal(t, tf.Sensitive(typ.Integer), tf.ParseType(`sensitive[int]`))
+	require.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.ParseType(`sensitive int`))
+	require.Equal(t, vf.Sensitive(34).Type(), tf.ParseType(`sensitive 34`))
+	require.Panic(t, func() { tf.ParseType(`sensitive[34]`) }, `illegal argument`)
+	require.Panic(t, func() { tf.ParseType(`sensitive[int, string]`) }, `illegal number of arguments`)
+}
+
+func TestSensitiveType_New(t *testing.T) {
+	s := vf.Sensitive(`hide me`)
+	require.Equal(t, s, vf.New(typ.Sensitive, vf.Arguments(`hide me`)))
+	require.Equal(t, s, vf.New(typ.Sensitive, vf.String(`hide me`)))
+	require.Same(t, s, vf.New(typ.Sensitive, vf.Arguments(s)))
+	require.Same(t, s, vf.New(typ.Sensitive, s))
+
+	require.Panic(t, func() { vf.New(typ.Sensitive, vf.Arguments(`hide me`, `and me`)) }, `illegal number of arguments`)
 }
 
 func TestSensitive(t *testing.T) {
@@ -51,7 +68,7 @@ func TestSensitive(t *testing.T) {
 	require.NotEqual(t, s, vf.Strings(`a`))
 
 	require.True(t, s.Frozen())
-	a := vf.MutableValues(nil, `a`)
+	a := vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	require.False(t, s.Frozen())
 	s.Freeze()
@@ -59,7 +76,7 @@ func TestSensitive(t *testing.T) {
 	require.True(t, a.Frozen())
 	require.Same(t, s.Unwrap(), a)
 
-	a = vf.MutableValues(nil, `a`)
+	a = vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	c := s.FrozenCopy().(dgo.Sensitive)
 	require.False(t, s.Frozen())

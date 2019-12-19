@@ -1,12 +1,3 @@
-/*
-Package dgo contains all interfaces for the dgo types and values.
-
-Other packages
-
-https://godoc.org/github.com/lyraproj/dgo/typ contains the default dgo type constants
-https://godoc.org/github.com/lyraproj/dgo/newtype contains methods to create types
-https://godoc.org/github.com/lyraproj/dgo/vf contains methods to create Dgo values fom go values
-*/
 package dgo
 
 import (
@@ -113,6 +104,11 @@ type (
 
 		// GoTime returns the Go native representation of this value
 		GoTime() time.Time
+
+		// SecondsWithFraction returns the number of seconds since since January 1, 1970 UTC. The fraction
+		// will have nano-second precision for values in the years 1679 to 2261 and micro second precision
+		// for years that a time can represent outside of that range.
+		SecondsWithFraction() float64
 	}
 
 	// Boolean value

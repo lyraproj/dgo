@@ -58,9 +58,9 @@ func (v *typeError) Error() string {
 	var what string
 	switch actual := v.actual.(type) {
 	case *exactStringType:
-		what = fmt.Sprintf(`the string %s`, strconv.Quote(actual.s))
-	case exactIntegerType, exactFloatType, booleanType, nilType:
-		what = fmt.Sprintf(`the value %s`, actual.String())
+		what = fmt.Sprintf(`the string %s`, strconv.Quote(actual.value.s))
+	case dgo.ExactType:
+		what = fmt.Sprintf(`the value %s`, actual.ExactValue())
 	default:
 		what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
 	}
@@ -87,7 +87,8 @@ func (v *sizeError) Equals(other interface{}) bool {
 }
 
 func (v *sizeError) Error() string {
-	return fmt.Sprintf("size constraint violation on type %s when attempting resize to %d", TypeString(v.sizedType), v.attemptedSize)
+	return fmt.Sprintf(
+		"size constraint violation on type %s when attempting resize to %d", TypeString(v.sizedType), v.attemptedSize)
 }
 
 func (v *sizeError) HashCode() int {

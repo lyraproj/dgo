@@ -1,21 +1,6 @@
 package dgo
 
-import (
-	"encoding/json"
-
-	"github.com/lyraproj/dgo/util"
-)
-
 type (
-	// Doer is performs some task on behalf of a caller
-	Doer func()
-
-	// Actor is performs some task with a value on behalf of a caller
-	Actor func(value Value)
-
-	// Mapper maps a value to another value
-	Mapper func(value Value) interface{}
-
 	// DoWithIndex performs some task on behalf of an indexed caller
 	DoWithIndex func(value Value, index int)
 
@@ -48,7 +33,7 @@ type (
 		Value
 
 		// Each calls the given function once for each value of this Iterable.
-		Each(actor Actor)
+		Each(actor Consumer)
 
 		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
 		Len() int
@@ -60,9 +45,7 @@ type (
 		Iterable
 		Comparable
 		ReflectedValue
-		util.Indentable
-		json.Marshaler
-		json.Unmarshaler
+		Indentable
 
 		// Add adds the given value to the end of this array. It panics if the receiver is frozen.
 		Add(val interface{})
@@ -97,9 +80,17 @@ type (
 		// overflow panic.
 		Copy(frozen bool) Array
 
+		// Find calls the Mapper function for each value of this Array. The first call that returns
+		// a non nil value will terminate the iteration. The value of the last call is returned.
+		Find(Mapper) interface{}
+
 		// EachWithIndex calls the given function once for each value of this Array. The index of
 		// the current value is provided in the call.
 		EachWithIndex(actor DoWithIndex)
+
+		// Flatten returns a new Array that is a one-dimensional flattening of this Array (recursively). That is,
+		// for every element that is an array, extract its elements into the new array.
+		Flatten() Array
 
 		// Get returns the value at the given position. A negative position or a position
 		// that is greater or equal to the length of the array will result in a panic.
@@ -117,6 +108,11 @@ type (
 		// Insert inserts the given value at the given position and moves all values after that position
 		// one step forward. The method panics if the receiver is frozen.
 		Insert(pos int, val interface{})
+
+		// InterfaceSlice returns the values held by the Array as a slice. The slice will
+		// contain dgo.Value instances. The method is intended for cases where an array
+		// must be expanded into a variadic function argument.
+		InterfaceSlice() []interface{}
 
 		// Map returns a new equally sized Array where each value has been replaced using the
 		// given mapper function.
@@ -168,6 +164,9 @@ type (
 		// to an ArrayType. The Array must be mutable and an instance of the given type
 		SetType(t interface{})
 
+		// Slice returns a slice of this array, starting at position start and ending at position end-1
+		Slice(start, end int) Array
+
 		// Sort returns a new Array with all elements sorted using their natural order. The method
 		// will panic unless all elements implement the Comparable interface
 		Sort() Array
@@ -196,6 +195,20 @@ type (
 		WithValues(values ...interface{}) Array
 	}
 
+	// Arguments is a special form of an Array that enables differentiation between one argument that is an Array and
+	// several arguments in the form of an array.
+	Arguments interface {
+		Array
+
+		// Arg is like Get, but it will an illegal argument error unless the value at the given position is not
+		// of the correct type or if the given position is beyond the size of the array
+		Arg(funcName string, n int, typ Type) Value
+
+		// AssertSize will panic with an illegal argument error unless the size of the receiver is within
+		// the given min and max inclusive range.
+		AssertSize(funcName string, min, max int)
+	}
+
 	// ArrayType is implemented by types representing implementations of the Array value
 	ArrayType interface {
 		SizedType
@@ -208,7 +221,21 @@ type (
 	TupleType interface {
 		ArrayType
 
-		// ElementTypes returns the types of the elements for instances of this type
+		// Len returns the number of types in this tuple.
+		Len() int
+
+		// Element returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
+		Element(int) Type
+
+		// ElementTypes returns the types of the elements for instances of this type.
 		ElementTypes() Array
+
+		// Variadic means that the tuple can hold a variable number of elements.
+		//
+		// A non variadic Tuple will always have t.Min() == t.Max().
+		//
+		// The type of the last element of a variadic Tuple is always an ArrayType with an element type that describes
+		// the type for indexes >= t.Len() - 1.
+		Variadic() bool
 	}
 )

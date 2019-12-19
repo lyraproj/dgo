@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 type (
@@ -12,6 +13,11 @@ type (
 	}
 
 	errType int
+
+	exactErrorType struct {
+		exactType
+		value *errw
+	}
 )
 
 // DefaultErrorType is the unconstrained Error type
@@ -24,7 +30,7 @@ func (t errType) Type() dgo.Type {
 }
 
 func (t errType) Equals(other interface{}) bool {
-	return t == DefaultErrorType
+	return t == other
 }
 
 func (t errType) HashCode() int {
@@ -32,15 +38,20 @@ func (t errType) HashCode() int {
 }
 
 func (t errType) Assignable(other dgo.Type) bool {
-	if DefaultErrorType == other {
-		return true
+	_, ok := other.(errType)
+	if !ok {
+		_, ok = other.(*exactErrorType)
 	}
-	return CheckAssignableTo(nil, other, t)
+	return ok || CheckAssignableTo(nil, other, t)
 }
 
 func (t errType) Instance(value interface{}) bool {
 	_, ok := value.(error)
 	return ok
+}
+
+func (t errType) IsInstance(err error) bool {
+	return true
 }
 
 func (t errType) ReflectType() reflect.Type {
@@ -55,6 +66,26 @@ func (t errType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiError
 }
 
+func (t *exactErrorType) Generic() dgo.Type {
+	return DefaultErrorType
+}
+
+func (t *exactErrorType) IsInstance(err error) bool {
+	return t.value.Equals(err)
+}
+
+func (t *exactErrorType) ReflectType() reflect.Type {
+	return reflectErrorType
+}
+
+func (t *exactErrorType) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiErrorExact
+}
+
+func (t *exactErrorType) ExactValue() dgo.Value {
+	return t.value
+}
+
 func (e *errw) Equals(other interface{}) bool {
 	if oe, ok := other.(*errw); ok {
 		return e.error.Error() == oe.error.Error()
@@ -66,7 +97,7 @@ func (e *errw) Equals(other interface{}) bool {
 }
 
 func (e *errw) HashCode() int {
-	return stringHash(e.error.Error())
+	return util.StringHash(e.error.Error())
 }
 
 func (e *errw) Error() string {
@@ -95,5 +126,7 @@ func (e *errw) Unwrap() error {
 }
 
 func (e *errw) Type() dgo.Type {
-	return DefaultErrorType
+	ea := &exactErrorType{value: e}
+	ea.ExactType = ea
+	return ea
 }

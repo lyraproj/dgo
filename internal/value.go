@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"regexp"
 	"time"
@@ -10,13 +12,30 @@ import (
 
 var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()
 
+// New creates an instance of the given type from the given argument
+func New(typ dgo.Type, argument dgo.Value) dgo.Value {
+	if nt, ok := typ.(dgo.Factory); ok {
+		return nt.New(argument)
+	}
+	if args, ok := argument.(dgo.Arguments); ok {
+		if args.Len() != 1 {
+			panic(fmt.Errorf(`unable to create a %s from arguments %s`, typ, args))
+		}
+		argument = args.Get(0)
+	}
+	if typ.Instance(argument) {
+		return argument
+	}
+	panic(fmt.Errorf(`unable to create a %s from %s`, typ, argument))
+}
+
 // Value returns the dgo.Value representation of its argument. If the argument type
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
 func Value(v interface{}) dgo.Value {
-	// This function is kept very small to enable inlining so this
+	// This goFunc is kept very small to enable inlining so this
 	// if statement should not be baked in to the grand switch
-	// in the value function
+	// in the value goFunc
 	if gv, ok := v.(dgo.Value); ok {
 		return gv
 	}
@@ -47,18 +66,32 @@ func value(v interface{}) dgo.Value {
 		dv = (*timeVal)(&v)
 	case error:
 		dv = &errw{v}
+	case json.Number:
+		dv = valueFromJSONNumber(v)
 	case reflect.Value:
 		dv = ValueFromReflected(v)
-	}
-
-	if dv == nil {
+	default:
 		if i, ok := ToInt(v); ok {
 			dv = intVal(i)
-		} else if f, ok := ToFloat(v); ok {
-			dv = floatVal(f)
+		} else {
+			var f float64
+			if f, ok = ToFloat(v); ok {
+				dv = floatVal(f)
+			}
 		}
 	}
 	return dv
+}
+
+func valueFromJSONNumber(v json.Number) dgo.Value {
+	if i, err := v.Int64(); err == nil {
+		return Integer(i)
+	}
+	f, err := v.Float64()
+	if err != nil {
+		panic(err)
+	}
+	return Float(f)
 }
 
 // ValueFromReflected converts the given reflected value into an immutable dgo.Value
@@ -83,14 +116,20 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 			return Nil
 		}
 		isPtr = true
+	case reflect.Func:
+		return (*goFunc)(&vr)
 	}
-	vi := vr.Interface()
-	if v, ok := vi.(dgo.Value); ok {
-		return v
+
+	if vr.CanInterface() {
+		vi := vr.Interface()
+		if v, ok := vi.(dgo.Value); ok {
+			return v
+		}
+		if v := value(vi); v != nil {
+			return v
+		}
 	}
-	if v := value(vi); v != nil {
-		return v
-	}
+
 	if isPtr {
 		er := vr.Elem()
 		// Pointer to struct should have been handled at this point or it is a pointer to
@@ -100,7 +139,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		}
 	}
 	// Value as unsafe. Immutability is not guaranteed
-	return native(vr)
+	return Native(vr)
 }
 
 // FromValue converts a dgo.Value into a go native value. The given `dest` must be a pointer
@@ -125,11 +164,7 @@ func ReflectTo(src dgo.Value, dest reflect.Value) {
 }
 
 // Add well known types like regexp, time, etc. here
-var wellKnownTypes map[reflect.Type]dgo.Type
-
-func init() {
-	wellKnownTypes = map[reflect.Type]dgo.Type{
-		reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
-		reflect.TypeOf(time.Time{}):      DefaultTimeType,
-	}
+var wellKnownTypes = map[reflect.Type]dgo.Type{
+	reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
+	reflect.TypeOf(time.Time{}):      DefaultTimeType,
 }

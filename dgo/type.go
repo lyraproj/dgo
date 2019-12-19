@@ -1,6 +1,10 @@
 package dgo
 
-import "reflect"
+import (
+	"reflect"
+	"regexp"
+	"time"
+)
 
 type (
 	// A Type describes an immutable Value. The Type is in itself also a Value
@@ -21,8 +25,16 @@ type (
 		ReflectType() reflect.Type
 	}
 
-	// IntegerRangeType describes integers that are within an inclusive or exclusive range
-	IntegerRangeType interface {
+	// Meta is the description of a Type.
+	Meta interface {
+		Type
+
+		// Describes returns the type that the meta type describes.
+		Describes() Type
+	}
+
+	// IntegerType describes integers that are within an inclusive or exclusive range
+	IntegerType interface {
 		Type
 
 		// Inclusive returns true if this range has an inclusive end
@@ -38,8 +50,8 @@ type (
 		Min() int64
 	}
 
-	// FloatRangeType describes floating point numbers that are within an inclusive or exclusive range
-	FloatRangeType interface {
+	// FloatType describes floating point numbers that are within an inclusive or exclusive range
+	FloatType interface {
 		Type
 
 		// Inclusive returns true if this range has an inclusive end
@@ -61,6 +73,22 @@ type (
 
 		// IsInstance returns true if the Go native value is represented by this type
 		IsInstance(value bool) bool
+	}
+
+	// RegexpType matches regular expressions
+	RegexpType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(regexp *regexp.Regexp) bool
+	}
+
+	// TimeType matches time values
+	TimeType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(tm time.Time) bool
 	}
 
 	// SizedType is implemented by types that may have a size constraint
@@ -91,18 +119,27 @@ type (
 		GoType() reflect.Type
 	}
 
-	// AliasProvider replaces aliases with their concrete type.
-	//
-	// The parser uses this interface to perform in-place replacement of aliases
-	AliasProvider interface {
-		Replace(Type) Type
+	// ErrorType is the type for all error values
+	ErrorType interface {
+		Type
+
+		// IsInstance returns true if the Go native value is represented by this type
+		IsInstance(error) bool
 	}
 
-	// AliasContainer is implemented by types that can contain other types.
+	// AliasContainer is implemented by types and values that can contain other types.
 	//
 	// The parser uses this interface to perform in-place replacement of aliases
 	AliasContainer interface {
-		Resolve(AliasProvider)
+		Resolve(AliasMap)
+	}
+
+	// Alias is a named reference of another type which can be resolved using an AliasMap
+	Alias interface {
+		Type
+
+		// Reference returns the name of the aliased type.
+		Reference() String
 	}
 
 	// An AliasMap maps names to types and vice versa.
@@ -115,22 +152,33 @@ type (
 
 		// Add adds the type t with the given name to this map
 		Add(t Type, name String)
+
+		// Replace replaces aliases with their concrete value.
+		//
+		// The parser uses this interface to perform in-place replacement of aliases
+		Replace(Value) Value
+	}
+
+	// GenericType is implemented by types that represent themselves stripped from
+	// range and size constraints.
+	GenericType interface {
+		// Generic returns the generic type that this type represents stripped
+		// from range and size constraints
+		Generic() Type
 	}
 
 	// ExactType is implemented by types that match exactly one value
 	ExactType interface {
 		Type
 
-		// Generic returns the generic type that this exact type represents stripped
-		// from range and size constraints
-		Generic() Type
-
-		Value() Value
+		// ExactValue returns the value that this type represents
+		ExactValue() Value
 	}
 
-	// Named is implemented by named types such as the StructMap
-	Named interface {
-		Name() string
+	// Factory provides the New method that types use to create new instances
+	Factory interface {
+		// New creates instances of this type.
+		New(Value) Value
 	}
 
 	// DeepAssignable is implemented by values that need deep Assignable comparisons.

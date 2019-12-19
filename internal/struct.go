@@ -1,14 +1,14 @@
 package internal
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+
+	"github.com/lyraproj/dgo/dgo"
 )
 
 type (
@@ -18,7 +18,7 @@ type (
 	}
 )
 
-func (v *structVal) AppendTo(w util.Indenter) {
+func (v *structVal) AppendTo(w dgo.Indenter) {
 	appendMapTo(v, w)
 }
 
@@ -66,6 +66,13 @@ func (v *structVal) AnyValue(predicate dgo.Predicate) bool {
 	return !v.AllValues(func(entry dgo.Value) bool { return !predicate(entry) })
 }
 
+func (v *structVal) ContainsKey(key interface{}) bool {
+	if s, ok := stringKey(key); ok {
+		return v.rs.FieldByName(s).IsValid()
+	}
+	return false
+}
+
 func (v *structVal) Copy(frozen bool) dgo.Map {
 	if frozen && v.frozen {
 		return v
@@ -79,7 +86,7 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 	return &structVal{rs: rs, frozen: false}
 }
 
-func (v *structVal) Each(actor dgo.Actor) {
+func (v *structVal) Each(actor dgo.Consumer) {
 	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
@@ -87,11 +94,11 @@ func (v *structVal) EachEntry(actor dgo.EntryActor) {
 	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
 }
 
-func (v *structVal) EachKey(actor dgo.Actor) {
+func (v *structVal) EachKey(actor dgo.Consumer) {
 	v.AllKeys(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
-func (v *structVal) EachValue(actor dgo.Actor) {
+func (v *structVal) EachValue(actor dgo.Consumer) {
 	v.AllValues(func(entry dgo.Value) bool { actor(entry); return true })
 }
 
@@ -212,10 +219,6 @@ func (v *structVal) Map(mapper dgo.EntryMapper) dgo.Map {
 	return c
 }
 
-func (v *structVal) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.rs.Addr().Interface())
-}
-
 func (v *structVal) Merge(associations dgo.Map) dgo.Map {
 	if associations.Len() == 0 || v == associations {
 		return v
@@ -275,7 +278,7 @@ func (v *structVal) SetType(t interface{}) {
 }
 
 func (v *structVal) String() string {
-	return ToStringERP(v)
+	return util.ToStringERP(v)
 }
 
 func (v *structVal) StringKeys() bool {
@@ -283,14 +286,9 @@ func (v *structVal) StringKeys() bool {
 }
 
 func (v *structVal) Type() dgo.Type {
-	return &exactMapType{v}
-}
-
-func (v *structVal) UnmarshalJSON(data []byte) error {
-	if v.frozen {
-		panic(frozenMap(`UnmarshalJSON`))
-	}
-	return json.Unmarshal(data, v.rs.Addr().Interface())
+	et := &exactMapType{value: v}
+	et.ExactType = et
+	return et
 }
 
 func (v *structVal) Values() dgo.Array {
@@ -322,7 +320,7 @@ func (v *structVal) WithoutAll(keys dgo.Array) dgo.Map {
 }
 
 func (v *structVal) toHashMap() *hashMap {
-	c := MapWithCapacity(int(float64(v.Len())/loadFactor), nil)
+	c := MapWithCapacity(v.Len(), nil)
 	v.EachEntry(func(entry dgo.MapEntry) {
 		c.Put(entry.Key(), entry.Value())
 	})

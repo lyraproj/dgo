@@ -20,8 +20,17 @@ type (
 var DefaultSensitiveType = &sensitiveType{wrapped: DefaultAnyType}
 
 // SensitiveType returns a Sensitive dgo.Type that wraps the given dgo.Type
-func SensitiveType(wrappedType dgo.Type) dgo.Type {
-	return &sensitiveType{wrapped: wrappedType}
+func SensitiveType(args []interface{}) dgo.Type {
+	switch len(args) {
+	case 0:
+		return DefaultSensitiveType
+	case 1:
+		if st, ok := Value(args[0]).(dgo.Type); ok {
+			return &sensitiveType{wrapped: st}
+		}
+		panic(illegalArgument(`SensitiveType`, `Type`, args, 0))
+	}
+	panic(illegalArgumentCount(`SensitiveType`, 0, 1, len(args)))
 }
 
 func (t *sensitiveType) Assignable(other dgo.Type) bool {
@@ -73,6 +82,17 @@ func (t *sensitiveType) Operand() dgo.Type {
 
 func (t *sensitiveType) Operator() dgo.TypeOp {
 	return dgo.OpSensitive
+}
+
+func (t *sensitiveType) New(arg dgo.Value) dgo.Value {
+	if args, ok := arg.(dgo.Arguments); ok {
+		args.AssertSize(`sensitive`, 1, 1)
+		arg = args.Get(0)
+	}
+	if s, ok := arg.(dgo.Sensitive); ok {
+		return s
+	}
+	return Sensitive(arg)
 }
 
 func (t *sensitiveType) String() string {

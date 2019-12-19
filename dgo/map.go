@@ -1,11 +1,5 @@
 package dgo
 
-import (
-	"encoding/json"
-
-	"github.com/lyraproj/dgo/util"
-)
-
 type (
 	// MapEntry is a key-value association in a Map
 	MapEntry interface {
@@ -33,15 +27,21 @@ type (
 	// EntryPredicate returns true of false based on the given entry
 	EntryPredicate func(entry MapEntry) bool
 
+	// Keyed is the simples possible interface for a key store.
+	Keyed interface {
+		// Get returns the value for the given key. The method will return nil when the key is not found. A
+		// vf.Nil is returned if the key is found but associated with nil.
+		Get(key interface{}) Value
+	}
+
 	// Map represents an ordered set of key-value associations. The Map preserves the order by which the entries
 	// were added. Associations retain their order even if their value change. When creating a Map from a go map
 	// the associations will be sorted based on the natural order of the keys.
 	Map interface {
 		Iterable
+		Keyed
 		ReflectedValue
-		util.Indentable
-		json.Marshaler
-		json.Unmarshaler
+		Indentable
 
 		// All returns true if the predicate returns true for all entries of this Map.
 		All(predicate EntryPredicate) bool
@@ -61,6 +61,9 @@ type (
 		// AnyValue returns true if the predicate returns true for any value of this Map.
 		AnyValue(actor Predicate) bool
 
+		// ContainsKey returns true if the map contains the give key
+		ContainsKey(key interface{}) bool
+
 		// Copy returns a copy of the Map. The copy is frozen or mutable depending on
 		// the given argument. A request to create a frozen copy of an already frozen Map
 		// is a no-op that returns the receiver
@@ -76,17 +79,13 @@ type (
 		EachEntry(actor EntryActor)
 
 		// EachKey calls the given actor with each key of this Map
-		EachKey(actor Actor)
+		EachKey(actor Consumer)
 
 		// EachValue calls the given actor with each value of this Map
-		EachValue(actor Actor)
+		EachValue(actor Consumer)
 
 		// Find returns the first entry for which the entry predicate returns true
 		Find(predicate EntryPredicate) MapEntry
-
-		// Get returns the value for the given key. The method will return nil when the key is not present
-		// in the map. Use NilValue to bind a key to nil
-		Get(key interface{}) Value
 
 		// Keys returns frozen snapshot of all the keys of this map
 		Keys() Array
@@ -162,11 +161,11 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// EachEntry iterates over each entry of the StructMapType
+		// Each iterates over each entry of the StructMapType
 		Each(actor func(StructMapEntry))
 
-		// Get returns the MapEntry that is identified with the given key
-		Get(key interface{}) MapEntry
+		// Get returns the StructMapEntry that is identified with the given key
+		Get(key interface{}) StructMapEntry
 
 		// Len returns the number of StructEntrys in this StructMapType
 		Len() int
@@ -185,6 +184,6 @@ type (
 		// ValidateVerbose checks that the given value represents a Map which is an instance of this struct and returns
 		// a boolean result. During validation, both successful and failing errors are verbosely explained on the given
 		// Indenter.
-		ValidateVerbose(value interface{}, out util.Indenter) bool
+		ValidateVerbose(value interface{}, out Indenter) bool
 	}
 )

@@ -20,7 +20,8 @@ The Dgo Type syntax is designed to be close to the syntax used by Go itself.
 |`string[10,12]`|a string with a required length between 10 and 12 characters|
 |`/.*abc.*/`|any string matching the regular expression|
 |`"abc"`|the string "abc" verbatim|
-  
+|`~"abc"`|the string "abc" case insensitive|
+ 
 #### Constrained numbers
 
 |Type expression|References|

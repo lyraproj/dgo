@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -34,45 +35,52 @@ func (d *dataDecoder) AddMap(cap int, doer dgo.Doer) {
 	d.BasicCollector.AddMap(cap, doer)
 	m := d.PeekLast().(dgo.Map)
 	dl := d.dialect
-	if ts := m.Get(dl.TypeKey()); ts != nil {
-		d.ReplaceLast(d.decode(m))
+	if ts, ok := m.Get(dl.TypeKey()).(dgo.String); ok {
+		d.ReplaceLast(d.decode(ts, m))
 	}
 }
 
-func (d *dataDecoder) decode(v dgo.Value) dgo.Value {
-	if m, ok := v.(dgo.Map); ok {
-		dl := d.dialect
-		if ts := m.Get(dl.TypeKey()); ts != nil {
-			mv := m.Get(dl.ValueKey())
-			switch {
-			case mv == nil:
-				v = dl.ParseType(ts.(dgo.String))
-			case ts.Equals(dl.MapTypeName()):
-				nm := mv.(dgo.Array).ToMap()
-				// Replace all occurrences of v in the new map recursively with the new map as it
-				// might contain references to itself
-				replaceInstance(v, nm, nm)
-				v = nm
-			case ts.Equals(dl.SensitiveTypeName()):
-				v = vf.Sensitive(mv)
-			case ts.Equals(dl.BinaryTypeName()):
-				v = vf.BinaryFromString(mv.(dgo.String).GoString())
-			case ts.Equals(dl.TimeTypeName()):
-				ts, err := time.Parse(time.RFC3339Nano, mv.(dgo.String).GoString())
-				if err != nil {
-					panic(err)
-				}
-				v = vf.Time(ts)
-			case ts.Equals(dl.AliasTypeName()):
-				ad := mv.(dgo.Array)
-				v = dl.ParseType(ad.Get(1).(dgo.String))
-				if d.aliasMap != nil {
-					d.aliasMap.Add(v.(dgo.Type), ad.Get(0).(dgo.String))
-				}
-			default:
-				panic(fmt.Errorf(`unable to decode %s: %s`, dl.TypeKey(), ts))
-			}
+func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
+	dl := d.dialect
+	if m.Len() == 1 {
+		return dl.ParseType(nil, ts)
+	}
+	mv := m.Get(dl.ValueKey())
+	if mv == nil {
+		mv = m.Without(dl.TypeKey())
+	}
+
+	var v dgo.Value
+
+	switch {
+	case ts.Equals(dl.MapTypeName()):
+		nm := mv.(dgo.Array).ToMap()
+		// Replace all occurrences of m in the new map recursively with the new map as it
+		// might contain references to itself
+		replaceInstance(m, nm, nm)
+		v = nm
+	case ts.Equals(dl.SensitiveTypeName()):
+		v = vf.Sensitive(mv)
+	case ts.Equals(dl.BinaryTypeName()):
+		v = vf.BinaryFromString(mv.(dgo.String).GoString())
+	case ts.Equals(dl.TimeTypeName()):
+		t, err := time.Parse(time.RFC3339Nano, mv.(dgo.String).GoString())
+		if err != nil {
+			panic(err)
 		}
+		v = vf.Time(t)
+	case ts.Equals(dl.AliasTypeName()):
+		ad := mv.(dgo.Array)
+		v = dl.ParseType(nil, ad.Get(1).(dgo.String))
+		if d.aliasMap != nil {
+			d.aliasMap.Add(v.(dgo.Type), ad.Get(0).(dgo.String))
+		}
+	default:
+		tp := tf.Named(ts.GoString())
+		if tp == nil {
+			panic(fmt.Errorf(`unable to decode %s: %s`, dl.TypeKey(), ts))
+		}
+		v = tp.New(mv)
 	}
 	return v
 }
@@ -83,6 +91,7 @@ func replaceInstance(orig, repl, in dgo.Value) (dgo.Value, bool) {
 	}
 
 	replaceHappened := false
+
 	switch iv := in.(type) {
 	case dgo.Map:
 		iv.EachEntry(func(v dgo.MapEntry) {
