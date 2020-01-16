@@ -5,6 +5,9 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
+
+	// ensure that stringer package is initialized prior to using this package
+	_ "github.com/lyraproj/dgo/stringer"
 )
 
 // New creates an instance of the given type from the given argument
