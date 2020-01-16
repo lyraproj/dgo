@@ -12,6 +12,9 @@ linters-settings:
   gocyclo:
     min-complexity: 15
 
+  gocognit:
+    min-complexity: 40
+
   lll:
     line-length: 140
     tab-width: 2

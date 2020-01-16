@@ -1,9 +1,9 @@
-name: Dgo Build
+name: Dgo Test
 on: [push, pull_request]
 jobs:
 
   build:
-    name: Build
+    name: Test
     runs-on: ubuntu-latest
     steps:
 

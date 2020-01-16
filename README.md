@@ -3,7 +3,7 @@
 [![](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![](https://goreportcard.com/badge/github.com/lyraproj/dgo)](https://goreportcard.com/report/github.com/lyraproj/dgo)
 [![](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/lyraproj/dgo)
-[![](https://github.com/lyraproj/dgo/workflows/Dgo%20Build/badge.svg)](https://github.com/lyraproj/dgo/actions)
+[![](https://github.com/lyraproj/dgo/workflows/Dgo%20Test/badge.svg)](https://github.com/lyraproj/dgo/actions)
 [![](https://coveralls.io/repos/github/lyraproj/dgo/badge.svg)](https://coveralls.io/github/lyraproj/dgo)
 
 Dgo's main objectives are: Type Constraints, Immutability, Collections, Serialization, Encapsulation, Extendability,
