@@ -255,7 +255,7 @@ func (t *sizedArrayType) New(arg dgo.Value) dgo.Value {
 	return newArray(t, arg)
 }
 
-func (t *sizedArrayType) Resolve(ap dgo.AliasMap) {
+func (t *sizedArrayType) Resolve(ap dgo.AliasAdder) {
 	te := t.elementType
 	t.elementType = DefaultAnyType
 	t.elementType = ap.Replace(te).(dgo.Type)
@@ -329,7 +329,7 @@ func (t *exactArrayType) ReflectType() reflect.Type {
 	return reflect.SliceOf(t.ElementType().ReflectType())
 }
 
-func (t *exactArrayType) Resolve(ap dgo.AliasMap) {
+func (t *exactArrayType) Resolve(ap dgo.AliasAdder) {
 	t.value.Resolve(ap)
 }
 
@@ -637,7 +637,7 @@ func (t *tupleType) ReflectType() reflect.Type {
 	return reflect.SliceOf(t.ElementType().ReflectType())
 }
 
-func (t *tupleType) Resolve(ap dgo.AliasMap) {
+func (t *tupleType) Resolve(ap dgo.AliasAdder) {
 	s := t.types
 	t.types = nil
 	resolveSlice(s, ap)
@@ -1330,7 +1330,7 @@ func (v *array) RemoveValue(value interface{}) bool {
 	return v.removePos(v.IndexOf(value)) != nil
 }
 
-func (v *array) Resolve(ap dgo.AliasMap) {
+func (v *array) Resolve(ap dgo.AliasAdder) {
 	a := v.slice
 	for i := range a {
 		a[i] = ap.Replace(a[i])
@@ -1598,7 +1598,7 @@ func frozenArray(f string) error {
 	return fmt.Errorf(`%s called on a frozen Array`, f)
 }
 
-func resolveSlice(ts []dgo.Value, ap dgo.AliasMap) {
+func resolveSlice(ts []dgo.Value, ap dgo.AliasAdder) {
 	for i := range ts {
 		ts[i] = ap.Replace(ts[i])
 	}

@@ -68,8 +68,9 @@ func TestDataDecoder_selfref(t *testing.T) {
 }
 
 func TestDataDecoder_alias(t *testing.T) {
-	aliasMap := tf.NewAliasMap()
-	tf.ParseFile(aliasMap, ``, `ne=string[1]`)
+	aliasMap := tf.BuiltInAliases().Collect(func(aa dgo.AliasAdder) {
+		tf.ParseFile(aa, ``, `ne=string[1]`)
+	})
 	a := vf.Values(tf.String(1))
 
 	// Transform rich data to plain data
@@ -77,9 +78,9 @@ func TestDataDecoder_alias(t *testing.T) {
 	streamer.New(aliasMap, nil).Stream(a, c)
 
 	// Transform back to plain data
-	aliasMap = tf.NewAliasMap()
-	d := streamer.DataDecoder(aliasMap, nil)
-	streamer.New(nil, nil).Stream(c.Value(), d)
-
+	aliasMap = tf.BuiltInAliases().Collect(func(aa dgo.AliasAdder) {
+		d := streamer.DataDecoder(aa, nil)
+		streamer.New(nil, nil).Stream(c.Value(), d)
+	})
 	require.Equal(t, `ne`, aliasMap.GetName(tf.String(1)))
 }

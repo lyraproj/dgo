@@ -342,7 +342,7 @@ func (t *structType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *structType) Resolve(ap dgo.AliasMap) {
+func (t *structType) Resolve(ap dgo.AliasAdder) {
 	ks := t.keys.slice
 	vs := t.values.slice
 	t.keys.slice = []dgo.Value{}

@@ -30,13 +30,24 @@ func Parse(content string) dgo.Value {
 //
 // The alias map is optional. If given, the parser will recognize the type aliases provided in the map
 // and also add any new aliases declared within the parsed content to that map.
-func ParseFile(aliasMap dgo.AliasMap, fileName, content string) dgo.Value {
+func ParseFile(aliasMap dgo.AliasAdder, fileName, content string) dgo.Value {
 	return parser.ParseFile(aliasMap, fileName, content)
 }
 
-// NewAliasMap creates a new dgo.Alias map to be used as a scope when parsing types
-func NewAliasMap() dgo.AliasMap {
-	return internal.NewAliasMap()
+// AddDefaultAliases adds the new aliases to the default alias map by passing an AliasAdder to the function
+// The function is safe from a concurrency perspective.
+func AddDefaultAliases(adderFunc func(aliasAdder dgo.AliasAdder)) {
+	internal.AddDefaultAliases(adderFunc)
+}
+
+// BuiltInAliases returns the frozen built-in dgo.AliasMap
+func BuiltInAliases() dgo.AliasMap {
+	return internal.BuiltInAliases()
+}
+
+// DefaultAliases returns the default dgo.AliasMap
+func DefaultAliases() dgo.AliasMap {
+	return internal.DefaultAliases()
 }
 
 // Meta creates the meta type for the given type
