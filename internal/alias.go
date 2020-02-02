@@ -19,7 +19,7 @@ type (
 
 	aliasAdder struct {
 		namedTypes hashMap
-		backingMap *aliasMap
+		backingMap dgo.AliasMap
 	}
 
 	dType        = dgo.Type // To avoid collision with method named Type
@@ -39,12 +39,21 @@ var defaultLock = sync.Mutex{}
 // AddDefaultAliases adds the new aliases to the default alias map by passing an AliasAdder to the function
 // The function is safe from a concurrency perspective.
 func AddDefaultAliases(adder func(adder dgo.AliasAdder)) {
-	am := &aliasAdder{backingMap: defaultAliases.(*aliasMap)}
+	AddAliases(&defaultAliases, &defaultLock, adder)
+}
+
+// AddAliases will call the given adder function, and if entries were added, lock the appointed Locker, create
+// a copy of the appointed AliasMap, add the entries to that copy, swap the appointed AliasMap for the copy,
+// and finally release the lock.
+//
+// No Locker is locked and no swap will take place if the adder function doesn't add anything.
+func AddAliases(mapToReplace *dgo.AliasMap, lock sync.Locker, adder func(adder dgo.AliasAdder)) {
+	am := &aliasAdder{backingMap: *mapToReplace}
 	adder(am)
 	if am.namedTypes.Len() > 0 {
-		defaultLock.Lock()
-		defer defaultLock.Unlock()
-		defaultAliases = am.backingMap.update(am)
+		lock.Lock()
+		defer lock.Unlock()
+		*mapToReplace = (*mapToReplace).(*aliasMap).update(am)
 	}
 }
 

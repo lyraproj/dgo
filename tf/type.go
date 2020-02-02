@@ -2,6 +2,7 @@ package tf
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
@@ -38,6 +39,15 @@ func ParseFile(aliasMap dgo.AliasAdder, fileName, content string) dgo.Value {
 // The function is safe from a concurrency perspective.
 func AddDefaultAliases(adderFunc func(aliasAdder dgo.AliasAdder)) {
 	internal.AddDefaultAliases(adderFunc)
+}
+
+// AddAliases will call the given adder function, and if entries were added, lock the appointed Locker, create
+// a copy of the appointed AliasMap, add the entries to that copy, swap the appointed AliasMap for the copy,
+// and finally release the lock.
+//
+// No Locker is locked and no swap will take place if the adder function doesn't add anything.
+func AddAliases(mapToReplace *dgo.AliasMap, lock sync.Locker, adder func(adder dgo.AliasAdder)) {
+	internal.AddAliases(mapToReplace, lock, adder)
 }
 
 // BuiltInAliases returns the frozen built-in dgo.AliasMap
