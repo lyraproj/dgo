@@ -777,18 +777,9 @@ func (g *hashMap) RemoveAll(keys dgo.Array) {
 	})
 }
 
-func (g *hashMap) Resolve(ap dgo.AliasMap) {
-	needRehash := false
+func (g *hashMap) Resolve(ap dgo.AliasAdder) {
 	for e := g.first; e != nil; e = e.next {
-		if rk := ap.Replace(e.key); rk != e.key {
-			e.key = rk
-			needRehash = true
-		}
 		e.value = ap.Replace(e.value)
-	}
-
-	if needRehash {
-		g.resize(g, 0)
 	}
 }
 
@@ -1163,7 +1154,7 @@ func (t *sizedMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *sizedMapType) Resolve(ap dgo.AliasMap) {
+func (t *sizedMapType) Resolve(ap dgo.AliasAdder) {
 	kt := t.keyType
 	vt := t.valueType
 	t.keyType = DefaultAnyType
@@ -1315,7 +1306,7 @@ func (t *exactMapType) ReflectType() reflect.Type {
 	return reflect.MapOf(t.KeyType().ReflectType(), t.ValueType().ReflectType())
 }
 
-func (t *exactMapType) Resolve(ap dgo.AliasMap) {
+func (t *exactMapType) Resolve(ap dgo.AliasAdder) {
 	if ac, ok := t.value.(dgo.AliasContainer); ok {
 		ac.Resolve(ap)
 	}

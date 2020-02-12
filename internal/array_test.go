@@ -338,12 +338,14 @@ func TestTupleType(t *testing.T) {
 }
 
 func TestTupleType_selfReference(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`x={string,x}`).(dgo.ArrayType)
 	d := vf.MutableValues()
 	d.Add(`hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
+	internal.ResetDefaultAliases()
 	t2 := tf.ParseType(`x={string,{string,x}}`)
 	require.Assignable(t, tp, t2)
 
@@ -503,11 +505,13 @@ func TestArray_SetType(t *testing.T) {
 }
 
 func TestArray_selfReference(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`x=[](string|x)`).(dgo.ArrayType)
 	d := vf.MutableValues(tp, `hello`)
 	d.Add(d)
 	require.Instance(t, tp, d)
 
+	internal.ResetDefaultAliases()
 	t2 := tf.ParseType(`x=[](string|[](string|x))`)
 	require.Assignable(t, tp, t2)
 }

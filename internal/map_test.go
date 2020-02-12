@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lyraproj/dgo/parser"
-
 	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -702,6 +700,7 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 }
 
 func TestMap_selfReference(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`x=map[string](string|x)`)
 	d := vf.MutableMap()
 	d.Put(`hello`, `world`)
@@ -709,6 +708,7 @@ func TestMap_selfReference(t *testing.T) {
 	require.Instance(t, tp, d)
 	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map>}`, d.String())
 
+	internal.ResetDefaultAliases()
 	t2 := tf.ParseType(`x=map[string](string|map[string](string|x))`)
 	require.Assignable(t, tp, t2)
 }
@@ -1023,11 +1023,10 @@ func TestMap_String(t *testing.T) {
 
 func TestMap_Resolve(t *testing.T) {
 	n := vf.String(`b`)
-	m := vf.Map(parser.NewAlias(n), `value`)
-	am := tf.NewAliasMap()
-	am.Add(tf.Integer(0, 255, true), n)
-	m.(dgo.AliasContainer).Resolve(am)
-	require.Equal(t, vf.Map(tf.Integer(0, 255, true), `value`), m)
+	am := tf.BuiltInAliases().Collect(func(a dgo.AliasAdder) {
+		a.Add(tf.Integer(0, 255, true), n)
+	})
+	require.Equal(t, n, am.GetName(tf.Integer(0, 255, true)))
 }
 
 func TestMapEntry_Equal(t *testing.T) {

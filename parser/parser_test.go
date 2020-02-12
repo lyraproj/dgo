@@ -5,6 +5,10 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/stringer"
+
+	"github.com/lyraproj/dgo/internal"
+
 	"github.com/lyraproj/dgo/dgo"
 
 	require "github.com/lyraproj/dgo/dgo_test"
@@ -90,30 +94,55 @@ func TestParse_nestedSized(t *testing.T) {
 }
 
 func TestParse_aliasBad(t *testing.T) {
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`"f"=map[string]int`) }, `expected end of expression, got '='`)
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`m=map[string](int|<"m">)`) }, `expected an identifier, got "m"`)
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`m=map[string](int|<m)`) }, `expected '>', got '\)'`)
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`map[string](int|n)`) }, `reference to unresolved type 'n'`)
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`m=map[string](int|n)`) }, `reference to unresolved type 'n'`)
+	internal.ResetDefaultAliases()
 	require.Panic(t, func() { tf.ParseType(`int=map[string](int|int)`) }, `attempt to redeclare identifier 'int'`)
 }
 
 func TestParse_aliasInUnary(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`type[m=map[string](string|m)]`).(dgo.UnaryType)
-	require.Equal(t, `type[map[string](string|<recursive self reference to map type>)]`, tp.String())
+	require.Equal(t, `type[m]`, tp.String())
 
+	internal.ResetDefaultAliases()
 	tp = tf.ParseType(`!m=map[string](string|m)`).(dgo.UnaryType)
-	require.Equal(t, `!map[string](string|<recursive self reference to map type>)`, tp.String())
+	require.Equal(t, `!m`, tp.String())
 }
 
 func TestParse_aliasInAllOf(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`m=[](0..5&3..8&m)`)
-	require.Equal(t, `[](0..5&3..8&<recursive self reference to slice type>)`, tp.String())
+	require.Equal(t, `m`, tp.String())
+}
+
+func TestParse_aliasInAllOf_separateAm(t *testing.T) {
+	internal.ResetDefaultAliases()
+	tf.BuiltInAliases().Collect(func(a dgo.AliasAdder) {
+		tp := tf.ParseFile(a, `internal`, `m=[](0..5&3..8&m)`)
+		require.Equal(t, `[](0..5&3..8&<recursive self reference to slice type>)`, tp.String())
+	})
 }
 
 func TestParse_aliasInOneOf(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`m=[](0..5^3..8^m)`)
-	require.Equal(t, `[](0..5^3..8^<recursive self reference to slice type>)`, tp.String())
+	require.Equal(t, `m`, tp.String())
+}
+
+func TestParse_data(t *testing.T) {
+	tf.BuiltInAliases().Collect(func(aa dgo.AliasAdder) {
+		tp := tf.ParseFile(aa, `internal`, `data`)
+		require.Equal(t, `data`, tp.String())
+	})
 }
 
 func TestParse_range(t *testing.T) {
@@ -179,7 +208,9 @@ func TestParse_string(t *testing.T) {
 }
 
 func TestParse_multiAliases(t *testing.T) {
-	tp := tf.ParseType(`
+	var tp dgo.StructMapType
+	am := tf.BuiltInAliases().Collect(func(aa dgo.AliasAdder) {
+		tp = tf.ParseFile(aa, `internal`, `
 {
   types: {
     ascii=1..127,
@@ -187,12 +218,15 @@ func TestParse_multiAliases(t *testing.T) {
   },
   x: map[slug]{Token:ascii,value:string}
 }`).(dgo.StructMapType)
-	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
+	})
+
+	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, stringer.TypeStringWithAliasMap(tp.Get(`x`).Value().(dgo.Type), am))
 }
 
 func TestParse_mapKeyAliases(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := tf.ParseType(`{tp = "key", { key: 2 }}`)
-	require.Equal(t, `{"key",{"key":2}}`, tp.String())
+	require.Equal(t, `{tp,{tp:2}}`, stringer.TypeString(tp))
 }
 
 func TestParse_errors(t *testing.T) {

@@ -73,8 +73,10 @@ func TestEncode_time(t *testing.T) {
 }
 
 func TestEncode_alias(t *testing.T) {
-	am := tf.NewAliasMap()
-	tp := tf.ParseFile(am, ``, `ne=string[1]`)
+	var tp dgo.Value
+	am := tf.BuiltInAliases().Collect(func(aa dgo.AliasAdder) {
+		tp = tf.ParseFile(aa, ``, `ne=string[1]`)
+	})
 	c := streamer.NewCollector()
 	streamer.New(am, nil).Stream(tp, c)
 	require.Equal(t, vf.Map(`__type`, `alias`, `__value`, vf.Strings(`ne`, `string[1]`)), c.Value())

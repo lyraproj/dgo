@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/internal"
+
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/streamer/pcore"
@@ -322,6 +324,7 @@ func TestParse_variant(t *testing.T) {
 }
 
 func TestParse_aliasBad(t *testing.T) {
+	internal.ResetDefaultAliases()
 	require.Panic(t,
 		func() { pcore.Parse(`f=Hash[String,Integer]`) }, `expected end of expression, got '='`)
 	require.Panic(t,
@@ -332,18 +335,21 @@ func TestParse_aliasBad(t *testing.T) {
 }
 
 func TestParse_aliasInUnary(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := pcore.Parse(`Type[type M=Hash[String,Variant[String,M]]]`).(dgo.UnaryType)
-	require.Equal(t, `type[map[string](string|<recursive self reference to map type>)]`, tp.String())
+	require.Equal(t, `type[m]`, tp.String())
 }
 
 func TestParse_aliasInAnyOf(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := pcore.Parse(`type M=Array[Variant[Integer[0, 5], Integer[3, 8], M]]`).(dgo.Type)
-	require.Equal(t, `[](0..5|3..8|<recursive self reference to slice type>)`, tp.String())
+	require.Equal(t, `m`, tp.String())
 }
 
 func TestParse_aliasInMap(t *testing.T) {
-	tp := pcore.Parse(`type M=Array[Variant[Integer[0, 5], Integer[3, 8], M]]`).(dgo.Type)
-	require.Equal(t, `[](0..5|3..8|<recursive self reference to slice type>)`, tp.String())
+	internal.ResetDefaultAliases()
+	tp := pcore.Parse(`type M=Hash[String, Variant[Integer[0, 5], Integer[3, 8], M]]`).(dgo.Type)
+	require.Equal(t, `m`, tp.String())
 }
 
 func TestParse_range(t *testing.T) {
@@ -393,6 +399,7 @@ func TestParse_string(t *testing.T) {
 }
 
 func TestParse_multiAliases(t *testing.T) {
+	internal.ResetDefaultAliases()
 	tp := pcore.Parse(`
 Struct[
   types => [
@@ -401,7 +408,7 @@ Struct[
   ],
   x => Hash[Slug,Struct["Token" => Ascii, value => String]]
 ]`).(dgo.StructMapType)
-	require.Equal(t, `map[/^[a-z0-9-]+$/]{"Token":1..127,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
+	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
 }
 
 func TestParse_errors(t *testing.T) {
