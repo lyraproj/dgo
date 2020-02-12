@@ -175,7 +175,7 @@ func NotNil(t *testing.T, v interface{}) {
 }
 
 // Panic will fail unless a call to f results in a panic and the recovered value matches v
-func Panic(t *testing.T, f func(), v interface{}) {
+func Panic(t *testing.T, f func(), v string) {
 	t.Helper()
 	var err error
 
@@ -197,15 +197,8 @@ func Panic(t *testing.T, f func(), v interface{}) {
 		return
 	}
 
-	switch v := v.(type) {
-	case string:
-		if regexp.MustCompile(v).MatchString(err.Error()) {
-			return
-		}
-	case dgo.Value:
-		if v.Equals(err) {
-			return
-		}
+	if regexp.MustCompile(v).MatchString(err.Error()) {
+		return
 	}
-	t.Errorf(`recovered "%s" does not match "%v"`, err.Error(), v)
+	t.Errorf(`recovered "%s" does not match "%s"`, err.Error(), v)
 }

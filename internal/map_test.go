@@ -16,21 +16,6 @@ import (
 	"github.com/lyraproj/dgo/vf"
 )
 
-func TestTyped(t *testing.T) {
-	// value type for the map
-	mt := tf.Map(typ.String, tf.AnyOf(typ.String, tf.Integer(0, 15, true)), 0, 2)
-
-	m := vf.MutableMap()
-	m.SetType(mt)
-	m.PutAll(vf.Map(map[string]interface{}{
-		`first`:  1,
-		`second`: `two`,
-	}))
-	require.Panic(t, func() { m.Put(`third`, 3.2) }, internal.IllegalAssignment(mt.ValueType(), vf.Value(3.2)))
-	require.Panic(t, func() { m.Put(1, 2) }, internal.IllegalAssignment(mt.KeyType(), vf.Value(1)))
-	require.Panic(t, func() { m.Put(`third`, 2) }, internal.IllegalSize(mt, 3))
-}
-
 func TestMapType_New(t *testing.T) {
 	mt := tf.Map(typ.String, typ.Integer)
 	m := vf.Map(`first`, 1, `second`, 2)
@@ -438,36 +423,17 @@ func TestMap_immutable(t *testing.T) {
 	require.Same(t, m, m.Copy(true))
 }
 
-func TestMutableMap(t *testing.T) {
-	m := vf.MutableMap()
-	m.SetType(map[string]string{})
-	mt := m.Type()
-	require.Equal(t, 0, m.Len())
-	require.Equal(t, tf.Map(typ.String, typ.String), mt)
-
-	m = vf.MutableMap()
-	m.SetType(mt)
-	require.Equal(t, 0, m.Len())
-	require.Equal(t, tf.Map(typ.String, typ.String), m.Type())
-
-	m = vf.MutableMap()
-	m.SetType(`map[string]int`)
-	require.Equal(t, 0, m.Len())
-	require.Equal(t, tf.Map(typ.String, typ.Integer), m.Type())
-
-	m = vf.MapWithCapacity(7, vf.String(`map[string]int`))
-	require.Equal(t, 0, m.Len())
-	require.Equal(t, tf.Map(typ.String, typ.Integer), m.Type())
-
-	require.Panic(t, func() { vf.MutableMap().SetType(`[]int`) }, `does not evaluate to a map type`)
-}
-
 func TestMapFromReflected(t *testing.T) {
 	m := vf.FromReflectedMap(reflect.ValueOf(map[string]string{}), false)
 	require.Equal(t, 0, m.Len())
-	require.Equal(t, tf.Map(typ.String, typ.String), m.Type())
-	m.Put(`hi`, `there`)
+	require.Equal(t, tf.ParseType(`{}`), m.Type())
+	require.Equal(t, tf.ParseType(`map[any]any`), typ.Generic(m.Type()))
+	m = vf.FromReflectedMap(reflect.ValueOf(map[string]string{`foo`: `bar`}), false)
 	require.Equal(t, 1, m.Len())
+	require.Equal(t, tf.ParseType(`{foo: "bar"}`), m.Type())
+	require.Equal(t, tf.ParseType(`map[string]string`), typ.Generic(m.Type()))
+	m.Put(`hi`, `there`)
+	require.Equal(t, 2, m.Len())
 }
 
 func TestMapType_KeyType(t *testing.T) {
@@ -647,7 +613,6 @@ func TestMap_StringKeys(t *testing.T) {
 	m = vf.Map(`a`, 1, 2, `b`)
 	require.False(t, m.StringKeys())
 	m = vf.MutableMap()
-	m.SetType(tf.Map(typ.String, typ.String))
 	require.True(t, m.StringKeys())
 }
 
@@ -822,33 +787,6 @@ func TestMap_RemoveAll(t *testing.T) {
 	require.Panic(t, func() { mi.RemoveAll(vf.Strings(`first`, `second`)) }, `frozen`)
 }
 
-func TestMap_SetType(t *testing.T) {
-	m := vf.FromReflectedMap(reflect.ValueOf(map[string]interface{}{
-		`first`:  1,
-		`second`: 2.0,
-		`third`:  `three`,
-	}), false)
-
-	mt := tf.Map(typ.String, tf.AnyOf(typ.Integer, typ.Float, typ.String))
-	m.SetType(mt)
-	require.Same(t, mt, m.Type())
-
-	require.Panic(t, func() { m.SetType(`map[string](float|string)`) },
-		`cannot be assigned`)
-
-	require.Panic(t, func() { m.SetType(vf.String(`map[string](float|string)`)) },
-		`cannot be assigned`)
-
-	require.Panic(t, func() { m.SetType(vf.String(`float|string`)) },
-		`Map.SetType: argument does not evaluate to a map type`)
-
-	m.SetType(nil)
-	require.Assignable(t, tf.ParseType(`{"first":1,"second":2.0,"third":"three"}`), m.Type())
-
-	m.Freeze()
-	require.Panic(t, func() { m.SetType(mt) }, `frozen`)
-}
-
 func TestMap_With(t *testing.T) {
 	m := vf.Map()
 	m = m.With(1, `a`)
@@ -958,7 +896,6 @@ func TestMap_HashCode(t *testing.T) {
 
 	// Self containing map
 	m = vf.MutableMap()
-	m.SetType(map[string]interface{}{})
 	m.Put(`first`, 1)
 	m.Put(`self`, m)
 
@@ -979,21 +916,19 @@ func TestMap_Equal(t *testing.T) {
 	require.Equal(t, m1, m2)
 
 	m1 = vf.MutableMap()
-	m1.SetType(map[string]interface{}{})
 	m1.Put(`first`, 1)
 	m1.Put(`self`, m1)
 
+	require.Equal(t, m1.Keys(), vf.Values(`first`, `self`))
 	require.NotEqual(t, m1, vf.Values(`first`, `self`))
 
 	m2 = vf.MutableMap()
-	m2.SetType(map[string]interface{}{})
 	m2.Put(`first`, 1)
 	m2.Put(`self`, m2)
 
 	require.Equal(t, m1, m2)
 
 	m3 := vf.MutableMap()
-	m3.SetType(map[string]interface{}{})
 	m3.Put(`second`, 1)
 	m3.Put(`self`, m3)
 	require.NotEqual(t, m1, m3)

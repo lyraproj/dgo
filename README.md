@@ -77,10 +77,8 @@ to `string`, `string[5]`, `string[0,10]`, `"hello"|"goodbye"`, but it is not ass
 instance of that other type.
 
 #### Collection types
-The default type for an Array or a Map can be overridden. This is particularly useful when working with
-mutable collections. If an explicit type is given to the collection, it will instead ensure that any modifications
-made to it will be in conformance with that type. The default type is backed by the collection and changes
-dynamically when the collection is modified.
+The type of a collection is just a cast of the collection itself and hence, will change dynamically when the collection
+is modified.
 
 ## Immutability
 

@@ -17,16 +17,14 @@ import (
 	"github.com/lyraproj/dgo/vf"
 )
 
-func ExampleMap_SetType_structType() {
+func ExampleMap_structType() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
-	m.SetType(`{host: string, port: int}`)
 	fmt.Println(m)
 	// Output: {"host":"example.com","port":22}
 }
 
 func ExampleMap_Put_structType() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
-	m.SetType(`{host: string, port: int}`)
 	m.Put(`port`, 465)
 	fmt.Println(m)
 	// Output: {"host":"example.com","port":465}
@@ -34,28 +32,33 @@ func ExampleMap_Put_structType() {
 
 func ExampleMap_Put_structTypeAdditionalKey() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
-	m.SetType(`{host: string, port: int, ...}`)
 	m.Put(`login`, `bob`)
 	fmt.Println(m)
 	// Output: {"host":"example.com","port":22,"login":"bob"}
 }
 
 func ExampleMap_Put_structTypeIllegalKey() {
-	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
-	m.SetType(`{host: string, port: int}`)
-	if err := util.Catch(func() { m.Put(`login`, `bob`) }); err != nil {
+	type st struct {
+		Host string
+		Port int
+	}
+	m := vf.Map(&st{Host: `example.com`, Port: 22}).Copy(false)
+	if err := util.Catch(func() { m.Put(`Login`, `bob`) }); err != nil {
 		fmt.Println(err)
 	}
-	// Output: key "login" cannot added to type {"host":string,"port":int}
+	// Output: internal_test.st has no field named 'Login'
 }
 
 func ExampleMap_Put_structTypeIllegalValue() {
-	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
-	m.SetType(`{host: string, port: int}`)
-	if err := util.Catch(func() { m.Put(`port`, `22`) }); err != nil {
+	type st struct {
+		Host string
+		Port int
+	}
+	m := vf.Map(&st{Host: `example.com`, Port: 22}).Copy(false)
+	if err := util.Catch(func() { m.Put(`Port`, `22`) }); err != nil {
 		fmt.Println(err)
 	}
-	// Output: the string "22" cannot be assigned to a variable of type int
+	// Output: reflect: call of reflect.Value.SetString on int Value
 }
 
 func TestStructType_Get(t *testing.T) {

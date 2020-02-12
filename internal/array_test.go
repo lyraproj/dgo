@@ -302,9 +302,6 @@ func TestTupleType(t *testing.T) {
 	require.NotInstance(t, tt, okv)
 
 	okm := vf.MutableValues(`world`, 2, 3.0)
-	okm.SetType(tt)
-	require.Panic(t, func() { okm.Add(3) }, tf.IllegalSize(tt, 4))
-	require.Panic(t, func() { okm.Set(2, 3) }, tf.IllegalAssignment(typ.Float, vf.Value(3)))
 	require.Equal(t, `world`, okm.Set(0, `earth`))
 
 	tt = tf.Tuple(typ.String, typ.String)
@@ -368,60 +365,31 @@ func TestVariadicTupleType(t *testing.T) {
 	require.Equal(t, 1, tt.Min())
 	require.Equal(t, math.MaxInt64, tt.Max())
 
-	a := vf.MutableValues(`one`, `two`)
-	a.SetType(tt)
-	require.Panic(t, func() { a.Set(0, 1) }, `cannot be assigned`)
-	require.Panic(t, func() { a.Set(1, 2) }, `cannot be assigned`)
-
 	require.Panic(t, func() { tf.VariadicTuple() }, `must have at least one element`)
 }
 
-func TestMutableValues_withoutType(t *testing.T) {
+func TestMutableValues_withoutNil(t *testing.T) {
 	a := vf.MutableValues(nil)
 	require.True(t, vf.Nil == a.Get(0))
 }
 
 func TestMutableValues_maxSizeMismatch(t *testing.T) {
-	a := vf.MutableValues(true)
-	a.SetType(tf.Array(0, 1))
-	require.Panic(t, func() { a.Add(vf.False) }, `size constraint`)
-	require.Panic(t, func() { a.With(vf.False) }, `size constraint`)
-	require.Panic(t, func() { a.WithAll(vf.Values(false)) }, `size constraint`)
-	require.Panic(t, func() { a.WithValues(false) }, `size constraint`)
-
-	a.WithAll(vf.Values()) // No panic
-	a.WithValues()         // No panic
+	tp := tf.Array(0, 1)
+	a := vf.Values(true)
+	require.Instance(t, tp, a)
+	require.NotInstance(t, tp, a.With(false))
+	require.NotInstance(t, tp, a.WithAll(vf.Values(false)))
+	require.NotInstance(t, tp, a.WithValues(false))
+	require.Instance(t, tp, a.WithAll(vf.Values()))
+	require.Instance(t, tp, a.WithValues())
 }
 
 func TestMutableValues_minSizeMismatch(t *testing.T) {
-	require.Panic(t, func() { vf.MutableValues().SetType(tf.Array(1, 1)) }, `cannot be assigned`)
-
 	a := vf.MutableValues(true)
-	a.SetType(`[1,1]bool`)
-	require.Panic(t, func() { a.Remove(0) }, `size constraint`)
-	require.Panic(t, func() { a.RemoveValue(vf.True) }, `size constraint`)
-	require.Panic(t, func() { a.Add(vf.True) }, `size constraint`)
-	require.Panic(t, func() { a.AddAll(vf.Values(vf.True)) }, `size constraint`)
-}
-
-func TestMutableValues_elementTypeMismatch(t *testing.T) {
-	a := vf.MutableValues()
-	a.SetType(`[]string`)
-	a.Add(`hello`)
-	a.AddAll(vf.Values(`hello`))
-	a.AddAll(vf.Values())
-	require.Panic(t, func() { a.Add(vf.True) }, `cannot be assigned`)
-	require.Panic(t, func() { a.AddAll(vf.Values(vf.True)) }, `cannot be assigned`)
-
-	a = vf.MutableValues(`a`, 2)
-	a.SetType(tf.Tuple(typ.String, typ.Integer))
-	a.Set(0, `hello`)
-	a.Set(1, 3)
-	require.Panic(t, func() { a.Set(0, 3) }, `cannot be assigned`)
-}
-
-func TestMutableValues_tupleTypeMismatch(t *testing.T) {
-	require.Panic(t, func() { vf.MutableValues(true).SetType(tf.Tuple(typ.String)) }, `cannot be assigned`)
+	tp := tf.ParseType(`[1,1]bool`)
+	require.Instance(t, tp, a)
+	a.Remove(0)
+	require.NotInstance(t, tp, a)
 }
 
 func TestMutableArray(t *testing.T) {
@@ -432,27 +400,8 @@ func TestMutableArray(t *testing.T) {
 	require.Equal(t, `hello`, s[0])
 }
 
-func TestMutableArray_stringType(t *testing.T) {
+func TestMutableArray_nilSlice(t *testing.T) {
 	a := vf.WrapSlice(nil)
-	a.SetType(`[]int`)
-	a.Add(3)
-	require.Equal(t, 3, a.Get(0))
-}
-
-func TestMutableArray_dgoStringType(t *testing.T) {
-	a := vf.WrapSlice(nil)
-	a.SetType(vf.String(`[]int`))
-	a.Add(3)
-	require.Equal(t, 3, a.Get(0))
-}
-
-func TestMutableArray_badType(t *testing.T) {
-	require.Panic(t, func() { vf.WrapSlice(nil).SetType(`map[string]int`) }, `does not evaluate to an array type`)
-}
-
-func TestMutableArray_zeroType(t *testing.T) {
-	a := vf.WrapSlice(nil)
-	a.SetType([]int{})
 	a.Add(3)
 	require.Equal(t, 3, a.Get(0))
 }
@@ -467,41 +416,14 @@ func TestArray(t *testing.T) {
 	require.Same(t, a, vf.Array(reflect.ValueOf(a)))
 }
 
-func TestArray_Set(t *testing.T) {
+func TestArray_FrozenCopy(t *testing.T) {
 	a := vf.MutableValues()
-	a.SetType(tf.Array(typ.Integer))
 	a.Add(1)
 	a.Set(0, 2)
 	require.Equal(t, 2, a.Get(0))
 
-	require.Panic(t, func() { a.Set(0, 1.0) }, `cannot be assigned`)
-
 	f := a.Copy(true)
 	require.Panic(t, func() { f.Set(0, 1) }, `Set .* frozen`)
-}
-
-func TestArray_SetType(t *testing.T) {
-	a := vf.MutableValues(1, 2.0, `three`)
-	adt := a.Type()
-
-	at := tf.Array(tf.AnyOf(typ.Integer, typ.Float, typ.String))
-	a.SetType(at)
-	require.Same(t, at, a.Type())
-
-	require.Panic(t, func() { a.SetType(`[](float|string)`) },
-		`cannot be assigned`)
-
-	require.Panic(t, func() { a.SetType(vf.String(`[](float|string)`)) },
-		`cannot be assigned`)
-
-	require.Panic(t, func() { a.SetType(`(float|string)`) },
-		`does not evaluate to an array type`)
-
-	a.SetType(nil)
-	require.Equal(t, adt, a.Type())
-
-	a.Freeze()
-	require.Panic(t, func() { a.SetType(at) }, `SetType .* frozen`)
 }
 
 func TestArray_selfReference(t *testing.T) {
@@ -877,48 +799,6 @@ func TestArray_Map(t *testing.T) {
 	require.Equal(t, vf.Values(vf.Nil, vf.Nil, vf.Nil), a.Map(func(e dgo.Value) interface{} {
 		return nil
 	}))
-}
-
-func TestArray_MapTo(t *testing.T) {
-	require.Equal(t, vf.Integers(97), vf.Strings(`a`).MapTo(nil, func(e dgo.Value) interface{} {
-		return int64(e.String()[0])
-	}))
-
-	at := tf.Array(typ.Integer, 2, 3)
-	b := vf.Strings(`a`, `b`, `c`).MapTo(at, func(e dgo.Value) interface{} {
-		return int64(e.String()[0])
-	})
-
-	require.Equal(t, at, b.Type())
-	require.Equal(t, vf.Integers(97, 98, 99), b)
-
-	require.Panic(t, func() {
-		vf.Strings(`a`, `b`, `c`, `d`).MapTo(at, func(e dgo.Value) interface{} {
-			return int64(e.String()[0])
-		})
-	}, `size constraint`)
-
-	require.Panic(t, func() {
-		vf.Strings(`a`).MapTo(at, func(e dgo.Value) interface{} {
-			return int64(e.String()[0])
-		})
-	}, `size constraint`)
-
-	oat := tf.Array(tf.AnyOf(typ.Nil, typ.Integer), 0, 3)
-	require.Equal(t, vf.Values(97, 98, vf.Nil), vf.Strings(`a`, `b`, `c`).MapTo(oat, func(e dgo.Value) interface{} {
-		if e.Equals(`c`) {
-			return nil
-		}
-		return vf.Integer(int64(e.String()[0]))
-	}))
-	require.Panic(t, func() {
-		vf.Strings(`a`, `b`, `c`).MapTo(at, func(e dgo.Value) interface{} {
-			if e.Equals(`c`) {
-				return nil
-			}
-			return int64(e.String()[0])
-		})
-	}, `cannot be assigned`)
 }
 
 func TestArray_Pop(t *testing.T) {
