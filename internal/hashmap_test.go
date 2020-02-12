@@ -40,7 +40,7 @@ func BenchmarkHashMapStrings(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	ks := buildStringKeys(sz)
 	k := make([]dgo.Value, sz)
-	m := MapWithCapacity(sz, nil)
+	m := MapWithCapacity(sz)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
 		m.Put(key, intVal(i))
@@ -61,7 +61,7 @@ func BenchmarkHashMapStringsNoHashCache(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	ks := buildStringKeys(sz)
 	k := make([]*hstring, sz)
-	m := MapWithCapacity(sz, nil)
+	m := MapWithCapacity(sz)
 	for i := 0; i < sz; i++ {
 		key := makeHString(ks[i])
 		m.Put(key, intVal(i))
@@ -81,7 +81,7 @@ func BenchmarkHashMapStringsNoHashCache(b *testing.B) {
 func BenchmarkHashMapIntegers(b *testing.B) {
 	sz := b.N + lookupsPerOp
 	k := make([]dgo.Value, sz)
-	m := MapWithCapacity(sz, nil)
+	m := MapWithCapacity(sz)
 	for i := 0; i < sz; i++ {
 		key := intVal(rand.Intn(sz * rndFactor))
 		m.Put(key, intVal(i))

@@ -390,16 +390,6 @@ func Test_structMap_Remove(t *testing.T) {
 	require.Panic(t, func() { m.RemoveAll(vf.Values(`A`, `B`)) }, `cannot be removed`)
 }
 
-func Test_structMap_SetType(t *testing.T) {
-	type structA struct {
-		A string
-		B int
-	}
-	s := structA{}
-	m := vf.Map(&s)
-	require.Panic(t, func() { m.SetType(`map[string]int`) }, `type is read only`)
-}
-
 func Test_structMap_String(t *testing.T) {
 	type structA struct {
 		A string

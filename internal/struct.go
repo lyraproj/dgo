@@ -273,10 +273,6 @@ func (v *structVal) RemoveAll(keys dgo.Array) {
 	panic(errors.New(`struct fields cannot be removed`))
 }
 
-func (v *structVal) SetType(t interface{}) {
-	panic(errors.New(`struct type is read only`))
-}
-
 func (v *structVal) String() string {
 	return util.ToStringERP(v)
 }
@@ -320,7 +316,7 @@ func (v *structVal) WithoutAll(keys dgo.Array) dgo.Map {
 }
 
 func (v *structVal) toHashMap() *hashMap {
-	c := MapWithCapacity(v.Len(), nil)
+	c := MapWithCapacity(v.Len())
 	v.EachEntry(func(entry dgo.MapEntry) {
 		c.Put(entry.Key(), entry.Value())
 	})
