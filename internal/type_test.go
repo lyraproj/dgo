@@ -22,6 +22,9 @@ func TestFromReflected(t *testing.T) {
 	v = tf.FromReflected(reflect.ValueOf(map[int]string{1: `a`}).Type())
 	require.Assignable(t, tf.Map(typ.Integer, typ.String), v)
 
+	v = tf.FromReflected(reflect.ValueOf(map[int]interface{}{1: `a`}).Type())
+	require.Assignable(t, tf.Map(typ.Integer, typ.Any), v)
+
 	v = tf.FromReflected(reflect.ValueOf(&map[int]string{1: `a`}).Type())
 	require.Assignable(t, v, tf.Map(typ.Integer, typ.String))
 	require.Assignable(t, v, typ.Nil)

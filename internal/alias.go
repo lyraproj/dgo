@@ -95,6 +95,10 @@ func (a *alias) FrozenCopy() dgo.Value {
 	panic(a.freezeAttempt())
 }
 
+func (a *alias) ThawedCopy() dgo.Value {
+	return a
+}
+
 func (a *alias) freezeAttempt() error {
 	return fmt.Errorf(`attempt to freeze unresolved alias '%s'`, a.Reference())
 }

@@ -169,6 +169,21 @@ func (v *structVal) FrozenCopy() dgo.Value {
 	return &structVal{rs: rs, frozen: true}
 }
 
+func (v *structVal) ThawedCopy() dgo.Value {
+	// Perform a by-value copy of the struct
+	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v.rs)                          // copy v.rs to the zero value
+
+	for i, n := 0, rs.NumField(); i < n; i++ {
+		ef := rs.Field(i)
+		ev := ValueFromReflected(ef)
+		if f, ok := ev.(dgo.Freezable); ok {
+			ReflectTo(f.ThawedCopy(), ef)
+		}
+	}
+	return &structVal{rs: rs, frozen: false}
+}
+
 func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 	rv := v.rs
 	rt := rv.Type()

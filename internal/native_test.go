@@ -50,6 +50,7 @@ func TestNative(t *testing.T) {
 	require.False(t, c.Frozen())
 	require.Panic(t, func() { c.Freeze() }, `cannot be frozen`)
 	require.Panic(t, func() { c.FrozenCopy() }, `cannot be frozen`)
+	require.Panic(t, func() { c.ThawedCopy() }, `cannot be copied`)
 
 	require.NotEqual(t, 0, s.HashCode())
 	require.Equal(t, s.HashCode(), s.HashCode())
