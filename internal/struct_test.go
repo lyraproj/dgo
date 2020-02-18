@@ -228,6 +228,28 @@ func Test_structMap_FrozenCopy(t *testing.T) {
 	require.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
 }
 
+func Test_structMap_ThawedCopy(t *testing.T) {
+	type structA struct {
+		A string
+		E dgo.Array
+	}
+	s := structA{A: `Alpha`}
+	m := vf.Map(&s)
+	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
+	m.Freeze()
+
+	c := m.ThawedCopy().(dgo.Map)
+	require.True(t, m.Frozen())
+	require.True(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	require.False(t, c.Frozen())
+	require.False(t, c.Get(`E`).(dgo.Freezable).Frozen())
+
+	c.Put(`A`, `Adam`)
+	require.Equal(t, `Adam`, c.Get(`A`))
+	require.Equal(t, `Alpha`, m.Get(`A`))
+	require.NotSame(t, c, c.FrozenCopy())
+}
+
 func Test_structMap_HashCode(t *testing.T) {
 	type structA struct {
 		A string

@@ -84,9 +84,17 @@ func TestSensitive(t *testing.T) {
 	require.Equal(t, s.Unwrap(), c.Unwrap())
 	require.NotSame(t, s.Unwrap(), c.Unwrap())
 
-	s = vf.Sensitive(vf.String(`a`))
+	s = vf.Sensitive(vf.MutableValues(`a`))
+	require.False(t, s.Frozen())
 	c = s.FrozenCopy().(dgo.Sensitive)
+	require.NotSame(t, s, c)
+	require.True(t, c.Frozen())
+	s = c.FrozenCopy().(dgo.Sensitive)
 	require.Same(t, s, c)
+
+	c = s.ThawedCopy().(dgo.Sensitive)
+	require.NotSame(t, s, c)
+	require.False(t, c.Frozen()) // string is frozen regardless
 
 	require.Equal(t, `sensitive [value redacted]`, s.String())
 

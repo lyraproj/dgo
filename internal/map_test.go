@@ -305,6 +305,16 @@ func TestMap_EntryType(t *testing.T) {
 		vt := v.Type()
 		require.Equal(t, `"a":{1,2}`, vt.String())
 	})
+	m = m.FrozenCopy().(dgo.Map)
+	m.EachEntry(func(v dgo.MapEntry) {
+		require.True(t, v.Frozen())
+		require.NotSame(t, v, v.ThawedCopy())
+	})
+	m = m.ThawedCopy().(dgo.Map)
+	m.EachEntry(func(v dgo.MapEntry) {
+		require.False(t, v.Frozen())
+		require.NotSame(t, v, v.ThawedCopy())
+	})
 }
 
 func TestNewMapType_max_min(t *testing.T) {
@@ -979,6 +989,20 @@ func TestMapEntry_Frozen(t *testing.T) {
 
 	e = internal.NewMapEntry(`a`, vf.MutableValues(`a`))
 	require.NotSame(t, e, e.FrozenCopy())
+}
+
+func TestMapEntry_Thawed(t *testing.T) {
+	e := internal.NewMapEntry(`a`, 1)
+	require.NotSame(t, e, e.ThawedCopy())
+
+	e = e.FrozenCopy().(dgo.MapEntry)
+	require.NotSame(t, e, e.ThawedCopy())
+
+	e = internal.NewMapEntry(`a`, vf.MutableValues(`a`))
+	c := e.ThawedCopy().(dgo.MapEntry)
+	c.Value().(dgo.Array).Set(0, `b`)
+	require.Equal(t, vf.Values(`a`), e.Value())
+	require.Equal(t, vf.Values(`b`), c.Value())
 }
 
 func TestMapEntry_String(t *testing.T) {

@@ -943,6 +943,12 @@ func (v *array) Copy(frozen bool) dgo.Array {
 				cp[i] = f.FrozenCopy()
 			}
 		}
+	} else {
+		for i := range cp {
+			if f, ok := cp[i].(dgo.Freezable); ok {
+				cp[i] = f.ThawedCopy()
+			}
+		}
 	}
 	return &array{slice: cp, frozen: frozen}
 }
@@ -1068,6 +1074,10 @@ func (v *array) Frozen() bool {
 
 func (v *array) FrozenCopy() dgo.Value {
 	return v.Copy(true)
+}
+
+func (v *array) ThawedCopy() dgo.Value {
+	return v.Copy(false)
 }
 
 func (v *array) GoSlice() []dgo.Value {

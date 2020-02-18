@@ -25,6 +25,9 @@ type (
 		// FrozenCopy checks if the receiver is frozen. If it is, it returned. If not, a frozen copy
 		// of the receiver is returned.
 		FrozenCopy() Value
+
+		// ThawedCopy returns a thawed copy of the receiver.
+		ThawedCopy() Value
 	}
 
 	// Iterable enables the implementor to express how iteration is performed over contained elements

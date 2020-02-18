@@ -247,6 +247,10 @@ func TestBinary_Copy(t *testing.T) {
 	c = c.Copy(true)
 	require.True(t, c.Frozen())
 	require.Same(t, c, c.Copy(true))
+
+	c = a.ThawedCopy().(dgo.Binary)
+	require.False(t, c.Frozen())
+	require.NotSame(t, c, c.ThawedCopy())
 }
 
 func TestBinary_Equal(t *testing.T) {

@@ -131,12 +131,28 @@ func (v *mapEntry) FrozenCopy() dgo.Value {
 	return c
 }
 
+func (v *mapEntry) ThawedCopy() dgo.Value {
+	c := &mapEntry{key: v.key, value: v.value}
+	if f, ok := v.value.(dgo.Freezable); ok {
+		v.value = f.ThawedCopy()
+	}
+	return c
+}
+
 func (v *hashNode) FrozenCopy() dgo.Value {
 	if v.Frozen() {
 		return v
 	}
 	c := &hashNode{mapEntry: mapEntry{key: v.key, value: v.value}}
 	c.copyFreeze()
+	return c
+}
+
+func (v *hashNode) ThawedCopy() dgo.Value {
+	c := &hashNode{mapEntry: mapEntry{key: v.key, value: v.value}}
+	if f, ok := v.value.(dgo.Freezable); ok {
+		v.value = f.ThawedCopy()
+	}
 	return c
 }
 
@@ -161,6 +177,12 @@ func (v *mapEntry) Value() dgo.Value {
 func (v *mapEntry) copyFreeze() {
 	if f, ok := v.value.(dgo.Freezable); ok {
 		v.value = f.FrozenCopy()
+	}
+}
+
+func (v *mapEntry) copyThaw() {
+	if f, ok := v.value.(dgo.Freezable); ok {
+		v.value = f.ThawedCopy()
 	}
 }
 
@@ -406,6 +428,10 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 		for e := c.first; e != nil; e = e.next {
 			e.copyFreeze()
 		}
+	} else {
+		for e := c.first; e != nil; e = e.next {
+			e.copyThaw()
+		}
 	}
 	return c
 }
@@ -473,6 +499,10 @@ func (g *hashMap) Frozen() bool {
 
 func (g *hashMap) FrozenCopy() dgo.Value {
 	return g.Copy(true)
+}
+
+func (g *hashMap) ThawedCopy() dgo.Value {
+	return g.Copy(false)
 }
 
 func (g *hashMap) Get(key interface{}) dgo.Value {
