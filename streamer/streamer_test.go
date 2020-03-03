@@ -141,6 +141,13 @@ func TestEncode_dedup_string_keys(t *testing.T) {
 	require.Same(t, aes[0].Key(), bes[0].Key())
 }
 
+func TestEncode_existingRef(t *testing.T) {
+	v := vf.Map(`x`, vf.Map(`z`, vf.Values(`a`, `b`)), `y`, vf.Map(streamer.DgoDialect().RefKey(), 6))
+	vc := streamer.DataCollector()
+	streamer.New(nil, nil).Stream(v, vc)
+	require.Equal(t, vf.Map(`x`, vf.Map(`z`, vf.Values("a", `b`)), `y`, `b`), vc.Value())
+}
+
 type testNamed struct {
 	A string
 	B int64

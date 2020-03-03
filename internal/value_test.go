@@ -89,6 +89,8 @@ func TestValue(t *testing.T) {
 	v = vf.Value(struct{ A int }{10})
 	require.Equal(t, struct{ A int }{10}, v)
 
+	require.Equal(t, 42, vf.Value(json.Number(`42`)))
+	require.Equal(t, 3.14, vf.Value(json.Number(`3.14`)))
 	require.Panic(t, func() { vf.Value(json.Number(`not a float`)) }, `invalid`)
 }
 
