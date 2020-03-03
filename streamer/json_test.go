@@ -68,6 +68,15 @@ func TestJSON_ComplexKeys(t *testing.T) {
 		b.String())
 }
 
+func TestUnmarshalJSON_ref(t *testing.T) {
+	v := streamer.UnmarshalJSON(
+		[]byte(`[["a","b"],{"__ref":1}]`),
+		streamer.DgoDialect())
+	x := vf.Strings(`a`, `b`)
+	v2 := vf.Values(x, x)
+	require.Equal(t, v2, v)
+}
+
 func TestUnmarshalJSON_complexKeys(t *testing.T) {
 	v := streamer.UnmarshalJSON(
 		[]byte(`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`),
