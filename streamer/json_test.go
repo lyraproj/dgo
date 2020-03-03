@@ -70,11 +70,21 @@ func TestJSON_ComplexKeys(t *testing.T) {
 
 func TestUnmarshalJSON_ref(t *testing.T) {
 	v := streamer.UnmarshalJSON(
-		[]byte(`[["a","b"],{"__ref":1}]`),
+		[]byte(`{"x": {"z": ["a","b"]}, "y": {"__ref":6}}`),
 		streamer.DgoDialect())
-	x := vf.Strings(`a`, `b`)
-	v2 := vf.Values(x, x)
-	require.Equal(t, v2, v)
+	require.Equal(t, vf.Map(`x`, vf.Map(`z`, vf.Values("a", `b`)), `y`, `b`), v)
+}
+
+func TestUnmarshalJSON_refBad(t *testing.T) {
+	require.Panic(t, func() {
+		streamer.UnmarshalJSON([]byte(`{"x": {"z": ["a","b"]}, "y": {"__ref":"6"}}`), streamer.DgoDialect())
+	}, `expected integer after key "__ref"`)
+}
+
+func TestUnmarshalJSON_badDelim(t *testing.T) {
+	require.Panic(t, func() {
+		streamer.UnmarshalJSON([]byte(``), streamer.DgoDialect())
+	}, `unexpected EOF`)
 }
 
 func TestUnmarshalJSON_complexKeys(t *testing.T) {
