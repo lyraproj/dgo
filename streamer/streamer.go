@@ -3,7 +3,6 @@ package streamer
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/vf"
@@ -76,7 +75,6 @@ func (t *rdSerializer) Stream(value dgo.Value, consumer Consumer) {
 	if c.dedupLevel >= MaxDedup && !consumer.CanDoComplexKeys() {
 		c.dedupLevel = NoKeyDedup
 	}
-	log.Println(value.String())
 	c.emitData(value)
 }
 
