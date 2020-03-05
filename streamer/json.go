@@ -98,6 +98,9 @@ func (j *jsonDecoder) decodeCollection(delim json.Delim) {
 			if n, ok := j.nextToken().(json.Number); ok {
 				if ri, err := n.Int64(); err == nil {
 					j.consumer.AddRef(int(ri))
+					if j.nextToken() != json.Delim('}') {
+						panic(fmt.Errorf(`expected end of object after "%s": %d`, j.refKey, ri))
+					}
 					return
 				}
 			}
