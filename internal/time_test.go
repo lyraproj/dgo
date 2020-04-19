@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestTimeDefault(t *testing.T) {
@@ -71,7 +71,7 @@ func TestTimeExact(t *testing.T) {
 
 	require.Same(t, typ.Time, typ.Generic(tp))
 
-	require.Equal(t, `time["`+now.Format(time.RFC3339Nano)+`"]`, tp.String())
+	require.Equal(t, `time "`+now.Format(time.RFC3339Nano)+`"`, tp.String())
 	require.Equal(t, typ.Time.ReflectType(), tp.ReflectType())
 }
 

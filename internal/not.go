@@ -3,7 +3,7 @@ package internal
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type notType struct {
@@ -98,7 +98,7 @@ func (t *notType) String() string {
 }
 
 func (t *notType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *notType) TypeIdentifier() dgo.TypeIdentifier {

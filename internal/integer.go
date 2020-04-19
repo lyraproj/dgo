@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
@@ -14,11 +14,6 @@ type (
 	intVal int64
 
 	defaultIntegerType int
-
-	exactIntegerType struct {
-		exactType
-		value intVal
-	}
 
 	integerType struct {
 		min       int64
@@ -69,8 +64,8 @@ func IntEnumType(ints []int) dgo.Type {
 
 func (t *integerType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
-	case *exactIntegerType:
-		return t.IsInstance(int64(ot.value))
+	case intVal:
+		return t.IsInstance(int64(ot))
 	case *integerType:
 		if t.min > ot.min {
 			return false
@@ -151,52 +146,16 @@ func (t *integerType) String() string {
 }
 
 func (t *integerType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *integerType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerRange
 }
 
-func (t *exactIntegerType) Generic() dgo.Type {
-	return DefaultIntegerType
-}
-
-func (t *exactIntegerType) Inclusive() bool {
-	return true
-}
-
-func (t *exactIntegerType) IsInstance(value int64) bool {
-	return int64(t.value) == value
-}
-
-func (t *exactIntegerType) Max() int64 {
-	return int64(t.value)
-}
-
-func (t *exactIntegerType) Min() int64 {
-	return int64(t.value)
-}
-
-func (t *exactIntegerType) New(arg dgo.Value) dgo.Value {
-	return newInt(t, arg)
-}
-
-func (t *exactIntegerType) ReflectType() reflect.Type {
-	return reflectIntegerType
-}
-
-func (t *exactIntegerType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiIntegerExact
-}
-
-func (t *exactIntegerType) ExactValue() dgo.Value {
-	return t.value
-}
-
 func (t defaultIntegerType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultIntegerType, *exactIntegerType, *integerType:
+	case intVal, defaultIntegerType, *integerType:
 		return true
 	}
 	return CheckAssignableTo(nil, other, t)
@@ -223,7 +182,7 @@ func (t defaultIntegerType) Inclusive() bool {
 	return true
 }
 
-func (t defaultIntegerType) IsInstance(value int64) bool {
+func (t defaultIntegerType) IsInstance(_ int64) bool {
 	return true
 }
 
@@ -248,7 +207,7 @@ func (t defaultIntegerType) String() string {
 }
 
 func (t defaultIntegerType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t defaultIntegerType) TypeIdentifier() dgo.TypeIdentifier {
@@ -353,6 +312,10 @@ func (v intVal) intPointer(kind reflect.Kind) reflect.Value {
 	return p
 }
 
+func (v intVal) Format(s fmt.State, format rune) {
+	doFormat(int64(v), s, format)
+}
+
 func (v intVal) String() string {
 	return strconv.Itoa(int(v))
 }
@@ -366,9 +329,47 @@ func (v intVal) ToInt() int64 {
 }
 
 func (v intVal) Type() dgo.Type {
-	et := &exactIntegerType{value: v}
-	et.ExactType = et
-	return et
+	return v
+}
+
+func (v intVal) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
+}
+
+func (v intVal) Generic() dgo.Type {
+	return DefaultIntegerType
+}
+
+func (v intVal) Inclusive() bool {
+	return true
+}
+
+func (v intVal) Instance(value interface{}) bool {
+	return v.Equals(value)
+}
+
+func (v intVal) IsInstance(value int64) bool {
+	return int64(v) == value
+}
+
+func (v intVal) Max() int64 {
+	return int64(v)
+}
+
+func (v intVal) Min() int64 {
+	return int64(v)
+}
+
+func (v intVal) New(arg dgo.Value) dgo.Value {
+	return newInt(v, arg)
+}
+
+func (v intVal) ReflectType() reflect.Type {
+	return reflectIntegerType
+}
+
+func (v intVal) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiIntegerExact
 }
 
 // ToInt returns the given value as a int64 if, and only if, the value type is one of the go int types. An

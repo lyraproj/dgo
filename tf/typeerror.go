@@ -1,8 +1,8 @@
 package tf
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // IllegalAssignment returns the error that represents an assignment type constraint mismatch

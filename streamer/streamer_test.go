@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/streamer"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/streamer"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/vf"
 )
 
 func TestNew(t *testing.T) {

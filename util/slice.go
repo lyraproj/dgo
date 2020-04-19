@@ -1,6 +1,6 @@
 package util
 
-import "github.com/lyraproj/dgo/dgo"
+import "github.com/tada/dgo/dgo"
 
 // SliceCopy copies the given value slice to a new slice
 func SliceCopy(s []dgo.Value) []dgo.Value {

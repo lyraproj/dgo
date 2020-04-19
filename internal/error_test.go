@@ -5,11 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/internal"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestErrorType(t *testing.T) {
@@ -46,7 +48,7 @@ func TestErrorType(t *testing.T) {
 	require.Equal(t, tp.HashCode(), tp.HashCode())
 	require.NotEqual(t, 0, tp.HashCode())
 
-	require.Equal(t, `error["some error"]`, tp.String())
+	require.Equal(t, `error "some error"`, tp.String())
 
 	require.True(t, reflect.TypeOf(er).AssignableTo(tp.ReflectType()))
 }
@@ -81,8 +83,6 @@ func TestError(t *testing.T) {
 
 	require.Equal(t, `some error`, ve.Error())
 
-	require.Equal(t, ve.Error(), v.String())
-
 	type uvt interface {
 		Unwrap() error
 	}
@@ -116,4 +116,8 @@ func TestError_ReflectTo(t *testing.T) {
 	ec, ok := mi.(error)
 	require.True(t, ok)
 	require.Same(t, err, ec)
+}
+
+func TestError_TypeString(t *testing.T) {
+	require.Equal(t, `error "some error"`, internal.TypeString(vf.Value(errors.New(`some error`)).Type()))
 }

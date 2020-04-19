@@ -2,9 +2,9 @@
 package typ
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/loader"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
+	"github.com/tada/dgo/loader"
 )
 
 // AllOf is the default AllOf type. Since it contains no types, everything is
@@ -39,16 +39,16 @@ var Map dgo.MapType = internal.DefaultMapType
 var Any dgo.Type = internal.DefaultAnyType
 
 // Nil is a type that represents the nil Value
-var Nil dgo.Type = internal.DefaultNilType
+var Nil dgo.Type = internal.Nil
 
 // Boolean is a type that represents both true and false
 var Boolean dgo.BooleanType = internal.DefaultBooleanType
 
 // False is a type that only represents the value false
-var False dgo.BooleanType = internal.FalseType
+var False dgo.BooleanType = internal.False
 
 // True is a type that only represents the value true
-var True dgo.BooleanType = internal.TrueType
+var True dgo.BooleanType = internal.True
 
 // Number is a type that represents all numbers
 var Number = internal.AnyOfType([]interface{}{internal.DefaultIntegerType, internal.DefaultFloatType})

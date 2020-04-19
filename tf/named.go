@@ -3,8 +3,8 @@ package tf
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Named returns the type with the given name from the global type registry. The function returns

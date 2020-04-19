@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleValue() {

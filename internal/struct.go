@@ -6,9 +6,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/lyraproj/dgo/util"
-
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
@@ -280,16 +278,16 @@ func (v *structVal) ReflectTo(value reflect.Value) {
 	}
 }
 
-func (v *structVal) Remove(key interface{}) dgo.Value {
+func (v *structVal) Remove(_ interface{}) dgo.Value {
 	panic(errors.New(`struct fields cannot be removed`))
 }
 
-func (v *structVal) RemoveAll(keys dgo.Array) {
+func (v *structVal) RemoveAll(_ dgo.Array) {
 	panic(errors.New(`struct fields cannot be removed`))
 }
 
 func (v *structVal) String() string {
-	return util.ToStringERP(v)
+	return TypeString(v)
 }
 
 func (v *structVal) StringKeys() bool {
@@ -297,9 +295,7 @@ func (v *structVal) StringKeys() bool {
 }
 
 func (v *structVal) Type() dgo.Type {
-	et := &exactMapType{value: v}
-	et.ExactType = et
-	return et
+	return v
 }
 
 func (v *structVal) Values() dgo.Array {
@@ -336,4 +332,71 @@ func (v *structVal) toHashMap() *hashMap {
 		c.Put(entry.Key(), entry.Value())
 	})
 	return c.(*hashMap)
+}
+
+func (v *structVal) Additional() bool {
+	return false
+}
+
+func (v *structVal) Assignable(other dgo.Type) bool {
+	return v.Equals(other)
+}
+
+func (v *structVal) Instance(value interface{}) bool {
+	return v.Equals(value)
+}
+
+func (v *structVal) EachEntryType(actor func(dgo.StructMapEntry)) {
+	eachEntryType(v, actor)
+}
+
+func (v *structVal) Generic() dgo.Type {
+	return genericMapType(v)
+}
+
+func (v *structVal) GetEntryType(key interface{}) dgo.StructMapEntry {
+	return entryType(v, key)
+}
+
+func (v *structVal) KeyType() dgo.Type {
+	return keyType(v)
+}
+
+func (v *structVal) Max() int {
+	return v.Len()
+}
+
+func (v *structVal) Min() int {
+	return v.Len()
+}
+
+func (v *structVal) New(arg dgo.Value) dgo.Value {
+	m := newMap(v, arg)
+	nv := &structVal{rs: reflect.New(v.rs.Type()).Elem()}
+	nv.PutAll(m)
+	return nv
+}
+
+func (v *structVal) ReflectType() reflect.Type {
+	return v.rs.Type()
+}
+
+func (v *structVal) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiMapExact
+}
+
+func (v *structVal) Unbounded() bool {
+	return false
+}
+
+func (v *structVal) ValueType() dgo.Type {
+	return valueType(v)
+}
+
+func (v *structVal) Validate(keyLabel func(key dgo.Value) string, value interface{}) []error {
+	return validate(v, keyLabel, value)
+}
+
+func (v *structVal) ValidateVerbose(value interface{}, out dgo.Indenter) bool {
+	return validateVerbose(v, value, out)
 }

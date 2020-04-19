@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // True is the dgo.Value representation of true

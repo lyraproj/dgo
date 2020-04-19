@@ -1,8 +1,8 @@
 package tf
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Map returns a type that represents an Map value

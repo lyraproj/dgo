@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleRegexp() {

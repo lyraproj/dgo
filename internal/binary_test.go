@@ -7,15 +7,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 
-	"github.com/lyraproj/dgo/tf"
+	"github.com/tada/dgo/tf"
 
-	"github.com/lyraproj/dgo/typ"
+	"github.com/tada/dgo/typ"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func TestBinaryType(t *testing.T) {
@@ -118,7 +118,7 @@ func TestExactBinaryType(t *testing.T) {
 	require.NotAssignable(t, tf.Binary(4), tp)
 	require.NotAssignable(t, tf.Binary(0, 2), tp)
 
-	require.NotEqual(t, v.HashCode(), tp.HashCode())
+	require.Equal(t, v.HashCode(), tp.HashCode())
 
 	require.Instance(t, tp.Type(), tp)
 	require.Equal(t, `binary "AQID"`, tp.String())

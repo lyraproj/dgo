@@ -1,8 +1,8 @@
 package tf
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Binary returns a new dgo.BinaryType. It can be called with two optional integer arguments denoting

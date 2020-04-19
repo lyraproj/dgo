@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type arguments struct {
@@ -32,4 +32,9 @@ func (a *arguments) Arg(funcName string, n int, typ dgo.Type) dgo.Value {
 		return v
 	}
 	panic(illegalArgument(funcName, typ, a.InterfaceSlice(), n))
+}
+
+func (a *arguments) Equals(other interface{}) bool {
+	oa, ok := other.(*arguments)
+	return ok && a.array.Equals(&oa.array)
 }

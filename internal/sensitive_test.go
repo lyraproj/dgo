@@ -4,15 +4,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/tf"
+	"github.com/tada/dgo/tf"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 
-	"github.com/lyraproj/dgo/typ"
+	"github.com/tada/dgo/typ"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 )
 
 func TestSensitiveType(t *testing.T) {
@@ -46,7 +46,6 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, tf.Sensitive(typ.Integer), tf.ParseType(`sensitive[int]`))
 	require.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.ParseType(`sensitive int`))
 	require.Equal(t, vf.Sensitive(34).Type(), tf.ParseType(`sensitive 34`))
-	require.Panic(t, func() { tf.ParseType(`sensitive[34]`) }, `illegal argument`)
 	require.Panic(t, func() { tf.ParseType(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 

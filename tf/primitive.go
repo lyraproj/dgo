@@ -4,8 +4,8 @@ package tf
 import (
 	"regexp"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // String returns a new dgo.StringType. It can be called with two optional integer arguments denoting

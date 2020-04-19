@@ -4,12 +4,12 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/parser"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
+	"github.com/tada/dgo/parser"
 
 	// ensure that stringer package is initialized prior to using this package
-	_ "github.com/lyraproj/dgo/stringer"
+	_ "github.com/tada/dgo/stringer"
 )
 
 // FromReflected returns the dgo.Type that represents the given reflected type

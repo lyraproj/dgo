@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/util"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/util"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleToString() {

@@ -3,12 +3,12 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestIllegalAssignment(t *testing.T) {
@@ -48,5 +48,5 @@ func TestIllegalMapKey(t *testing.T) {
 	require.Instance(t, v.Type(), v)
 	require.NotEqual(t, 0, v.HashCode())
 	require.Equal(t, v.HashCode(), v.HashCode())
-	require.Equal(t, `key "b" cannot added to type {"a":string}`, v.String())
+	require.Equal(t, `key "b" cannot be added to type {"a":string}`, v.String())
 }

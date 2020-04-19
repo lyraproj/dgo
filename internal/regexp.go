@@ -1,23 +1,19 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"regexp"
 
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/util"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
 	// regexpType represents an regexp type without constraints
 	regexpType int
-
-	exactRegexpType struct {
-		exactType
-		value *regexpVal
-	}
 
 	regexpVal regexp.Regexp
 )
@@ -29,7 +25,7 @@ var reflectRegexpType = reflect.TypeOf(&regexp.Regexp{})
 
 func (t regexpType) Assignable(ot dgo.Type) bool {
 	switch ot.(type) {
-	case regexpType, *exactRegexpType:
+	case *regexpVal, regexpType:
 		return true
 	}
 	return CheckAssignableTo(nil, ot, t)
@@ -64,31 +60,39 @@ func (t regexpType) String() string {
 }
 
 func (t regexpType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t regexpType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiRegexp
 }
 
-func (t *exactRegexpType) Generic() dgo.Type {
+func (v *regexpVal) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
+}
+
+func (v *regexpVal) Format(s fmt.State, format rune) {
+	doFormat((*regexp.Regexp)(v), s, format)
+}
+
+func (v *regexpVal) Generic() dgo.Type {
 	return DefaultRegexpType
 }
 
-func (t *exactRegexpType) IsInstance(v *regexp.Regexp) bool {
-	return t.value.String() == v.String()
+func (v *regexpVal) Instance(value interface{}) bool {
+	return v.Equals(value)
 }
 
-func (t *exactRegexpType) ReflectType() reflect.Type {
+func (v *regexpVal) IsInstance(ov *regexp.Regexp) bool {
+	return v.GoRegexp().String() == ov.String()
+}
+
+func (v *regexpVal) ReflectType() reflect.Type {
 	return reflectRegexpType
 }
 
-func (t *exactRegexpType) TypeIdentifier() dgo.TypeIdentifier {
+func (v *regexpVal) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiRegexpExact
-}
-
-func (t *exactRegexpType) ExactValue() dgo.Value {
-	return t.value
 }
 
 // Regexp returns the given regexp as a dgo.Regexp
@@ -124,13 +128,11 @@ func (v *regexpVal) ReflectTo(value reflect.Value) {
 }
 
 func (v *regexpVal) String() string {
-	return (*regexp.Regexp)(v).String()
+	return fmt.Sprintf(`regexp %q`, (*regexp.Regexp)(v).String())
 }
 
 func (v *regexpVal) Type() dgo.Type {
-	et := &exactRegexpType{value: v}
-	et.ExactType = et
-	return et
+	return v
 }
 
 // RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped

@@ -3,10 +3,10 @@ package streamer_test
 import (
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/streamer"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/streamer"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestDataCollector(t *testing.T) {

@@ -1,20 +1,16 @@
 package internal
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"time"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
 	timeType int
-
-	exactTimeType struct {
-		exactType
-		value *timeVal
-	}
 
 	timeVal time.Time
 )
@@ -26,7 +22,7 @@ var reflectTimeType = reflect.TypeOf(time.Time{})
 
 func (t timeType) Assignable(ot dgo.Type) bool {
 	switch ot.(type) {
-	case timeType, *exactTimeType:
+	case *timeVal, timeType:
 		return true
 	}
 	return CheckAssignableTo(nil, ot, t)
@@ -61,35 +57,11 @@ func (t timeType) String() string {
 }
 
 func (t timeType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t timeType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiTime
-}
-
-func (t *exactTimeType) Generic() dgo.Type {
-	return DefaultTimeType
-}
-
-func (t *exactTimeType) IsInstance(tv time.Time) bool {
-	return (*time.Time)(t.value).Equal(tv)
-}
-
-func (t *exactTimeType) New(arg dgo.Value) dgo.Value {
-	return newTime(t, arg)
-}
-
-func (t *exactTimeType) ReflectType() reflect.Type {
-	return reflectTimeType
-}
-
-func (t *exactTimeType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiTimeExact
-}
-
-func (t *exactTimeType) ExactValue() dgo.Value {
-	return t.value
 }
 
 func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
@@ -158,8 +130,8 @@ func (v *timeVal) SecondsWithFraction() float64 {
 	return float64(us) / 1000000.0
 }
 
-func (v *timeVal) GoTime() time.Time {
-	return *(*time.Time)(v)
+func (v *timeVal) GoTime() *time.Time {
+	return (*time.Time)(v)
 }
 
 func (v *timeVal) HashCode() int {
@@ -176,11 +148,39 @@ func (v *timeVal) ReflectTo(value reflect.Value) {
 }
 
 func (v *timeVal) String() string {
-	return (*time.Time)(v).Format(time.RFC3339Nano)
+	return fmt.Sprintf(`time %q`, (*time.Time)(v).Format(time.RFC3339Nano))
 }
 
 func (v *timeVal) Type() dgo.Type {
-	ea := &exactTimeType{value: v}
-	ea.ExactType = ea
-	return ea
+	return v
+}
+
+// Time exact type implementation
+
+func (v *timeVal) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
+}
+
+func (v *timeVal) Instance(value interface{}) bool {
+	return v.Equals(value)
+}
+
+func (v *timeVal) Generic() dgo.Type {
+	return DefaultTimeType
+}
+
+func (v *timeVal) IsInstance(tv time.Time) bool {
+	return (*time.Time)(v).Equal(tv)
+}
+
+func (v *timeVal) New(arg dgo.Value) dgo.Value {
+	return newTime(v, arg)
+}
+
+func (v *timeVal) ReflectType() reflect.Type {
+	return reflectTimeType
+}
+
+func (v *timeVal) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiTimeExact
 }

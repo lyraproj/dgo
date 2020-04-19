@@ -103,7 +103,7 @@ type (
 		ReflectedValue
 
 		// GoTime returns the Go native representation of this value
-		GoTime() time.Time
+		GoTime() *time.Time
 
 		// SecondsWithFraction returns the number of seconds since since January 1, 1970 UTC. The fraction
 		// will have nano-second precision for values in the years 1679 to 2261 and micro second precision
@@ -124,7 +124,6 @@ type (
 	// representation
 	Native interface {
 		Value
-		Freezable
 		ReflectedValue
 
 		// GoValue returns the Go native representation of this value

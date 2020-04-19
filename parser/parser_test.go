@@ -5,16 +5,16 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/dgo/stringer"
+	"github.com/tada/dgo/stringer"
 
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/internal"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestParse_default(t *testing.T) {
@@ -220,7 +220,7 @@ func TestParse_multiAliases(t *testing.T) {
 }`).(dgo.StructMapType)
 	})
 
-	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, stringer.TypeStringWithAliasMap(tp.Get(`x`).Value().(dgo.Type), am))
+	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, stringer.TypeStringWithAliasMap(tp.GetEntryType(`x`).Value().(dgo.Type), am))
 }
 
 func TestParse_mapKeyAliases(t *testing.T) {

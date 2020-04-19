@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/util"
 )
 
 type (
@@ -54,7 +54,7 @@ func (t *nativeType) ReflectType() reflect.Type {
 }
 
 func (t *nativeType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *nativeType) TypeIdentifier() dgo.TypeIdentifier {
@@ -91,24 +91,6 @@ func (v *native) Equals(other interface{}) bool {
 	return false
 }
 
-func (v *native) Freeze() {
-	if !v.Frozen() {
-		panic(fmt.Errorf(`native value cannot be frozen`))
-	}
-}
-
-func (v *native) Frozen() bool {
-	return false
-}
-
-func (v *native) FrozenCopy() dgo.Value {
-	panic(fmt.Errorf(`native value cannot be frozen`))
-}
-
-func (v *native) ThawedCopy() dgo.Value {
-	panic(fmt.Errorf(`native value cannot be copied`))
-}
-
 func (v *native) HashCode() int {
 	rv := (*reflect.Value)(v)
 	switch rv.Kind() {
@@ -126,6 +108,10 @@ func (v *native) HashCode() int {
 		return structHash(rv) * 3
 	}
 	return 1234
+}
+
+func (v *native) Format(s fmt.State, format rune) {
+	doFormat(v.GoValue(), s, format)
 }
 
 func structHash(rv *reflect.Value) int {
@@ -151,7 +137,11 @@ func (v *native) ReflectTo(value reflect.Value) {
 func (v *native) String() string {
 	rv := (*reflect.Value)(v)
 	if rv.CanInterface() {
-		if s, ok := rv.Interface().(fmt.Stringer); ok {
+		iv := rv.Interface()
+		if _, ok := iv.(fmt.Formatter); ok {
+			return fmt.Sprintf("%#v", iv)
+		}
+		if s, ok := iv.(fmt.Stringer); ok {
 			return s.String()
 		}
 	}

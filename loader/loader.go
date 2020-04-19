@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/vf"
 )
 
 type (
@@ -271,7 +271,7 @@ func (l *loader) Namespace(name string) dgo.Loader {
 				panic(fmt.Errorf(`namespace %q is already defined`, name))
 			}
 
-			// Get rid of the duplicate
+			// GetEntryType rid of the duplicate
 			ns = old.(dgo.Loader)
 		}
 	}

@@ -3,10 +3,10 @@ package util_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/util"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/util"
+	"github.com/tada/dgo/vf"
 )
 
 func TestSliceCopy(t *testing.T) {

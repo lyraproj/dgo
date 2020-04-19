@@ -3,11 +3,11 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestNotType(t *testing.T) {

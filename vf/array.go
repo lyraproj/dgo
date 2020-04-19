@@ -1,8 +1,8 @@
 package vf
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Array returns a frozen dgo.Array that represents a copy of the given value. The value can be

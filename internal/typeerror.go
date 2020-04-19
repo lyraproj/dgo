@@ -2,9 +2,8 @@ package internal
 
 import (
 	"fmt"
-	"strconv"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
@@ -32,7 +31,7 @@ func (v *mapKeyError) Equals(other interface{}) bool {
 }
 
 func (v *mapKeyError) Error() string {
-	return fmt.Sprintf("key %s cannot added to type %s", v.key, TypeString(v.mapType))
+	return fmt.Sprintf("key %q cannot be added to type %s", v.key, TypeString(v.mapType))
 }
 
 func (v *mapKeyError) HashCode() int {
@@ -57,14 +56,16 @@ func (v *typeError) Equals(other interface{}) bool {
 func (v *typeError) Error() string {
 	var what string
 	switch actual := v.actual.(type) {
-	case *exactStringType:
-		what = fmt.Sprintf(`the string %s`, strconv.Quote(actual.value.s))
-	case dgo.ExactType:
-		what = fmt.Sprintf(`the value %s`, actual.ExactValue())
+	case *hstring:
+		what = fmt.Sprintf(`the string %q`, actual.s)
 	default:
-		what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
+		if dgo.IsExact(actual) {
+			what = fmt.Sprintf(`the value %v`, actual)
+		} else {
+			what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
+		}
 	}
-	return fmt.Sprintf("%s cannot be assigned to a variable of type %s", what, TypeString(v.expected))
+	return fmt.Sprintf("%v cannot be assigned to a variable of type %s", what, TypeString(v.expected))
 }
 
 func (v *typeError) HashCode() int {

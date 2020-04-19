@@ -1,8 +1,8 @@
 package tf
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Array returns a type that represents an Array value
@@ -15,7 +15,7 @@ func Tuple(types ...interface{}) dgo.TupleType {
 	return internal.TupleType(types)
 }
 
-// VariadicTuple returns a type that represents an Array value with a variadic number of elements. Each
+// VariadicTuple returns a type that represents an Array value with a variadic number of elements. EachEntryType
 // given type determines the type of a corresponding element in an array except for the last one which
 // determines the remaining elements.
 func VariadicTuple(types ...interface{}) dgo.TupleType {

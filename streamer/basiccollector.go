@@ -1,8 +1,8 @@
 package streamer
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/vf"
 )
 
 // A BasicCollector is an extendable basic implementation of the Consumer interface

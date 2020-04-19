@@ -1,16 +1,52 @@
 package internal_test
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/util"
+
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/vf"
 )
 
-func Test_structMap_Any(t *testing.T) {
+func TestStruct(t *testing.T) {
+	type structA struct {
+		A int
+		B int
+	}
+	m := vf.Map(&structA{1, 2})
+	tp := m.(dgo.StructMapType)
+	require.Same(t, m, tp)
+	require.Assignable(t, tp, m.Type())
+	require.False(t, tp.Additional())
+	require.Instance(t, tp, m)
+	require.Equal(t, tf.Map(typ.String, typ.Integer), typ.Generic(tp))
+	require.Equal(t, 2, tp.Max())
+	require.Equal(t, 2, tp.Min())
+	require.False(t, tp.Unbounded())
+	require.Equal(t, tf.StructMapEntry(`A`, 1, true), tp.GetEntryType(`A`))
+
+	m2 := tp.(dgo.Factory).New(vf.Map(`A`, 1, `B`, 2))
+	require.Equal(t, m, m2)
+	require.Equal(t, &structA{1, 2}, m2.(dgo.Struct).GoStruct())
+	require.Equal(t, `internal_test.structA`, tp.ReflectType().String())
+
+	c := 0
+	tp.EachEntryType(func(e dgo.StructMapEntry) {
+		c++
+		require.Equal(t, c, e.Value())
+	})
+	require.Equal(t, 2, c)
+}
+
+func TestStruct_Any(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -25,7 +61,7 @@ func Test_structMap_Any(t *testing.T) {
 	}))
 }
 
-func Test_structMap_AllKeys(t *testing.T) {
+func TestStruct_AllKeys(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -40,7 +76,7 @@ func Test_structMap_AllKeys(t *testing.T) {
 	}))
 }
 
-func Test_structMap_AnyKey(t *testing.T) {
+func TestStruct_AnyKey(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -55,7 +91,7 @@ func Test_structMap_AnyKey(t *testing.T) {
 	}))
 }
 
-func Test_structMap_AnyValue(t *testing.T) {
+func TestStruct_AnyValue(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -70,7 +106,7 @@ func Test_structMap_AnyValue(t *testing.T) {
 	}))
 }
 
-func Test_structMap_ContainsKey(t *testing.T) {
+func TestStruct_ContainsKey(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -81,7 +117,7 @@ func Test_structMap_ContainsKey(t *testing.T) {
 	require.False(t, m.ContainsKey(1))
 }
 
-func Test_structMap_Copy(t *testing.T) {
+func TestStruct_Copy(t *testing.T) {
 	type structA struct {
 		A string
 		E dgo.Array
@@ -110,7 +146,7 @@ func Test_structMap_Copy(t *testing.T) {
 	require.Equal(t, `Alpha`, c.Get(`A`))
 }
 
-func Test_structMap_EachKey(t *testing.T) {
+func TestStruct_EachKey(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -126,7 +162,7 @@ func Test_structMap_EachKey(t *testing.T) {
 	require.Equal(t, vf.Values(`First`, `Second`, `Third`), vs)
 }
 
-func Test_structMap_EachValue(t *testing.T) {
+func TestStruct_EachValue(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -142,7 +178,7 @@ func Test_structMap_EachValue(t *testing.T) {
 	require.Equal(t, vf.Values(1, 2.0, `three`), vs)
 }
 
-func Test_structMap_Each(t *testing.T) {
+func TestStruct_Each(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -160,7 +196,7 @@ func Test_structMap_Each(t *testing.T) {
 	require.Equal(t, vf.Values(`First`, 1, `Second`, 2.0, `Third`, `three`), vs)
 }
 
-func Test_structMap_Get(t *testing.T) {
+func TestStruct_Get(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -180,7 +216,7 @@ func Test_structMap_Get(t *testing.T) {
 	require.Equal(t, m.Get(10), nil)
 }
 
-func Test_structMap_Find(t *testing.T) {
+func TestStruct_Find(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -195,7 +231,7 @@ func Test_structMap_Find(t *testing.T) {
 	require.Nil(t, found)
 }
 
-func Test_structMap_Freeze(t *testing.T) {
+func TestStruct_Freeze(t *testing.T) {
 	type structA struct {
 		A string
 	}
@@ -205,7 +241,7 @@ func Test_structMap_Freeze(t *testing.T) {
 	require.Panic(t, func() { m.Put(`A`, `Alpha`) }, `frozen`)
 }
 
-func Test_structMap_FrozenCopy(t *testing.T) {
+func TestStruct_FrozenCopy(t *testing.T) {
 	type structA struct {
 		A string
 		E dgo.Array
@@ -228,7 +264,7 @@ func Test_structMap_FrozenCopy(t *testing.T) {
 	require.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
 }
 
-func Test_structMap_ThawedCopy(t *testing.T) {
+func TestStruct_ThawedCopy(t *testing.T) {
 	type structA struct {
 		A string
 		E dgo.Array
@@ -250,7 +286,7 @@ func Test_structMap_ThawedCopy(t *testing.T) {
 	require.NotSame(t, c, c.FrozenCopy())
 }
 
-func Test_structMap_HashCode(t *testing.T) {
+func TestStruct_HashCode(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -261,7 +297,7 @@ func Test_structMap_HashCode(t *testing.T) {
 	require.Equal(t, m.HashCode(), m.HashCode())
 }
 
-func Test_structMap_GoStruct(t *testing.T) {
+func TestStruct_GoStruct(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -272,7 +308,7 @@ func Test_structMap_GoStruct(t *testing.T) {
 	require.True(t, ok)
 }
 
-func Test_structMap_Keys(t *testing.T) {
+func TestStruct_Keys(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -283,7 +319,7 @@ func Test_structMap_Keys(t *testing.T) {
 	require.Equal(t, vf.Strings(`A`, `B`, `C`), m.Keys())
 }
 
-func Test_structMap_Map(t *testing.T) {
+func TestStruct_Map(t *testing.T) {
 	type structA struct {
 		A string
 		B string
@@ -293,14 +329,14 @@ func Test_structMap_Map(t *testing.T) {
 	require.Equal(t,
 		vf.Map(map[string]string{`A`: `the a`, `B`: `the b`, `C`: `the c`}),
 		a.Map(func(e dgo.MapEntry) interface{} {
-			return strings.Replace(e.Value().String(), `value`, `the`, 1)
+			return strings.Replace(fmt.Sprintf("%v", e.Value()), `value`, `the`, 1)
 		}))
 	require.Equal(t, vf.Map(`A`, nil, `B`, vf.Nil, `C`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil
 	}))
 }
 
-func Test_structMap_Merge(t *testing.T) {
+func TestStruct_Merge(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -323,7 +359,7 @@ func Test_structMap_Merge(t *testing.T) {
 	require.Same(t, m1, vf.Map().Merge(m1))
 }
 
-func Test_structMap_Put(t *testing.T) {
+func TestStruct_Put(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -348,7 +384,7 @@ func Test_structMap_Put(t *testing.T) {
 	require.Equal(t, s.E, []string{`Echo`, `Foxtrot`})
 }
 
-func Test_structMap_PutAll(t *testing.T) {
+func TestStruct_PutAll(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -360,7 +396,7 @@ func Test_structMap_PutAll(t *testing.T) {
 	require.Equal(t, s.B, 32)
 }
 
-func Test_structMap_ReflectTo(t *testing.T) {
+func TestStruct_ReflectTo(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -401,7 +437,7 @@ func Test_structMap_ReflectTo(t *testing.T) {
 	require.NotSame(t, &x.B, &s)
 }
 
-func Test_structMap_Remove(t *testing.T) {
+func TestStruct_Remove(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -412,7 +448,19 @@ func Test_structMap_Remove(t *testing.T) {
 	require.Panic(t, func() { m.RemoveAll(vf.Values(`A`, `B`)) }, `cannot be removed`)
 }
 
-func Test_structMap_String(t *testing.T) {
+func TestStruct_AppendTo(t *testing.T) {
+	type structA struct {
+		A string
+		B int
+	}
+	v := vf.Map(&structA{A: `hello`, B: 2})
+	require.Equal(t, `{
+  "A": "hello",
+  "B": 2
+}`, util.ToIndentedStringERP(v))
+}
+
+func TestStruct_String(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -422,7 +470,7 @@ func Test_structMap_String(t *testing.T) {
 	require.Equal(t, `{"A":"Alpha","B":32}`, m.String())
 }
 
-func Test_structMap_StringKeys(t *testing.T) {
+func TestStruct_StringKeys(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -432,7 +480,7 @@ func Test_structMap_StringKeys(t *testing.T) {
 	require.True(t, m.StringKeys())
 }
 
-func Test_structMap_Type(t *testing.T) {
+func TestStruct_Type(t *testing.T) {
 	type structA struct {
 		A string
 		B int
@@ -444,7 +492,33 @@ func Test_structMap_Type(t *testing.T) {
 	require.Instance(t, tp, m)
 }
 
-func Test_structMap_Values(t *testing.T) {
+func TestStruct_Validate(t *testing.T) {
+	type structA struct {
+		A int
+		B int
+	}
+	s := structA{A: 3, B: 4}
+	tp := vf.Map(&s).Type().(dgo.MapValidation)
+	es := tp.Validate(nil, vf.Map(`A`, 3, `B`, 4))
+	require.Equal(t, 0, len(es))
+
+	es = tp.Validate(nil, vf.Map(`A`, 2, `B`, 4))
+	require.Equal(t, 1, len(es))
+}
+
+func TestStruct_ValidateVerbose(t *testing.T) {
+	type structA struct {
+		A int
+		B int
+	}
+	s := structA{A: 3, B: 4}
+	tp := vf.Map(&s).Type().(dgo.MapValidation)
+	out := util.NewIndenter(``)
+	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
+	require.Equal(t, `value is not a Map`, out.String())
+}
+
+func TestStruct_Values(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -455,7 +529,7 @@ func Test_structMap_Values(t *testing.T) {
 	require.True(t, m.Values().SameValues(vf.Values(1, 2.0, `three`)))
 }
 
-func Test_structMap_With(t *testing.T) {
+func TestStruct_With(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -466,7 +540,7 @@ func Test_structMap_With(t *testing.T) {
 	require.Equal(t, m, vf.Map(`First`, 1, `Second`, 2.0, `Third`, `three`, `Fourth`, `quad`))
 }
 
-func Test_structMap_Without(t *testing.T) {
+func TestStruct_Without(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
@@ -490,7 +564,7 @@ func Test_structMap_Without(t *testing.T) {
 	require.Same(t, m, om)
 }
 
-func Test_structMap_WithoutAll(t *testing.T) {
+func TestStruct_WithoutAll(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64

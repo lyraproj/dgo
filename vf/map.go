@@ -3,8 +3,8 @@ package vf
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Map creates an immutable dgo.Map from the given slice which must have 0, 1, or an
@@ -35,9 +35,4 @@ func MapWithCapacity(capacity int) dgo.Map {
 // created Map will be mutable and its type will be derived from the reflected map.
 func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Map {
 	return internal.FromReflectedMap(rm, frozen).(dgo.Map)
-}
-
-// MapEntry returns a new MapEntry instance with the given key and value
-func MapEntry(k, v interface{}) dgo.MapEntry {
-	return internal.NewMapEntry(k, v)
 }

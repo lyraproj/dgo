@@ -3,7 +3,7 @@ package vf_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleSensitive() {

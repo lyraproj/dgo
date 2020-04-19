@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/util"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleToIndentedStringERP() {
@@ -38,4 +38,11 @@ func TestToIndentedStringERP_nonStringer(t *testing.T) {
 	ei := util.NewERPIndenter(` `)
 	ei.AppendValue(struct{ A string }{`hello`})
 	require.Equal(t, `struct { A string }{A:"hello"}`, ei.String())
+}
+
+func ExampleToStringERP_recursion() {
+	v := vf.MutableMap(`a`, `x`)
+	v.Put(`b`, v)
+	fmt.Println(util.ToStringERP(v))
+	// Output: {"a":"x","b":<recursive self reference to map>}
 }

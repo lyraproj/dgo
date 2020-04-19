@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/vf"
 )
 
 const (
@@ -211,7 +211,7 @@ func (j *jsonEncoder) delimit(doer dgo.Doer) {
 		assertOk(j.out.Write([]byte{','}))
 		doer()
 		j.state = afterKey
-	default: // Element
+	default: // ElementTypeAt
 		assertOk(j.out.Write([]byte{','}))
 		doer()
 	}

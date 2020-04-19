@@ -3,9 +3,9 @@ package util_test
 import (
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/util"
 )
 
 func TestReader_Next(t *testing.T) {

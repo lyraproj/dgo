@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 var reflectValueType = reflect.TypeOf((*dgo.Value)(nil)).Elem()

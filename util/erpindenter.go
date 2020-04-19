@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type erpIndenter struct {

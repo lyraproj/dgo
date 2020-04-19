@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/util"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/util"
 )
 
 type badWriter int

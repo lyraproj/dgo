@@ -35,7 +35,7 @@ type (
 		Freezable
 		Value
 
-		// Each calls the given function once for each value of this Iterable.
+		// EachEntryType calls the given function once for each value of this Iterable.
 		Each(actor Consumer)
 
 		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
@@ -95,7 +95,7 @@ type (
 		// for every element that is an array, extract its elements into the new array.
 		Flatten() Array
 
-		// Get returns the value at the given position. A negative position or a position
+		// GetEntryType returns the value at the given position. A negative position or a position
 		// that is greater or equal to the length of the array will result in a panic.
 		Get(position int) Value
 
@@ -195,7 +195,7 @@ type (
 	Arguments interface {
 		Array
 
-		// Arg is like Get, but it will an illegal argument error unless the value at the given position is not
+		// Arg is like GetEntryType, but it will an illegal argument error unless the value at the given position is not
 		// of the correct type or if the given position is beyond the size of the array
 		Arg(funcName string, n int, typ Type) Value
 
@@ -219,8 +219,8 @@ type (
 		// Len returns the number of types in this tuple.
 		Len() int
 
-		// Element returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
-		Element(int) Type
+		// ElementTypeAt returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
+		ElementTypeAt(int) Type
 
 		// ElementTypes returns the types of the elements for instances of this type.
 		ElementTypes() Array

@@ -199,5 +199,9 @@ func (ti TypeIdentifier) String() string {
 
 // IsExact returns true if the given type represents an exact value.
 func IsExact(value Type) bool {
-	return value.TypeIdentifier() > exactStart
+	exact := value.TypeIdentifier() > exactStart
+	if !exact {
+		_, exact = value.(ExactType)
+	}
+	return exact
 }

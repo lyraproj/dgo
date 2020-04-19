@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
@@ -104,7 +104,7 @@ func (a *alias) freezeAttempt() error {
 }
 
 func (a *alias) Reference() dgo.String {
-	return a.StringType.(dgo.ExactType).ExactValue().(dgo.String)
+	return a.StringType.(dgo.String)
 }
 
 func (a *alias) TypeIdentifier() dgo.TypeIdentifier {
@@ -122,7 +122,7 @@ func init() {
 			DefaultIntegerType,
 			DefaultFloatType,
 			DefaultBooleanType,
-			DefaultNilType,
+			Nil,
 			ArrayType([]interface{}{dataAlias}),
 			MapType([]interface{}{DefaultStringType, dataAlias})})
 		b.Add(data, dataAlias.Reference())
@@ -138,7 +138,7 @@ func init() {
 			DefaultRegexpType,
 			DefaultSensitiveType,
 			DefaultTimeType,
-			DefaultNilType,
+			Nil,
 			ArrayType([]interface{}{richDataAlias}),
 			MapType([]interface{}{AnyOfType([]interface{}{DefaultStringType, DefaultIntegerType, DefaultFloatType}), richDataAlias})})
 		b.Add(richData, richDataAlias.Reference())

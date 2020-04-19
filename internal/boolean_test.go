@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestBooleanDefault(t *testing.T) {
@@ -38,7 +38,7 @@ func TestBooleanType(t *testing.T) {
 	require.NotInstance(t, typ.False, true)
 	require.Assignable(t, typ.Boolean, tp)
 	require.NotAssignable(t, tp, typ.Boolean)
-	require.NotEqual(t, v, tp)
+	require.Equal(t, v, tp)
 	require.True(t, tp.IsInstance(true))
 	require.False(t, tp.IsInstance(false))
 	require.Equal(t, `true`, tp.String())
@@ -51,7 +51,7 @@ func TestBooleanType(t *testing.T) {
 	require.NotInstance(t, typ.True, v)
 	require.Assignable(t, typ.Boolean, tp)
 	require.NotAssignable(t, tp, typ.Boolean)
-	require.NotEqual(t, v, tp)
+	require.Equal(t, v, tp)
 	require.True(t, tp.IsInstance(false))
 	require.False(t, tp.IsInstance(true))
 	require.Equal(t, `false`, tp.String())

@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/util"
 )
 
 // deepEqual is implemented by values that need DeepEqual comparisons.

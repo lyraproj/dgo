@@ -1,17 +1,18 @@
 package internal_test
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/internal"
 
-	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/dgo"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func TestArray_max_min(t *testing.T) {
@@ -39,16 +40,25 @@ func TestArray_explicit_unbounded(t *testing.T) {
 }
 
 func TestArray_badOneArg(t *testing.T) {
-	require.Panic(t, func() { tf.Array(`bad`) }, `illegal argument`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(n), nil, nil)
+	require.Panic(t, func() { tf.Array(n) }, `illegal argument`)
 }
 
 func TestArray_badTwoArg(t *testing.T) {
-	require.Panic(t, func() { tf.Array(`bad`, 2) }, `illegal argument 1`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(n), nil, nil)
+	require.Panic(t, func() { tf.Array(n, 2) }, `illegal argument 1`)
 	require.Panic(t, func() { tf.Array(typ.String, `bad`) }, `illegal argument 2`)
 }
 
 func TestArray_badThreeArg(t *testing.T) {
-	require.Panic(t, func() { tf.Array(`bad`, 2, 2) }, `illegal argument 1`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(n), nil, nil)
+	require.Panic(t, func() { tf.Array(n, 2, 2) }, `illegal argument 1`)
 	require.Panic(t, func() { tf.Array(typ.String, `bad`, 2) }, `illegal argument 2`)
 	require.Panic(t, func() { tf.Array(typ.String, 2, `bad`) }, `illegal argument 3`)
 }
@@ -168,8 +178,8 @@ func TestExactArrayType(t *testing.T) {
 	require.NotAssignable(t, tp, typ.Array)
 	require.NotAssignable(t, tp, tf.Array(et, 1, 1))
 
-	require.Equal(t, vf.String(`a`).Type(), tp.Element(0))
-	require.Equal(t, vf.String(`b`).Type(), tp.Element(1))
+	require.Equal(t, vf.String(`a`).Type(), tp.ElementTypeAt(0))
+	require.Equal(t, vf.String(`b`).Type(), tp.ElementTypeAt(1))
 
 	require.Assignable(t, tp, tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type()))
 	require.NotAssignable(t, tp, tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type(), vf.String(`c`).Type()))
@@ -208,7 +218,6 @@ func TestArrayElementType_singleElement(t *testing.T) {
 	require.Instance(t, et, `hello`)
 	require.NotInstance(t, et, `world`)
 	require.Equal(t, et, vf.Strings(`hello`).Type().(dgo.ArrayType).ElementType())
-	//	require.Equal(t, et.(dgo.ExactType).Value(), vf.Strings(`hello`))
 	require.NotEqual(t, et, vf.Strings(`hello`).Type().(dgo.ArrayType))
 
 	require.NotEqual(t, 0, et.HashCode())
@@ -775,6 +784,23 @@ func TestArray_FrozenEqual(t *testing.T) {
 	require.NotSame(t, b, b.Copy(false))
 }
 
+func TestArray_Format(t *testing.T) {
+	a := vf.Values(1, 3)
+	require.Equal(t, `[]int{1, 3}`, fmt.Sprintf("%#v", a))
+}
+
+func TestArray_Format_namedElementType(t *testing.T) {
+	defer tf.RemoveNamed(`testNamed`)
+	tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
+	a := vf.Values(testNamed(1), testNamed(3))
+	require.Equal(t, `[]testNamed{1, 3}`, fmt.Sprintf("%#v", a))
+}
+
+func TestArray_Format_nativeElementType(t *testing.T) {
+	a := vf.Values(&testStruct{A: `a`}, &testStruct{A: `b`})
+	require.Equal(t, `[]*internal_test.testStruct{&internal_test.testStruct{A:"a"}, &internal_test.testStruct{A:"b"}}`, fmt.Sprintf("%#v", a))
+}
+
 func TestArray_IndexOf(t *testing.T) {
 	a := vf.Values(1, nil, 3)
 	require.Equal(t, 2, a.IndexOf(3))
@@ -794,7 +820,7 @@ func TestArray_Insert(t *testing.T) {
 func TestArray_Map(t *testing.T) {
 	a := vf.Strings(`a`, `b`, `c`)
 	require.Equal(t, vf.Strings(`d`, `e`, `f`), a.Map(func(e dgo.Value) interface{} {
-		return string([]byte{e.String()[0] + 3})
+		return string([]byte{e.String()[1] + 3})
 	}))
 	require.Equal(t, vf.Values(vf.Nil, vf.Nil, vf.Nil), a.Map(func(e dgo.Value) interface{} {
 		return nil

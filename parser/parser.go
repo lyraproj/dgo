@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
+	"github.com/tada/dgo/util"
 )
 
 // States:
@@ -235,17 +235,6 @@ func (p *Base) PopLast() dgo.Value {
 	return v
 }
 
-// PopLastType pops the last value from the value stack as a type.
-func (p *Base) PopLastType() dgo.Type {
-	last := p.Len() - 1
-	v := p.d[last]
-	p.d = p.d[:last]
-	if tp, ok := v.(dgo.Type); ok {
-		return tp
-	}
-	return v.Type()
-}
-
 // StringReader returns the reader in use by this parser
 func (p *Base) StringReader() *util.StringReader {
 	return p.sr
@@ -281,7 +270,7 @@ func (p *parser) list(endChar int) {
 			expectEntry = 0
 			p.anyOf(t)
 			t = p.NextToken()
-			et := internal.ArrayType([]interface{}{p.PopLastType(), 0, math.MaxInt64})
+			et := internal.ArrayType([]interface{}{p.PopLast(), 0, math.MaxInt64})
 			p.Append(et)
 		}
 
@@ -321,15 +310,7 @@ func (p *parser) list(endChar int) {
 func makeTupleType(as []dgo.Value, variadic bool) dgo.TupleType {
 	// Convert literal values to types and create a tupleType
 	ln := len(as)
-	ts := make([]interface{}, ln)
-	for i := 0; i < ln; i++ {
-		v := as[i]
-		t, ok := v.(dgo.Type)
-		if !ok {
-			t = v.Type()
-		}
-		ts[i] = t
-	}
+	ts := allTypes(as)
 	if variadic {
 		ln--
 		ts[ln] = ts[ln].(dgo.ArrayType).ElementType()
@@ -346,18 +327,12 @@ func makeStructType(as []dgo.Value, ellipsis bool) dgo.MapType {
 		hn := as[i].(dgo.MapEntry)
 		k := hn.Key()
 		v := hn.Value()
-		kt, isType := k.(dgo.Type)
-		if !isType {
-			kt = k.Type()
-		}
+		kt := internal.AsType(k)
 		ov, optional := v.(*optionalValue)
 		if optional {
 			v = ov.Value
 		}
-		vt, isType := v.(dgo.Type)
-		if !isType {
-			vt = v.Type()
-		}
+		vt := internal.AsType(v)
 		entries[i] = internal.StructMapEntry(kt, vt, !optional)
 	}
 	return internal.StructMapTypeUnresolved(ellipsis, entries)
@@ -495,7 +470,7 @@ func (p *parser) unary(t *Token) {
 		}
 	}
 	if negate {
-		nt := internal.NotType(p.PopLastType())
+		nt := internal.NotType(p.PopLast().(dgo.Type))
 		p.Append(nt)
 	}
 }
@@ -508,7 +483,7 @@ func (p *parser) mapExpression() dgo.Value {
 
 	// Deal with key type and size constraint
 	p.anyOf(p.NextToken())
-	keyType := p.PopLastType()
+	keyType := p.PopLast()
 
 	n = p.NextToken()
 	var szc dgo.Array
@@ -521,7 +496,7 @@ func (p *parser) mapExpression() dgo.Value {
 	}
 
 	p.typeExpression(p.NextToken())
-	params := internal.WrapSlice([]dgo.Value{keyType, p.PopLastType()})
+	params := internal.WrapSlice([]dgo.Value{keyType, p.PopLast()})
 	if szc != nil {
 		params.AddAll(szc)
 	}
@@ -536,12 +511,12 @@ func (p *parser) meta() dgo.Value {
 
 	// Deal with key type and size constraint
 	p.anyOf(p.NextToken())
-	tp := p.PopLastType()
+	tp := p.PopLast()
 	t := p.NextToken()
 	if t.Type != ']' {
 		panic(badSyntax(t, exRightBracket))
 	}
-	return internal.MetaType(tp)
+	return internal.MetaType(tp.(dgo.Type))
 }
 
 func (p *parser) string() dgo.Value {
@@ -576,7 +551,7 @@ func (p *parser) funcExpression() dgo.Value {
 		panic(badSyntax(t, exLeftParen))
 	}
 	p.list(')')
-	args := p.PopLastType().(dgo.TupleType)
+	args := p.PopLast().(dgo.TupleType)
 	var returns dgo.TupleType = internal.EmptyTupleType
 	t = p.PeekToken()
 
@@ -584,12 +559,12 @@ func (p *parser) funcExpression() dgo.Value {
 	case t.Type == '(':
 		p.NextToken()
 		p.list(')')
-		returns = p.PopLastType().(dgo.TupleType)
+		returns = p.PopLast().(dgo.TupleType)
 	case isExpressionEnd(rune(t.Type)):
 		break
 	default:
 		p.anyOf(p.NextToken())
-		returns = internal.TupleType([]interface{}{p.PopLastType()})
+		returns = internal.TupleType([]interface{}{p.PopLast()})
 	}
 	return internal.FunctionType(args, returns)
 }
@@ -709,7 +684,7 @@ func (p *parser) array() dgo.Value {
 	p.params()
 	params := p.PopLast().(dgo.Array)
 	p.typeExpression(p.NextToken())
-	params.Insert(0, p.PopLastType())
+	params.Insert(0, p.PopLast())
 	return internal.ArrayType(params.InterfaceSlice())
 }
 
@@ -736,7 +711,7 @@ func (p *parser) aliasDeclaration(t *Token) dgo.Value {
 			p.NextToken() // skip '='
 			p.sc.Add(NewAlias(s), s)
 			p.anyOf(p.NextToken())
-			tp = p.PopLastType()
+			tp = p.PopLast()
 			p.sc.Add(tp.(dgo.Type), s)
 			return tp
 		}
@@ -802,12 +777,7 @@ func allTypes(a []dgo.Value) []interface{} {
 	l := len(a)
 	c := make([]interface{}, len(a))
 	for i := 0; i < l; i++ {
-		v := a[i]
-		if tv, ok := v.(dgo.Type); ok {
-			c[i] = tv
-		} else {
-			c[i] = v.Type()
-		}
+		c[i] = internal.AsType(a[i])
 	}
 	return c
 }

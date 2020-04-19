@@ -3,8 +3,8 @@ package vf
 import (
 	"io"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 // Binary creates a new Binary based on the given slice. If frozen is true, the

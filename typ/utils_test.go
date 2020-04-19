@@ -3,7 +3,7 @@ package typ
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleGeneric() {
@@ -12,14 +12,6 @@ func ExampleGeneric() {
 	fmt.Println(Generic(vt))
 
 	// Output:
-	// {"hello","world"}
+	// [hello world]
 	// []string
-}
-
-func ExampleAsType() {
-	v := vf.String(`hello`)
-	fmt.Println(AsType(v))
-
-	// Output:
-	// "hello"
 }

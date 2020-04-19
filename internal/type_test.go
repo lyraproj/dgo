@@ -5,11 +5,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
 )
 
 func TestFromReflected(t *testing.T) {

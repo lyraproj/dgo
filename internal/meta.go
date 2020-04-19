@@ -3,7 +3,7 @@ package internal
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 var reflectTypeType = reflect.TypeOf((*dgo.Type)(nil)).Elem()
@@ -74,23 +74,15 @@ func (t *metaType) Instance(v interface{}) bool {
 }
 
 func (t *metaType) New(arg dgo.Value) dgo.Value {
-	args, ok := arg.(dgo.Arguments)
-	if ok {
+	if args, ok := arg.(dgo.Arguments); ok {
 		args.AssertSize(`type`, 1, 1)
 		arg = args.Get(0)
 	}
 	var tv dgo.Type
-	switch arg := arg.(type) {
-	case dgo.Type:
-		tv = arg
-	case dgo.String:
-		v := Parse(arg.GoString())
-		tv, ok = v.(dgo.Type)
-		if !ok {
-			tv = v.Type()
-		}
-	default:
-		panic(illegalArgument(`type`, `type|string`, []interface{}{arg}, 0))
+	if s, ok := arg.(dgo.String); ok {
+		tv = AsType(Parse(s.GoString()))
+	} else {
+		tv = AsType(arg)
 	}
 	if !t.Instance(tv) {
 		panic(IllegalAssignment(t, tv))

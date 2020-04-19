@@ -3,9 +3,9 @@ package tf_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleArray() {
@@ -20,7 +20,7 @@ func ExampleArray() {
 }
 
 func ExampleArray_min() {
-	tp := tf.Array(2)
+	tp := tf.Array(typ.Any, 2)
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
 	fmt.Println(tp.Instance(vf.Values(`hello`)))
 	// Output:
@@ -38,7 +38,7 @@ func ExampleArray_type() {
 }
 
 func ExampleArray_min_max() {
-	tp := tf.Array(1, 2)
+	tp := tf.Array(typ.Any, 1, 2)
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42, `word`)))
 	// Output:

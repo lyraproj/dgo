@@ -3,7 +3,7 @@ package internal
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 // anyType represents all possible values
@@ -40,7 +40,7 @@ func (t anyType) String() string {
 }
 
 func (t anyType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t anyType) TypeIdentifier() dgo.TypeIdentifier {

@@ -6,7 +6,7 @@ import (
 	"math"
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 type (
@@ -60,7 +60,7 @@ func createExactMap(keys, values []dgo.Value) dgo.StructMapType {
 	l := len(keys)
 	m := MapWithCapacity(l)
 	for i := 0; i < l; i++ {
-		m.Put(keys[i].(dgo.ExactType).ExactValue(), values[i].(dgo.ExactType).ExactValue())
+		m.Put(ExactValue(keys[i]), ExactValue(values[i]))
 	}
 	return m.Type().(dgo.StructMapType)
 }
@@ -98,16 +98,12 @@ func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 
 	// turn dgo|type into type
 	asType := func(v dgo.Value) dgo.Type {
-		tp, ok := v.(dgo.Type)
-		if !ok {
-			var s dgo.String
-			if s, ok = v.(dgo.String); ok {
-				v = Parse(s.GoString())
-				tp, ok = v.(dgo.Type)
-			}
-			if !ok {
-				tp = v.Type()
-			}
+		var tp dgo.Type
+		s, ok := v.(dgo.String)
+		if ok {
+			tp = AsType(Parse(s.GoString()))
+		} else {
+			tp = AsType(v)
 		}
 		return tp
 	}
@@ -198,14 +194,14 @@ func (t *structType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bo
 			}
 		}
 		return t.additional || oc == len(oks)
-	case *exactMapType:
-		ov := ot.value
+	case *hashMap:
+		ov := ot
 		return Instance(guard, t, ov)
 	}
 	return CheckAssignableTo(guard, other, t)
 }
 
-func (t *structType) Each(actor func(dgo.StructMapEntry)) {
+func (t *structType) EachEntryType(actor func(dgo.StructMapEntry)) {
 	ks := t.keys.slice
 	vs := t.values.slice
 	rs := t.required
@@ -270,11 +266,8 @@ func (t *structType) DeepInstance(guard dgo.RecursionGuard, value interface{}) b
 	return false
 }
 
-func (t *structType) Get(key interface{}) dgo.StructMapEntry {
-	kv := Value(key)
-	if _, ok := kv.(dgo.Type); !ok {
-		kv = kv.Type()
-	}
+func (t *structType) GetEntryType(key interface{}) dgo.StructMapEntry {
+	kv := AsType(Value(key))
 	i := t.keys.IndexOf(kv)
 	if i >= 0 {
 		return StructMapEntry(kv, t.values.slice[i], t.required[i])
@@ -343,7 +336,7 @@ func (t *structType) String() string {
 }
 
 func (t *structType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *structType) TypeIdentifier() dgo.TypeIdentifier {
@@ -376,7 +369,7 @@ func validate(t dgo.StructMapType, keyLabel func(key dgo.Value) string, value in
 	if keyLabel == nil {
 		keyLabel = parameterLabel
 	}
-	t.Each(func(e dgo.StructMapEntry) {
+	t.EachEntryType(func(e dgo.StructMapEntry) {
 		ek := e.Key().(dgo.ExactType).ExactValue()
 		if v := pm.Get(ek); v != nil {
 			ev := e.Value().(dgo.Type)
@@ -388,7 +381,7 @@ func validate(t dgo.StructMapType, keyLabel func(key dgo.Value) string, value in
 		}
 	})
 	pm.EachKey(func(k dgo.Value) {
-		if t.Get(k) == nil {
+		if t.GetEntryType(k) == nil {
 			errs = append(errs, fmt.Errorf(`unknown %s`, keyLabel(k)))
 		}
 	})
@@ -403,7 +396,7 @@ func validateVerbose(t dgo.StructMapType, value interface{}, out dgo.Indenter) b
 	}
 
 	inner := out.Indent()
-	t.Each(func(e dgo.StructMapEntry) {
+	t.EachEntryType(func(e dgo.StructMapEntry) {
 		ek := e.Key().(dgo.ExactType).ExactValue()
 		ev := e.Value().(dgo.Type)
 		out.Printf(`Validating '%s' against definition %s`, ek, ev)
@@ -416,7 +409,7 @@ func validateVerbose(t dgo.StructMapType, value interface{}, out dgo.Indenter) b
 				ok = false
 				inner.Append(`FAILED!`)
 				inner.NewLine()
-				inner.Printf(`Reason: expected a value of type %s, got %s`, ev, v.Type())
+				inner.Printf(`Reason: expected a value of type %s, got %#v`, ev, v)
 			}
 		} else if e.Required() {
 			ok = false
@@ -427,7 +420,7 @@ func validateVerbose(t dgo.StructMapType, value interface{}, out dgo.Indenter) b
 		out.NewLine()
 	})
 	pm.EachKey(func(k dgo.Value) {
-		if t.Get(k) == nil {
+		if t.GetEntryType(k) == nil {
 			ok = false
 			out.Printf(`Validating '%s'`, k)
 			inner.NewLine()
@@ -454,13 +447,7 @@ func (t *structType) ValueType() dgo.Type {
 // StructMapEntry returns a new StructMapEntry initiated with the given parameters
 func StructMapEntry(key interface{}, value interface{}, required bool) dgo.StructMapEntry {
 	kv := Value(key)
-	if _, ok := kv.(dgo.Type); !ok {
-		kv = kv.Type()
-	}
 	vv := Value(value)
-	if _, ok := vv.(dgo.Type); !ok {
-		vv = vv.Type()
-	}
 	return &structEntry{mapEntry: mapEntry{key: kv, value: vv}, required: required}
 }
 

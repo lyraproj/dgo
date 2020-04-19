@@ -1,7 +1,7 @@
 package streamer
 
 import (
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 // A Consumer is used by a Data streaming mechanism that maintains a reference index

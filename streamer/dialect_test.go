@@ -3,16 +3,16 @@ package streamer_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
 
-	"github.com/lyraproj/dgo/streamer"
+	"github.com/tada/dgo/streamer"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	require "github.com/tada/dgo/dgo_test"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
 func TestDgoDialect_names(t *testing.T) {

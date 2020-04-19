@@ -29,7 +29,7 @@ type (
 
 	// Keyed is the simples possible interface for a key store.
 	Keyed interface {
-		// Get returns the value for the given key. The method will return nil when the key is not found. A
+		// GetEntryType returns the value for the given key. The method will return nil when the key is not found. A
 		// vf.Nil is returned if the key is found but associated with nil.
 		Get(key interface{}) Value
 	}
@@ -157,15 +157,18 @@ type (
 		// have additional entries.
 		Additional() bool
 
-		// Each iterates over each entry of the StructMapType
-		Each(actor func(StructMapEntry))
+		// EachEntryType iterates over each entry of the StructMapType
+		EachEntryType(actor func(StructMapEntry))
 
-		// Get returns the StructMapEntry that is identified with the given key
-		Get(key interface{}) StructMapEntry
+		// GetEntryType returns the StructMapEntry that is identified with the given key
+		GetEntryType(key interface{}) StructMapEntry
 
 		// Len returns the number of StructEntrys in this StructMapType
 		Len() int
+	}
 
+	// MapValidation provides methods for validate a Map against a MapType as a set of named parameters
+	MapValidation interface {
 		// Validate checks that the given value represents a Map which is an instance of this struct and returns a
 		// possibly empty slice of errors explaining why that's not the case. Errors are generated if a required key
 		// is missing, not recognized, or if it is of incorrect type.

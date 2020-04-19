@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/typ"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
+	"github.com/tada/dgo/typ"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/vf"
 )
 
 type teststruct int
@@ -36,6 +36,14 @@ func (t *testStruct) String() string {
 	return t.A
 }
 
+type testStructFormat struct {
+	A string
+}
+
+func (t *testStructFormat) Format(s fmt.State, _ rune) {
+	_, _ = s.Write([]byte(`hello from testStruct Format`))
+}
+
 func TestNative(t *testing.T) {
 	c, ok := vf.Value(make(chan bool)).(dgo.Native)
 	require.True(t, ok)
@@ -46,11 +54,6 @@ func TestNative(t *testing.T) {
 	require.NotEqual(t, &testStruct{`a`}, reflect.TypeOf)
 	require.NotEqual(t, &testStruct{`a`}, `ValueOf`)
 	require.NotEqual(t, &testStruct{`a`}, vf.Value(`ValueOf`))
-
-	require.False(t, c.Frozen())
-	require.Panic(t, func() { c.Freeze() }, `cannot be frozen`)
-	require.Panic(t, func() { c.FrozenCopy() }, `cannot be frozen`)
-	require.Panic(t, func() { c.ThawedCopy() }, `cannot be copied`)
 
 	require.NotEqual(t, 0, s.HashCode())
 	require.Equal(t, s.HashCode(), s.HashCode())
@@ -66,6 +69,14 @@ func TestNative(t *testing.T) {
 	s, ok = vf.Value(&testStructNoStringer{`a`}).(dgo.Native)
 	require.True(t, ok)
 	require.Equal(t, `<*internal_test.testStructNoStringer Value>`, s.String())
+}
+
+func TestNative_Format(t *testing.T) {
+	require.Equal(t, `hello from testStruct Format`, fmt.Sprintf("%v", vf.Value(&testStructFormat{})))
+}
+
+func TestNative_Format_from_String(t *testing.T) {
+	require.Equal(t, `hello from testStruct Format`, vf.Value(&testStructFormat{}).String())
 }
 
 func TestNativeType(t *testing.T) {

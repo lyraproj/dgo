@@ -3,9 +3,9 @@ package tf_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/tf"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleMap_min() {
@@ -18,7 +18,7 @@ func ExampleMap_min() {
 }
 
 func ExampleMap_min_max() {
-	tp := tf.Map(1, 2)
+	tp := tf.Map(typ.String, typ.Integer, 1, 2)
 	fmt.Println(tp.Instance(vf.Map(`a`, 42, `b`, 84)))
 	fmt.Println(tp.Instance(vf.Map(`a`, 42, `b`, 84, `c`, 126)))
 	// Output:

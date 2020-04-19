@@ -3,27 +3,27 @@ package vf_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/typ"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/typ"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleValues() {
-	fmt.Println(vf.Values(`hello`, 1, 2.3, true, []byte{1, 2, 3}))
-	// Output: {"hello",1,2.3,true,AQID}
+	fmt.Printf("%#v\n", vf.Values(`hello`, 1, 2.3, true, []byte{1, 2, 3}))
+	// Output: []any{"hello", 1, 2.3, true, []byte{0x1, 0x2, 0x3}}
 }
 
 func ExampleStrings() {
-	fmt.Println(vf.Strings(`one`, `two`))
-	// Output: {"one","two"}
+	fmt.Printf("%#v\n", vf.Strings(`one`, `two`))
+	// Output: []string{"one", "two"}
 }
 
 func ExampleMutableValues() {
 	a := vf.MutableValues()
 	a.Add(32)
-	fmt.Println(a)
-	// Output: {32}
+	fmt.Printf("%#v\n", a)
+	// Output: []int{32}
 }
 
 func ExampleArguments() {

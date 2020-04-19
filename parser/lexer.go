@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/internal"
 
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/util"
 )
 
 const (
@@ -70,11 +70,10 @@ type Token struct {
 }
 
 func tokenString(t *Token) (s string) {
-	tt := t.Type
-	if t == nil || tt == end {
+	if t == nil || t.Type == end {
 		return "EOT"
 	}
-	switch tt {
+	switch t.Type {
 	case identifier, integer, float, dotdot, dotdotdot:
 		s = t.Value
 	case regexpLiteral:
@@ -98,10 +97,11 @@ func badToken(r rune) error {
 
 func nextToken(sr *util.StringReader) (t *Token) {
 	for {
+		var t *Token
 		r := sr.Next()
 		switch r {
 		case 0:
-			return &Token{``, end}
+			t = &Token{``, end}
 		case ' ', '\t', '\n':
 			continue
 		case '`':
@@ -132,13 +132,12 @@ func nextToken(sr *util.StringReader) (t *Token) {
 				util.WriteRune(buf, r)
 			}
 			tkn := ConsumeNumber(sr, n, buf, integer)
-			return &Token{buf.String(), tkn}
+			t = &Token{buf.String(), tkn}
 		default:
 			t = buildToken(r, sr)
 		}
-		break
+		return t
 	}
-	return t
 }
 
 func buildToken(r rune, sr *util.StringReader) *Token {

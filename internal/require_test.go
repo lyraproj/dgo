@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 func ensureFailed(t *testing.T, f func(t *testing.T)) {

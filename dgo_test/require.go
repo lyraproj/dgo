@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 )
 
 func errorlog(t *testing.T, dflt string, args []interface{}) {

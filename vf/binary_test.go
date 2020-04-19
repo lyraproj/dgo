@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/vf"
 )
 
 func ExampleBinary_frozen() {
@@ -14,8 +14,8 @@ func ExampleBinary_frozen() {
 	bs[0] = 3
 	fmt.Println(b)
 	// Output:
-	// AQID
-	// AQID
+	// [1 2 3]
+	// [1 2 3]
 }
 
 func ExampleBinary_mutable() {
@@ -25,8 +25,8 @@ func ExampleBinary_mutable() {
 	bs[0] = 3
 	fmt.Println(b)
 	// Output:
-	// AQID
-	// AwID
+	// [1 2 3]
+	// [3 2 3]
 }
 
 func ExampleBinaryFromString() {
@@ -45,5 +45,5 @@ func ExampleBinaryFromData() {
 	data := bytes.NewReader([]byte{1, 2, 3})
 	b := vf.BinaryFromData(data)
 	fmt.Println(b)
-	// Output: AQID
+	// Output: [1 2 3]
 }

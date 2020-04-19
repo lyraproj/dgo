@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/streamer"
-	"github.com/lyraproj/dgo/vf"
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/streamer"
+	"github.com/tada/dgo/vf"
 )
 
 type badWriter int

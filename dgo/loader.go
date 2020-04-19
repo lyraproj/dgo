@@ -25,7 +25,7 @@ type (
 	//
 	// Implementors of Loader must ensure that all methods are safe to use from concurrent go routines.
 	//
-	// The Loader implements the Keyed interface. The Get method is different from the Load method in
+	// The Loader implements the Keyed interface. The GetEntryType method is different from the Load method in
 	// that the name must contain no '/' characters since they separate the name from its namespace.
 	// A load involving a nested name must use the Load method.
 	Loader interface {

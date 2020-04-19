@@ -5,10 +5,16 @@ import (
 	"reflect"
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/dgo/util"
+
+	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
+
+func TestNil_AppendTo(t *testing.T) {
+	require.Equal(t, `nil`, util.ToStringERP(vf.Nil))
+}
 
 func TestNil_CompareTo(t *testing.T) {
 	c, ok := vf.Nil.CompareTo(vf.Nil)

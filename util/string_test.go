@@ -3,7 +3,7 @@ package util_test
 import (
 	"fmt"
 
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/dgo/util"
 )
 
 func ExampleFtoa() {

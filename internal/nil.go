@@ -1,17 +1,16 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/dgo/dgo"
 )
 
-type (
-	// nilType represents an nil value without constraints (-1), constrained to false (0) or constrained to true(1)
-	nilType int
+type nilValue int
 
-	nilValue int
-)
+// Nil is the singleton dgo.Value for Nil
+const Nil = nilValue(0)
 
 func (nilValue) AppendTo(w dgo.Indenter) {
 	w.Append(`nil`)
@@ -28,6 +27,10 @@ func (nilValue) HashCode() int {
 	return 131
 }
 
+func (nilValue) Format(s fmt.State, format rune) {
+	doFormat(nil, s, format)
+}
+
 func (nilValue) Equals(other interface{}) bool {
 	return Nil == other || nil == other
 }
@@ -40,49 +43,27 @@ func (nilValue) ReflectTo(value reflect.Value) {
 	value.Set(reflect.Zero(value.Type()))
 }
 
-func (nilValue) String() string {
-	return `null`
-}
-
 func (nilValue) Type() dgo.Type {
-	return DefaultNilType
+	return Nil
 }
 
-// DefaultNilType is the singleton Nil type
-const DefaultNilType = nilType(0)
-
-// Nil is the singleton dgo.Value for Nil
-const Nil = nilValue(0)
-
-func (t nilType) Assignable(ot dgo.Type) bool {
-	_, ok := ot.(nilType)
-	return ok || CheckAssignableTo(nil, ot, t)
+func (nilValue) Assignable(ot dgo.Type) bool {
+	_, ok := ot.(nilValue)
+	return ok || CheckAssignableTo(nil, ot, Nil)
 }
 
-func (t nilType) Equals(v interface{}) bool {
-	return t == v
-}
-
-func (t nilType) HashCode() int {
-	return int(1 + dgo.TiNil)
-}
-
-func (t nilType) Instance(v interface{}) bool {
+func (t nilValue) Instance(v interface{}) bool {
 	return Nil == v || nil == v
 }
 
-func (t nilType) ReflectType() reflect.Type {
+func (t nilValue) ReflectType() reflect.Type {
 	return reflectAnyType
 }
 
-func (t nilType) Type() dgo.Type {
-	return &metaType{t}
-}
-
-func (t nilType) String() string {
+func (t nilValue) String() string {
 	return `nil`
 }
 
-func (t nilType) TypeIdentifier() dgo.TypeIdentifier {
+func (t nilValue) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiNil
 }

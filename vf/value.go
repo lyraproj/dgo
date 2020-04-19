@@ -3,11 +3,11 @@ package vf
 import (
 	"reflect"
 
-	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/internal"
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 
 	// ensure that stringer package is initialized prior to using this package
-	_ "github.com/lyraproj/dgo/stringer"
+	_ "github.com/tada/dgo/stringer"
 )
 
 // New creates an instance of the given type from the given argument
