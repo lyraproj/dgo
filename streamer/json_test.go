@@ -123,3 +123,17 @@ func ExampleMarshalJSON_string() {
 	fmt.Println(string(v))
 	// Output: "hello"
 }
+func TestJSON__listOf4Maps(t *testing.T) {
+	v := vf.Values(
+		map[string]string{"01": ""},
+		map[string]string{"02": ""},
+		map[string]string{"03": ""},
+		map[string]string{"04": ""},
+		map[string]string{"05": ""},
+		map[string]string{"06": ""},
+		map[string]string{"07": ""},
+	)
+	b := bytes.Buffer{}
+	streamer.New(nil, nil).Stream(v, streamer.JSON(&b))
+	require.Equal(t, `[{"01":""},{"02":""},{"03":""},{"04":""},{"05":""},{"06":""},{"07":""}]`, b.String())
+}
