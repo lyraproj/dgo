@@ -155,6 +155,7 @@ func (j *jsonEncoder) AddArray(_ int, doer dgo.Doer) {
 		assertOk(j.out.Write([]byte{'['}))
 		doer()
 		assertOk(j.out.Write([]byte{']'}))
+		j.state = afterElement
 	})
 }
 
@@ -164,6 +165,7 @@ func (j *jsonEncoder) AddMap(_ int, doer dgo.Doer) {
 		j.state = firstInObject
 		doer()
 		assertOk(j.out.Write([]byte{'}'}))
+		j.state = afterElement
 	})
 }
 
