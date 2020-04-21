@@ -54,7 +54,7 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - unused
+  # - unused   disabled due to high memory consumption. See https://github.com/golangci/golangci-lint/issues/994
     - varcheck
     - whitespace
 
