@@ -122,14 +122,14 @@ func nextToken(sr *util.StringReader) (t *Token) {
 			} else {
 				t = &Token{Type: int(r)}
 			}
-		case '-', '+':
+		case '-', '+', 0x2212:
 			n := sr.Next()
 			if !IsDigit(n) {
 				panic(badToken(n))
 			}
 			buf := bytes.NewBufferString(``)
-			if r == '-' {
-				util.WriteRune(buf, r)
+			if r != '+' {
+				util.WriteRune(buf, '-')
 			}
 			tkn := ConsumeNumber(sr, n, buf, integer)
 			t = &Token{buf.String(), tkn}

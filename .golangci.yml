@@ -1,3 +1,7 @@
+run:
+  build-tags:
+    - test
+
 issues:
   exclude-use-default: false
   exclude-rules:
@@ -9,8 +13,11 @@ issues:
         - dupl
 
 linters-settings:
+  funlen:
+    statements: 50
+
   gocyclo:
-    min-complexity: 15
+    min-complexity: 25
 
   gocognit:
     min-complexity: 40

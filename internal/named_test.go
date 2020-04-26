@@ -6,14 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tada/dgo/vf"
-
 	"github.com/tada/dgo/dgo"
-
-	"github.com/tada/dgo/typ"
-
-	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/tf"
+	"github.com/tada/dgo/typ"
+	"github.com/tada/dgo/vf"
 )
 
 type testNamed int
@@ -54,24 +51,22 @@ func (t *testNamedB) Format(s fmt.State, _ rune) {
 func TestNamedType(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
-	require.Equal(t, tp, tp)
-	require.Equal(t, tp.Name(), `testNamed`)
-	require.Equal(t, tp.String(), `testNamed`)
-	require.NotEqual(t, tp, `testNamed`)
-
-	require.Assignable(t, tp, tp)
-	require.NotAssignable(t, tp, typ.Any)
-	require.Instance(t, tp.Type(), tp)
-	require.Instance(t, tp, testNamed(0))
-
-	require.NotEqual(t, 0, tp.HashCode())
-	require.Equal(t, tp.HashCode(), tp.HashCode())
+	assert.Equal(t, tp, tp)
+	assert.Equal(t, tp.Name(), `testNamed`)
+	assert.Equal(t, tp.String(), `testNamed`)
+	assert.NotEqual(t, tp, `testNamed`)
+	assert.Assignable(t, tp, tp)
+	assert.NotAssignable(t, tp, typ.Any)
+	assert.Instance(t, tp.Type(), tp)
+	assert.Instance(t, tp, testNamed(0))
+	assert.NotEqual(t, 0, tp.HashCode())
+	assert.Equal(t, tp.HashCode(), tp.HashCode())
 }
 
 func TestNamedType_redefined(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
-	require.Panic(t, func() {
+	assert.Panic(t, func() {
 		tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil)
 	}, `attempt to redefine named type 'testNamed'`)
 }
@@ -79,8 +74,8 @@ func TestNamedType_redefined(t *testing.T) {
 func TestNamedTypeFromReflected(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
-	require.Same(t, tp, tf.NamedFromReflected(reflect.TypeOf(testNamed(0))))
-	require.Nil(t, tf.NamedFromReflected(reflect.TypeOf(testNamedC(0))))
+	assert.Same(t, tp, tf.NamedFromReflected(reflect.TypeOf(testNamed(0))))
+	assert.Nil(t, tf.NamedFromReflected(reflect.TypeOf(testNamedC(0))))
 }
 
 func TestNamedType_Assignable(t *testing.T) {
@@ -88,16 +83,16 @@ func TestNamedType_Assignable(t *testing.T) {
 	defer tf.RemoveNamed(`testNamedB`)
 	defer tf.RemoveNamed(`testNamedC`)
 	tp := tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), reflect.TypeOf((*testNamedDummy)(nil)).Elem(), nil)
-	require.Assignable(t, tp, tf.NewNamed(`testNamedB`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil))
-	require.NotAssignable(t, tp, tf.NewNamed(`testNamedC`, nil, nil, reflect.TypeOf(testNamedC(0)), nil, nil))
-	require.NotAssignable(t, tf.Named(`testNamedB`), tf.Named(`testNamedC`))
+	assert.Assignable(t, tp, tf.NewNamed(`testNamedB`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil))
+	assert.NotAssignable(t, tp, tf.NewNamed(`testNamedC`, nil, nil, reflect.TypeOf(testNamedC(0)), nil, nil))
+	assert.NotAssignable(t, tf.Named(`testNamedB`), tf.Named(`testNamedC`))
 }
 
 func TestNamedType_Format(t *testing.T) {
 	defer tf.RemoveNamed(`testNamedB`)
 	_ = tf.NewNamed(`testNamedB`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil)
 	v := vf.Value(&testNamedB{0})
-	require.Equal(t, `hello from testNamedB Format`, fmt.Sprintf("%v", v))
+	assert.Equal(t, `hello from testNamedB Format`, fmt.Sprintf("%v", v))
 }
 
 func TestNamedType_New(t *testing.T) {
@@ -109,16 +104,15 @@ func TestNamedType_New(t *testing.T) {
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
 	v := tp.New(vf.Integer(3))
-	require.Equal(t, v, testNamed(3))
-	require.Equal(t, 3, tp.ExtractInitArg(v))
+	assert.Equal(t, v, testNamed(3))
+	assert.Equal(t, 3, tp.ExtractInitArg(v))
 }
 
 func TestNamedType_New_notApplicable(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
-
-	require.Panic(t, func() { tp.New(vf.Integer(3)) }, `creating new instances of testNamed is not possible`)
-	require.Panic(t, func() { tp.ExtractInitArg(testNamed(0)) }, `creating new instances of testNamed is not possible`)
+	assert.Panic(t, func() { tp.New(vf.Integer(3)) }, `creating new instances of testNamed is not possible`)
+	assert.Panic(t, func() { tp.ExtractInitArg(testNamed(0)) }, `creating new instances of testNamed is not possible`)
 }
 
 func TestNamedType_ValueString(t *testing.T) {
@@ -130,7 +124,7 @@ func TestNamedType_ValueString(t *testing.T) {
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
 	v := tp.New(vf.Integer(3))
-	require.Equal(t, `testNamed 3`, tp.ValueString(v))
+	assert.Equal(t, `testNamed 3`, tp.ValueString(v))
 }
 
 func TestNamedType_parse(t *testing.T) {
@@ -140,7 +134,7 @@ func TestNamedType_parse(t *testing.T) {
 	}, func(value dgo.Value) dgo.Value {
 		return vf.Integer(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
-	require.Same(t, tf.ParseType(`testNamed`), tp)
+	assert.Same(t, tf.ParseType(`testNamed`), tp)
 }
 
 func TestNamedType_exact(t *testing.T) {
@@ -153,24 +147,22 @@ func TestNamedType_exact(t *testing.T) {
 
 	v := tp.New(vf.Integer(3))
 	et := v.Type()
-	require.Same(t, tp, typ.Generic(et))
-	require.Assignable(t, tp, et)
-	require.NotAssignable(t, et, tp)
-	require.NotAssignable(t, et, tp.New(vf.Integer(4)).Type())
-	require.Instance(t, et, v)
-	require.NotInstance(t, et, tp.New(vf.Integer(4)))
-	require.Equal(t, `testNamed 3`, et.String())
-	require.Equal(t, et, tf.ParseType(`testNamed 3`))
-
-	require.Instance(t, et.Type(), et)
-	require.Instance(t, tp.Type(), et)
-	require.NotInstance(t, et.Type(), tp)
-
-	require.NotEqual(t, tp, et)
-	require.Equal(t, et, tp.New(vf.Integer(3)).Type())
-	require.NotEqual(t, et, tp.New(vf.Integer(3)))
-	require.NotEqual(t, et, tp.New(vf.Integer(4)).Type())
-	require.NotEqual(t, tp.HashCode(), et.HashCode())
+	assert.Same(t, tp, typ.Generic(et))
+	assert.Assignable(t, tp, et)
+	assert.NotAssignable(t, et, tp)
+	assert.NotAssignable(t, et, tp.New(vf.Integer(4)).Type())
+	assert.Instance(t, et, v)
+	assert.NotInstance(t, et, tp.New(vf.Integer(4)))
+	assert.Equal(t, `testNamed 3`, et.String())
+	assert.Equal(t, et, tf.ParseType(`testNamed 3`))
+	assert.Instance(t, et.Type(), et)
+	assert.Instance(t, tp.Type(), et)
+	assert.NotInstance(t, et.Type(), tp)
+	assert.NotEqual(t, tp, et)
+	assert.Equal(t, et, tp.New(vf.Integer(3)).Type())
+	assert.NotEqual(t, et, tp.New(vf.Integer(3)))
+	assert.NotEqual(t, et, tp.New(vf.Integer(4)).Type())
+	assert.NotEqual(t, tp.HashCode(), et.HashCode())
 }
 
 func TestNamedType_parameterized(t *testing.T) {
@@ -210,19 +202,17 @@ func TestNamedType_parameterized(t *testing.T) {
 
 	tpp := tf.Parameterized(tp, vf.Values(0, 10))
 	tpp2 := tf.Parameterized(tp, vf.Values(0, 10))
-	require.Equal(t, `testNamed[0,10]`, tpp.String())
-	require.Assignable(t, tpp, tpp2)
-	require.NotEqual(t, tpp, tp)
-	require.Equal(t, tpp, tpp2)
-	require.Equal(t, tpp.Type(), tpp2.Type())
-	require.Equal(t, tpp.HashCode(), tpp2.HashCode())
-	require.Same(t, tp, typ.Generic(tpp))
-	require.Same(t, tp, typ.Generic(tpp2))
-
-	require.Instance(t, tpp, testNamed(3))
-	require.NotInstance(t, tpp, testNamed(11))
-
-	require.Panic(t, func() { vf.New(tpp, vf.Integer(11)) },
+	assert.Equal(t, `testNamed[0,10]`, tpp.String())
+	assert.Assignable(t, tpp, tpp2)
+	assert.NotEqual(t, tpp, tp)
+	assert.Equal(t, tpp, tpp2)
+	assert.Equal(t, tpp.Type(), tpp2.Type())
+	assert.Equal(t, tpp.HashCode(), tpp2.HashCode())
+	assert.Same(t, tp, typ.Generic(tpp))
+	assert.Same(t, tp, typ.Generic(tpp2))
+	assert.Instance(t, tpp, testNamed(3))
+	assert.NotInstance(t, tpp, testNamed(11))
+	assert.Panic(t, func() { vf.New(tpp, vf.Integer(11)) },
 		`the value testNamed 11 cannot be assigned to a variable of type testNamed\[0,10\]`)
 }
 
@@ -235,9 +225,9 @@ func TestNamedType_parameterized_noAsgChecker(t *testing.T) {
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
 	tpp := tf.Parameterized(tp, vf.Values(0, 10))
-	require.Equal(t, `testNamed[0,10]`, tpp.String())
-	require.Assignable(t, tpp, tp)
-	require.NotEqual(t, tpp, tp)
-	require.Instance(t, tpp, testNamed(3))
-	require.Instance(t, tpp, testNamed(11))
+	assert.Equal(t, `testNamed[0,10]`, tpp.String())
+	assert.Assignable(t, tpp, tp)
+	assert.NotEqual(t, tpp, tp)
+	assert.Instance(t, tpp, testNamed(3))
+	assert.Instance(t, tpp, testNamed(11))
 }

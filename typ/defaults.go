@@ -56,11 +56,17 @@ var Number = internal.AnyOfType([]interface{}{internal.DefaultIntegerType, inter
 // Float is a type that represents all floats
 var Float dgo.FloatType = internal.DefaultFloatType
 
+// BigFloat is a type that represents big floats
+var BigFloat dgo.FloatType = internal.DefaultBigFloatType
+
 // Function is the type that represents all functions
 var Function dgo.FunctionType = internal.DefaultFunctionType
 
-// Integer is a type that represents all integers
+// Integer is a type that represents all integers that fit into a signed 64 bit int
 var Integer dgo.IntegerType = internal.DefaultIntegerType
+
+// BigInt is a type that represents big integers
+var BigInt dgo.IntegerType = internal.DefaultBigIntType
 
 // Regexp is a type that represents all regexps
 var Regexp dgo.RegexpType = internal.DefaultRegexpType

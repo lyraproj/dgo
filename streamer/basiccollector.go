@@ -64,6 +64,11 @@ func (c *BasicCollector) AddRef(ref int) {
 	c.StackTop().Add(c.Values.Get(ref))
 }
 
+// CanDoBigNumbers returns true
+func (c *BasicCollector) CanDoBigNumbers() bool {
+	return true
+}
+
 // CanDoBinary returns true
 func (c *BasicCollector) CanDoBinary() bool {
 	return true

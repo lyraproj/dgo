@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"reflect"
@@ -341,16 +340,16 @@ func StringType(args []interface{}) dgo.StringType {
 func (t *patternType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case *hstring:
-		return t.IsInstance(ot.s)
+		return t.MatchString(ot.s)
 	case *patternType:
-		return t.rxString() == ot.rxString()
+		return t.Regexp.String() == ot.Regexp.String()
 	}
 	return CheckAssignableTo(nil, other, t)
 }
 
 func (t *patternType) Equals(v interface{}) bool {
 	if ov, ok := v.(*patternType); ok {
-		return t.rxString() == ov.rxString()
+		return t.Regexp.String() == ov.Regexp.String()
 	}
 	return false
 }
@@ -360,7 +359,7 @@ func (t *patternType) Generic() dgo.Type {
 }
 
 func (t *patternType) HashCode() int {
-	return util.StringHash(t.rxString())
+	return util.StringHash(t.Regexp.String())
 }
 
 func (t *patternType) Instance(v interface{}) bool {
@@ -371,10 +370,6 @@ func (t *patternType) Instance(v interface{}) bool {
 		return t.MatchString(sv)
 	}
 	return false
-}
-
-func (t *patternType) IsInstance(v string) bool {
-	return t.MatchString(v)
 }
 
 func (t *patternType) Max() int {
@@ -393,8 +388,8 @@ func (t *patternType) ReflectType() reflect.Type {
 	return reflectStringType
 }
 
-func (t *patternType) rxString() string {
-	return (t.Regexp).String()
+func (t *patternType) GoRegexp() *regexp.Regexp {
+	return t.Regexp
 }
 
 func (t *patternType) Type() dgo.Type {
@@ -402,9 +397,7 @@ func (t *patternType) Type() dgo.Type {
 }
 
 func (t *patternType) String() string {
-	b := bytes.Buffer{}
-	RegexpSlashQuote(&b, t.rxString())
-	return b.String()
+	return TypeString(t)
 }
 
 func (t *patternType) TypeIdentifier() dgo.TypeIdentifier {
@@ -635,7 +628,7 @@ func (v *hstring) ReflectTo(value reflect.Value) {
 }
 
 func (v *hstring) String() string {
-	return strconv.Quote(v.s)
+	return TypeString(v)
 }
 
 func (v *hstring) Type() dgo.Type {

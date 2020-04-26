@@ -3,8 +3,8 @@ package streamer_test
 import (
 	"testing"
 
-	require "github.com/tada/dgo/dgo_test"
 	"github.com/tada/dgo/streamer"
+	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/typ"
 	"github.com/tada/dgo/vf"
 )
@@ -19,7 +19,7 @@ func TestDataCollector(t *testing.T) {
 	c := streamer.DataCollector()
 	streamer.New(nil, nil).Stream(a, c)
 
-	require.Equal(t, vf.Values(
+	assert.Equal(t, vf.Values(
 		vf.Map(`__type`, `string`),
 		vf.Map(`__type`, `binary`, `__value`, `AQID`),
 		vf.Map(`__type`, `sensitive`, `__value`, `secret`),

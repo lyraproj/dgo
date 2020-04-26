@@ -69,7 +69,7 @@ func (t *exactFunctionTuple) deepEqual(seen []dgo.Value, other deepEqual) bool {
 }
 
 func (t *exactFunctionTuple) HashCode() int {
-	return tupleHashCode(t, nil)
+	return deepHashCode(nil, t)
 }
 
 func (t *exactFunctionTuple) deepHashCode(seen []dgo.Value) int {
