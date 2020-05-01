@@ -54,8 +54,8 @@ func (t *metaType) Equals(v interface{}) bool {
 	return false
 }
 
-func (t *metaType) HashCode() int {
-	h := int(dgo.TiMeta) * 1321
+func (t *metaType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiMeta) * 1321
 	if t.tp != nil {
 		h += t.tp.HashCode()
 	}

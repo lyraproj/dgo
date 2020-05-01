@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tada/catch/pio"
-
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch/pio"
 )
 
 type indenter struct {

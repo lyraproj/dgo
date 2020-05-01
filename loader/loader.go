@@ -119,7 +119,7 @@ func (l *mapLoader) Equals(other interface{}) bool {
 	return false
 }
 
-func (l *mapLoader) HashCode() int {
+func (l *mapLoader) HashCode() dgo.Hash {
 	return l.entries.HashCode()
 }
 
@@ -216,7 +216,7 @@ func (l *loader) Equals(other interface{}) bool {
 	return false
 }
 
-func (l *loader) HashCode() int {
+func (l *loader) HashCode() dgo.Hash {
 	return l.entries.HashCode()*31 + l.namespaces.HashCode()
 }
 
@@ -331,7 +331,7 @@ func (l *childLoader) Get(key interface{}) dgo.Value {
 	return v
 }
 
-func (l *childLoader) HashCode() int {
+func (l *childLoader) HashCode() dgo.Hash {
 	return l.Loader.HashCode()*31 + l.parent.HashCode()
 }
 

@@ -128,8 +128,8 @@ func (t *integerType) Equals(other interface{}) bool {
 	return ok && t.inclusive == ot.Inclusive() && equals(nil, t.min, ot.Min()) && equals(nil, t.max, ot.Max())
 }
 
-func (t *integerType) HashCode() int {
-	h := int(dgo.TiIntegerRange)
+func (t *integerType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiIntegerRange)
 	if t.min != nil {
 		h = h*31 + t.min.HashCode()
 	}
@@ -219,8 +219,8 @@ func (t defaultIntegerType) Equals(other interface{}) bool {
 	return ok
 }
 
-func (t defaultIntegerType) HashCode() int {
-	return int(dgo.TiInteger)
+func (t defaultIntegerType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiInteger)
 }
 
 func (t defaultIntegerType) Instance(value interface{}) bool {
@@ -371,8 +371,8 @@ func (v intVal) GoInt() int64 {
 	return int64(v)
 }
 
-func (v intVal) HashCode() int {
-	return int(v ^ (v >> 32))
+func (v intVal) HashCode() dgo.Hash {
+	return dgo.Hash(v ^ (v >> 32))
 }
 
 func (v intVal) Inc() dgo.Integer {

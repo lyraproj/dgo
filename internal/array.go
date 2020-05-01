@@ -136,8 +136,8 @@ func (t defaultArrayType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t defaultArrayType) HashCode() int {
-	return int(dgo.TiArray)
+func (t defaultArrayType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiArray)
 }
 
 func (t defaultArrayType) Instance(value interface{}) bool {
@@ -208,17 +208,17 @@ func (t *sizedArrayType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *sizedArrayType) HashCode() int {
+func (t *sizedArrayType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *sizedArrayType) deepHashCode(seen []dgo.Value) int {
-	h := int(dgo.TiArray)
+func (t *sizedArrayType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	h := dgo.Hash(dgo.TiArray)
 	if t.min > 0 {
-		h = h*31 + t.min
+		h = h*31 + dgo.Hash(t.min)
 	}
 	if t.max < math.MaxInt64 {
-		h = h*31 + t.max
+		h = h*31 + dgo.Hash(t.max)
 	}
 	if DefaultAnyType != t.elementType {
 		h = h*31 + deepHashCode(seen, t.elementType)
@@ -458,16 +458,16 @@ func (t *tupleType) Generic() dgo.Type {
 	return newArrayType(Generic(t.ElementType()), 0, math.MaxInt64)
 }
 
-func (t *tupleType) HashCode() int {
+func (t *tupleType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *tupleType) deepHashCode(seen []dgo.Value) int {
+func (t *tupleType) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return tupleHashCode(t, seen)
 }
 
-func tupleHashCode(t dgo.TupleType, seen []dgo.Value) int {
-	h := 1
+func tupleHashCode(t dgo.TupleType, seen []dgo.Value) dgo.Hash {
+	h := dgo.Hash(1)
 	if t.Variadic() {
 		h = 7
 	}
@@ -1058,12 +1058,12 @@ func (v *array) GoSlice() []dgo.Value {
 	return v.slice
 }
 
-func (v *array) HashCode() int {
+func (v *array) HashCode() dgo.Hash {
 	return v.deepHashCode(nil)
 }
 
-func (v *array) deepHashCode(seen []dgo.Value) int {
-	h := 1
+func (v *array) deepHashCode(seen []dgo.Value) dgo.Hash {
+	h := dgo.Hash(1)
 	s := v.slice
 	for i := range s {
 		h = h*31 + deepHashCode(seen, s[i])

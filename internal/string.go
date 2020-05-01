@@ -39,8 +39,8 @@ type (
 
 	// hstring is a string that caches the hash value when it is computed
 	hstring struct {
-		s string
-		h int
+		string
+		h dgo.Hash
 	}
 )
 
@@ -86,8 +86,8 @@ func (t defaultDgoStringType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t defaultDgoStringType) HashCode() int {
-	return int(dgo.TiDgoString)
+func (t defaultDgoStringType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiDgoString)
 }
 
 func (t defaultDgoStringType) Assignable(other dgo.Type) bool {
@@ -105,7 +105,7 @@ func (t defaultDgoStringType) Instance(value interface{}) (ok bool) {
 	var ov *hstring
 	ov, ok = value.(*hstring)
 	if ok {
-		s = ov.s
+		s = ov.string
 	} else {
 		s, ok = value.(string)
 	}
@@ -203,8 +203,8 @@ func (t defaultStringType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t defaultStringType) HashCode() int {
-	return int(dgo.TiString)
+func (t defaultStringType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiString)
 }
 
 func (t defaultStringType) Instance(value interface{}) bool {
@@ -254,34 +254,34 @@ func (t defaultStringType) Unbounded() bool {
 func CiStringType(si interface{}) dgo.StringType {
 	var s string
 	if ov, ok := si.(*hstring); ok {
-		s = ov.s
+		s = ov.string
 	} else {
 		s = si.(string)
 	}
-	return &ciStringType{hstring: hstring{s: strings.ToLower(s)}}
+	return &ciStringType{hstring: hstring{string: strings.ToLower(s)}}
 }
 
 func (t *ciStringType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case *hstring:
-		return strings.EqualFold(t.s, ot.s)
+		return strings.EqualFold(t.string, ot.string)
 	case *ciStringType:
-		return t.s == ot.s
+		return t.string == ot.string
 	}
 	return CheckAssignableTo(nil, other, t)
 }
 
 func (t *ciStringType) Equals(v interface{}) bool {
 	ov, ok := v.(*ciStringType)
-	return ok && t.s == ov.s
+	return ok && t.string == ov.string
 }
 
 func (t *ciStringType) Instance(v interface{}) bool {
 	if ov, ok := v.(*hstring); ok {
-		return strings.EqualFold(t.s, ov.s)
+		return strings.EqualFold(t.string, ov.string)
 	}
 	if ov, ok := v.(string); ok {
-		return strings.EqualFold(t.s, ov)
+		return strings.EqualFold(t.string, ov)
 	}
 	return false
 }
@@ -341,7 +341,7 @@ func StringType(args []interface{}) dgo.StringType {
 func (t *patternType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
 	case *hstring:
-		return t.MatchString(ot.s)
+		return t.MatchString(ot.string)
 	case *patternType:
 		return t.Regexp.String() == ot.Regexp.String()
 	}
@@ -359,13 +359,13 @@ func (t *patternType) Generic() dgo.Type {
 	return DefaultStringType
 }
 
-func (t *patternType) HashCode() int {
+func (t *patternType) HashCode() dgo.Hash {
 	return util.StringHash(t.Regexp.String())
 }
 
 func (t *patternType) Instance(v interface{}) bool {
 	if sv, ok := v.(*hstring); ok {
-		return t.MatchString(sv.s)
+		return t.MatchString(sv.string)
 	}
 	if sv, ok := v.(string); ok {
 		return t.MatchString(sv)
@@ -431,9 +431,9 @@ func (t *sizedStringType) Assignable(other dgo.Type) bool {
 	case defaultDgoStringType:
 		return t.min <= 1
 	case *hstring:
-		return t.IsInstance(ot.s)
+		return t.IsInstance(ot.string)
 	case *ciStringType:
-		return t.IsInstance(ot.s)
+		return t.IsInstance(ot.string)
 	case *sizedStringType:
 		return t.min <= ot.min && t.max >= ot.max
 	}
@@ -447,20 +447,20 @@ func (t *sizedStringType) Equals(v interface{}) bool {
 	return false
 }
 
-func (t *sizedStringType) HashCode() int {
-	h := int(dgo.TiStringSized)
+func (t *sizedStringType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiStringSized)
 	if t.min > 0 {
-		h = h*31 + t.min
+		h = h*31 + dgo.Hash(t.min)
 	}
 	if t.max < math.MaxInt64 {
-		h = h*31 + t.max
+		h = h*31 + dgo.Hash(t.max)
 	}
 	return h
 }
 
 func (t *sizedStringType) Instance(v interface{}) bool {
 	if sv, ok := v.(*hstring); ok {
-		return t.IsInstance(sv.s)
+		return t.IsInstance(sv.string)
 	}
 	if sv, ok := v.(string); ok {
 		return t.IsInstance(sv)
@@ -506,11 +506,11 @@ func (t *sizedStringType) Unbounded() bool {
 }
 
 func makeHString(s string) *hstring {
-	return &hstring{s: s}
+	return &hstring{string: s}
 }
 
 func (v *hstring) AppendTo(w dgo.Indenter) {
-	w.Append(strconv.Quote(v.s))
+	w.Append(strconv.Quote(v.string))
 }
 
 func (v *hstring) CompareTo(other interface{}) (r int, ok bool) {
@@ -518,18 +518,18 @@ func (v *hstring) CompareTo(other interface{}) (r int, ok bool) {
 	switch ov := other.(type) {
 	case *hstring:
 		switch {
-		case v.s > ov.s:
+		case v.string > ov.string:
 			r = 1
-		case v.s < ov.s:
+		case v.string < ov.string:
 			r = -1
 		default:
 			r = 0
 		}
 	case string:
 		switch {
-		case v.s > ov:
+		case v.string > ov:
 			r = 1
-		case v.s < ov:
+		case v.string < ov:
 			r = -1
 		default:
 			r = 0
@@ -546,10 +546,10 @@ func (v *hstring) Equals(other interface{}) bool {
 	// comparison for *hstring must be first here or the HashMap will get a penalty. It
 	// must always use *hstring to get the hash code
 	if ov, ok := other.(*hstring); ok {
-		return v.s == ov.s
+		return v.string == ov.string
 	}
 	if s, ok := other.(string); ok {
-		return v.s == s
+		return v.string == s
 	}
 	return false
 }
@@ -603,16 +603,16 @@ func formatValue(v interface{}, s fmt.State, format rune) {
 }
 
 func (v *hstring) Format(s fmt.State, format rune) {
-	doFormat(v.s, s, format)
+	doFormat(v.string, s, format)
 }
 
 func (v *hstring) GoString() string {
-	return v.s
+	return v.string
 }
 
-func (v *hstring) HashCode() int {
+func (v *hstring) HashCode() dgo.Hash {
 	if v.h == 0 {
-		v.h = util.StringHash(v.s)
+		v.h = util.StringHash(v.string)
 	}
 	return v.h
 }
@@ -620,11 +620,11 @@ func (v *hstring) HashCode() int {
 func (v *hstring) ReflectTo(value reflect.Value) {
 	switch value.Kind() {
 	case reflect.Interface:
-		value.Set(reflect.ValueOf(v.s))
+		value.Set(reflect.ValueOf(v.string))
 	case reflect.Ptr:
-		value.Set(reflect.ValueOf(&v.s))
+		value.Set(reflect.ValueOf(&v.string))
 	default:
-		value.SetString(v.s)
+		value.SetString(v.string)
 	}
 }
 
@@ -651,11 +651,11 @@ func (v *hstring) Instance(value interface{}) bool {
 }
 
 func (v *hstring) Max() int {
-	return len(v.s)
+	return len(v.string)
 }
 
 func (v *hstring) Min() int {
-	return len(v.s)
+	return len(v.string)
 }
 
 func (v *hstring) New(arg dgo.Value) dgo.Value {

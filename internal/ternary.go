@@ -91,12 +91,12 @@ func (t *allOfType) Generic() dgo.Type {
 	return commonGeneric(t.slice, typeAsType)
 }
 
-func (t *allOfType) HashCode() int {
+func (t *allOfType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *allOfType) deepHashCode(seen []dgo.Value) int {
-	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOf)
+func (t *allOfType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	return deepHashCode(seen, (*array)(t))*7 + dgo.Hash(dgo.TiAllOf)
 }
 
 func (t *allOfType) Instance(value interface{}) bool {
@@ -195,12 +195,12 @@ func (t *allOfValueType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *allOfValueType) HashCode() int {
+func (t *allOfValueType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *allOfValueType) deepHashCode(seen []dgo.Value) int {
-	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAllOfValue)
+func (t *allOfValueType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	return deepHashCode(seen, (*array)(t))*7 + dgo.Hash(dgo.TiAllOfValue)
 }
 
 func (t *allOfValueType) Instance(value interface{}) bool {
@@ -303,12 +303,12 @@ func (t *anyOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *anyOfType) HashCode() int {
+func (t *anyOfType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *anyOfType) deepHashCode(seen []dgo.Value) int {
-	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiAnyOf)
+func (t *anyOfType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	return deepHashCode(seen, (*array)(t))*7 + dgo.Hash(dgo.TiAnyOf)
 }
 
 func (t *anyOfType) Instance(value interface{}) bool {
@@ -421,12 +421,12 @@ func (t *oneOfType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *oneOfType) HashCode() int {
+func (t *oneOfType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *oneOfType) deepHashCode(seen []dgo.Value) int {
-	return deepHashCode(seen, (*array)(t))*7 + int(dgo.TiOneOf)
+func (t *oneOfType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	return deepHashCode(seen, (*array)(t))*7 + dgo.Hash(dgo.TiOneOf)
 }
 
 func (t *oneOfType) Instance(value interface{}) bool {

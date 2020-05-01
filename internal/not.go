@@ -29,7 +29,7 @@ func (t *notType) Equals(other interface{}) bool {
 	return false
 }
 
-func (t *notType) HashCode() int {
+func (t *notType) HashCode() dgo.Hash {
 	return 1579 + t.negated.HashCode()
 }
 

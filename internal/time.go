@@ -35,8 +35,8 @@ func (t timeType) Equals(v interface{}) bool {
 	return t == v
 }
 
-func (t timeType) HashCode() int {
-	return int(dgo.TiTime)
+func (t timeType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiTime)
 }
 
 func (t timeType) Instance(v interface{}) bool {
@@ -140,8 +140,8 @@ func (v *timeVal) GoTime() *time.Time {
 	return &v.Time
 }
 
-func (v *timeVal) HashCode() int {
-	return int(v.UnixNano())
+func (v *timeVal) HashCode() dgo.Hash {
+	return dgo.Hash(v.UnixNano())
 }
 
 func (v *timeVal) Integer() dgo.Integer {

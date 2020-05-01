@@ -68,11 +68,11 @@ func (t *exactFunctionTuple) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return tupleEquals(seen, t, other)
 }
 
-func (t *exactFunctionTuple) HashCode() int {
+func (t *exactFunctionTuple) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *exactFunctionTuple) deepHashCode(seen []dgo.Value) int {
+func (t *exactFunctionTuple) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return tupleHashCode(t, seen)
 }
 
@@ -145,8 +145,8 @@ func (t exactFunctionType) Equals(other interface{}) bool {
 	return false
 }
 
-func (t exactFunctionType) HashCode() int {
-	h := int(dgo.TiFunction)
+func (t exactFunctionType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiFunction)
 	h = h*31 + t.In().HashCode()
 	h = h*31 + t.Out().HashCode()
 	return h
@@ -232,12 +232,12 @@ func (t *functionType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *functionType) HashCode() int {
+func (t *functionType) HashCode() dgo.Hash {
 	return t.deepHashCode(nil)
 }
 
-func (t *functionType) deepHashCode(seen []dgo.Value) int {
-	h := int(dgo.TiFunction)
+func (t *functionType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	h := dgo.Hash(dgo.TiFunction)
 	h = h*31 + deepHashCode(seen, t.arguments)
 	h = h*31 + deepHashCode(seen, t.returns)
 	return h
@@ -294,8 +294,8 @@ func (f *goFunc) Type() dgo.Type {
 	return &exactFunctionType{(*reflect.Value)(f).Type()}
 }
 
-func (f *goFunc) HashCode() int {
-	return int((*reflect.Value)(f).Pointer())
+func (f *goFunc) HashCode() dgo.Hash {
+	return dgo.Hash((*reflect.Value)(f).Pointer())
 }
 
 func (f *goFunc) Call(args dgo.Array) []dgo.Value {

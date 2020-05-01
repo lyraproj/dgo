@@ -42,7 +42,7 @@ func (b booBar) Equals(other interface{}) bool {
 	return b == other
 }
 
-func (b booBar) HashCode() int {
+func (b booBar) HashCode() int32 {
 	return util.StringHash(string(b))
 }
 

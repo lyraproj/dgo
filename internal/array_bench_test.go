@@ -74,7 +74,7 @@ func (d dummyDp) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return true
 }
 
-func (d dummyDp) deepHashCode(seen []dgo.Value) int {
+func (d dummyDp) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return 1
 }
 
@@ -90,7 +90,7 @@ func (d dummyDp) Equals(other interface{}) bool {
 	return true
 }
 
-func (d dummyDp) HashCode() int {
+func (d dummyDp) HashCode() dgo.Hash {
 	return 0
 }
 

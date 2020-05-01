@@ -135,8 +135,8 @@ func (t *named) Equals(other interface{}) bool {
 	return false
 }
 
-func (t *named) HashCode() int {
-	return util.StringHash(t.name)*7 + int(dgo.TiNamed)
+func (t *named) HashCode() dgo.Hash {
+	return util.StringHash(t.name)*7 + dgo.Hash(dgo.TiNamed)
 }
 
 func (t *named) ExtractInitArg(value dgo.Value) dgo.Value {
@@ -207,7 +207,7 @@ func (t *parameterized) Generic() dgo.Type {
 	return t.NamedType
 }
 
-func (t *parameterized) HashCode() int {
+func (t *parameterized) HashCode() dgo.Hash {
 	return t.NamedType.HashCode()*31 + t.params.HashCode()
 }
 
@@ -250,8 +250,8 @@ func (t *exactNamed) Generic() dgo.Type {
 	return t.NamedTypeExtension.(dgo.Type)
 }
 
-func (t *exactNamed) HashCode() int {
-	return t.ExactValue().HashCode()*7 + int(t.TypeIdentifier())
+func (t *exactNamed) HashCode() dgo.Hash {
+	return t.ExactValue().HashCode()*7 + dgo.Hash(t.TypeIdentifier())
 }
 
 func (t *exactNamed) Instance(value interface{}) bool {
