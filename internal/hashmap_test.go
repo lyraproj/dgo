@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
-	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch/pio"
 )
 
 const rndFactor = 1234
@@ -24,7 +24,7 @@ func buildStringKeys(count int) []string {
 		l := len(s)
 		p := 0
 		for r := 0; r < rand.Intn(rndLen)+l; r++ {
-			util.WriteByte(b, s[p])
+			pio.WriteByte(b, s[p])
 			p++
 			if p >= l {
 				p = 0

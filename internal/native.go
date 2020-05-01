@@ -6,6 +6,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch/pio"
 )
 
 type (
@@ -113,7 +114,7 @@ func (v *native) Format(s fmt.State, format rune) {
 	if v.CanInterface() {
 		doFormat(v.Interface(), s, format)
 	} else {
-		util.WriteString(s, v.String())
+		pio.WriteString(s, v.String())
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tada/catch/pio"
+
 	"github.com/lyraproj/dgo/dgo"
 )
 
@@ -59,7 +61,7 @@ func (i *indenter) String() string {
 		}
 		if r == ' ' || r == '\t' {
 			// Defer whitespace output
-			WriteByte(wb, byte(r))
+			pio.WriteByte(wb, byte(r))
 			continue
 		}
 		if r == '\n' {
@@ -69,7 +71,7 @@ func (i *indenter) String() string {
 			_, _ = n.Write(wb.Bytes())
 			wb.Reset()
 		}
-		WriteRune(n, r)
+		pio.WriteRune(n, r)
 	}
 	return n.String()
 }
@@ -83,11 +85,11 @@ func (i *indenter) Write(p []byte) (n int, err error) {
 }
 
 func (i *indenter) AppendRune(r rune) {
-	WriteRune(i.b, r)
+	pio.WriteRune(i.b, r)
 }
 
 func (i *indenter) Append(s string) {
-	WriteString(i.b, s)
+	pio.WriteString(i.b, s)
 }
 
 func (i *indenter) AppendValue(v interface{}) {
@@ -95,7 +97,7 @@ func (i *indenter) AppendValue(v interface{}) {
 	case dgo.Indentable:
 		v.AppendTo(i)
 	case fmt.Stringer:
-		WriteString(i.b, v.String())
+		pio.WriteString(i.b, v.String())
 	default:
 		Fprintf(i.b, "%#v", v)
 	}
@@ -104,7 +106,7 @@ func (i *indenter) AppendValue(v interface{}) {
 func (i *indenter) AppendIndented(s string) {
 	for ni := strings.IndexByte(s, '\n'); ni >= 0; ni = strings.IndexByte(s, '\n') {
 		if ni > 0 {
-			WriteString(i.b, s[:ni])
+			pio.WriteString(i.b, s[:ni])
 		}
 		i.NewLine()
 		ni++
@@ -114,7 +116,7 @@ func (i *indenter) AppendIndented(s string) {
 		s = s[ni:]
 	}
 	if len(s) > 0 {
-		WriteString(i.b, s)
+		pio.WriteString(i.b, s)
 	}
 }
 
@@ -125,11 +127,11 @@ func (i *indenter) AppendBool(b bool) {
 	} else {
 		s = `false`
 	}
-	WriteString(i.b, s)
+	pio.WriteString(i.b, s)
 }
 
 func (i *indenter) AppendInt(b int) {
-	WriteString(i.b, strconv.Itoa(b))
+	pio.WriteString(i.b, strconv.Itoa(b))
 }
 
 func (i *indenter) Indent() dgo.Indenter {
@@ -148,9 +150,9 @@ func (i *indenter) Printf(s string, args ...interface{}) {
 
 func (i *indenter) NewLine() {
 	if len(i.s) > 0 {
-		WriteByte(i.b, '\n')
+		pio.WriteByte(i.b, '\n')
 		for n := 0; n < i.i; n++ {
-			WriteString(i.b, i.s)
+			pio.WriteString(i.b, i.s)
 		}
 	}
 }

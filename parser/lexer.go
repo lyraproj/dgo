@@ -10,6 +10,7 @@ import (
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/util"
 	"github.com/tada/catch"
+	"github.com/tada/catch/pio"
 )
 
 const (
@@ -128,7 +129,7 @@ func nextToken(sr *util.StringReader) (t *Token) {
 			}
 			buf := bytes.NewBufferString(``)
 			if r != '+' {
-				util.WriteRune(buf, '-')
+				pio.WriteRune(buf, '-')
 			}
 			tkn := ConsumeNumber(sr, n, buf, integer)
 			t = &Token{buf.String(), tkn}
@@ -162,7 +163,7 @@ func consumeUnsignedInteger(sr *util.StringReader, buf io.Writer) {
 			panic(badToken(r))
 		case IsDigit(r):
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		default:
 			return
 		}
@@ -220,12 +221,12 @@ func consumeExponent(sr *util.StringReader, buf io.Writer) {
 		case 0:
 			panic(catch.Error("unexpected end"))
 		case '+', '-':
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 			r = sr.Next()
 			fallthrough
 		default:
 			if IsDigit(r) {
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				consumeUnsignedInteger(sr, buf)
 				return
 			}
@@ -236,32 +237,32 @@ func consumeExponent(sr *util.StringReader, buf io.Writer) {
 
 func consumeHexInteger(sr *util.StringReader, buf io.Writer) {
 	for IsHex(sr.Peek()) {
-		util.WriteRune(buf, sr.Next())
+		pio.WriteRune(buf, sr.Next())
 	}
 }
 
 // ConsumeNumber consumes the current number into the given Writer and returns the consumed token type.
 func ConsumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int {
-	util.WriteRune(buf, start)
+	pio.WriteRune(buf, start)
 	firstZero := t != float && start == '0'
 
 	for r := sr.Peek(); r != 0; r = sr.Peek() {
 		switch r {
 		case '0':
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		case 'e', 'E':
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 			consumeExponent(sr, buf)
 			return float
 		case 'x', 'X':
 			if firstZero {
 				sr.Next()
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				r = sr.Next()
 				if IsHex(r) {
-					util.WriteRune(buf, r)
+					pio.WriteRune(buf, r)
 					consumeHexInteger(sr, buf)
 					return t
 				}
@@ -273,7 +274,7 @@ func ConsumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int 
 			}
 			if t != float {
 				sr.Next()
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				r = sr.Next()
 				if IsDigit(r) {
 					return ConsumeNumber(sr, r, buf, float)
@@ -285,7 +286,7 @@ func ConsumeNumber(sr *util.StringReader, start rune, buf io.Writer, t int) int 
 				return t
 			}
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		}
 	}
 	return t
@@ -307,13 +308,13 @@ func ConsumeRegexp(sr *util.StringReader) string {
 				panic(catch.Error("unterminated regexp"))
 			case '/': // Escape is removed
 			default:
-				util.WriteRune(buf, '\\')
+				pio.WriteRune(buf, '\\')
 			}
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		case 0, '\n':
 			panic(catch.Error("unterminated regexp"))
 		default:
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		}
 	}
 }
@@ -335,7 +336,7 @@ func ConsumeString(sr *util.StringReader, end rune) string {
 		case '\n':
 			panic(catch.Error("unterminated string"))
 		default:
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 		}
 	}
 }
@@ -356,7 +357,7 @@ func consumeEscape(r rune, buf io.Writer, end rune) {
 			panic(fmt.Errorf("illegal escape '\\%c'", r))
 		}
 	}
-	util.WriteRune(buf, r)
+	pio.WriteRune(buf, r)
 }
 
 func consumeRawString(sr *util.StringReader) string {
@@ -369,13 +370,13 @@ func consumeRawString(sr *util.StringReader) string {
 		if r == 0 {
 			panic(catch.Error("unterminated string"))
 		}
-		util.WriteRune(buf, r)
+		pio.WriteRune(buf, r)
 	}
 }
 
 func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
-	util.WriteRune(buf, start)
+	pio.WriteRune(buf, start)
 	for IsIdentifier(sr.Peek()) {
-		util.WriteRune(buf, sr.Next())
+		pio.WriteRune(buf, sr.Next())
 	}
 }

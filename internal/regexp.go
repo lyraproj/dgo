@@ -8,6 +8,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch/pio"
 )
 
 type (
@@ -137,26 +138,26 @@ func (v *regexpVal) Type() dgo.Type {
 // RegexpSlashQuote converts the given string into a slash delimited string with internal slashes escaped
 // and writes it on the given builder.
 func RegexpSlashQuote(sb io.Writer, str string) {
-	util.WriteByte(sb, '/')
+	pio.WriteByte(sb, '/')
 	for _, c := range str {
 		switch c {
 		case '\t':
-			util.WriteString(sb, `\t`)
+			pio.WriteString(sb, `\t`)
 		case '\n':
-			util.WriteString(sb, `\n`)
+			pio.WriteString(sb, `\n`)
 		case '\r':
-			util.WriteString(sb, `\r`)
+			pio.WriteString(sb, `\r`)
 		case '/':
-			util.WriteString(sb, `\/`)
+			pio.WriteString(sb, `\/`)
 		case '\\':
-			util.WriteString(sb, `\\`)
+			pio.WriteString(sb, `\\`)
 		default:
 			if c < 0x20 {
 				util.Fprintf(sb, `\u{%X}`, c)
 			} else {
-				util.WriteRune(sb, c)
+				pio.WriteRune(sb, c)
 			}
 		}
 	}
-	util.WriteByte(sb, '/')
+	pio.WriteByte(sb, '/')
 }

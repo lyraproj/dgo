@@ -7,6 +7,7 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
 	"github.com/tada/catch"
+	"github.com/tada/catch/pio"
 )
 
 type (
@@ -175,7 +176,7 @@ func (t *named) TypeIdentifier() dgo.TypeIdentifier {
 
 func (t *named) ValueString(v dgo.Value) string {
 	b := util.NewERPIndenter(``)
-	util.WriteString(b, t.name)
+	pio.WriteString(b, t.name)
 	if t.extractor != nil {
 		switch t.extractor(v).(type) {
 		case dgo.Array, dgo.Map, dgo.String:

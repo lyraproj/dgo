@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/tada/catch/pio"
+
 	"github.com/lyraproj/dgo/parser"
 	"github.com/lyraproj/dgo/util"
 )
@@ -121,7 +123,7 @@ func consumeLineComment(sr *util.StringReader) {
 }
 
 func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
-	util.WriteRune(buf, start)
+	pio.WriteRune(buf, start)
 	for {
 		r := sr.Peek()
 		switch r {
@@ -129,13 +131,13 @@ func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
 			return
 		case ':':
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 			r = sr.Next()
 			if r == ':' {
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				r = sr.Next()
 				if r == '_' || parser.IsLowerCase(r) {
-					util.WriteRune(buf, r)
+					pio.WriteRune(buf, r)
 					continue
 				}
 			}
@@ -143,7 +145,7 @@ func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
 		default:
 			if r == '_' || parser.IsLetterOrDigit(r) {
 				sr.Next()
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				continue
 			}
 			return
@@ -152,7 +154,7 @@ func consumeIdentifier(sr *util.StringReader, start rune, buf io.Writer) {
 }
 
 func consumeTypeName(sr *util.StringReader, start rune, buf io.Writer) {
-	util.WriteRune(buf, start)
+	pio.WriteRune(buf, start)
 	for {
 		r := sr.Peek()
 		switch r {
@@ -160,13 +162,13 @@ func consumeTypeName(sr *util.StringReader, start rune, buf io.Writer) {
 			return
 		case ':':
 			sr.Next()
-			util.WriteRune(buf, r)
+			pio.WriteRune(buf, r)
 			r = sr.Next()
 			if r == ':' {
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				r = sr.Next()
 				if parser.IsUpperCase(r) {
-					util.WriteRune(buf, r)
+					pio.WriteRune(buf, r)
 					continue
 				}
 			}
@@ -174,7 +176,7 @@ func consumeTypeName(sr *util.StringReader, start rune, buf io.Writer) {
 		default:
 			if r == '_' || parser.IsLetterOrDigit(r) {
 				sr.Next()
-				util.WriteRune(buf, r)
+				pio.WriteRune(buf, r)
 				continue
 			}
 			return

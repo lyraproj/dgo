@@ -12,6 +12,7 @@ import (
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch/pio"
 )
 
 const (
@@ -70,47 +71,47 @@ func allOfValue(sb *typeBuilder, typ dgo.Type, prio int) {
 func array(sb *typeBuilder, typ dgo.Type, _ int) {
 	at := typ.(dgo.ArrayType)
 	if at.Unbounded() {
-		util.WriteString(sb, `[]`)
+		pio.WriteString(sb, `[]`)
 	} else {
-		util.WriteByte(sb, '[')
+		pio.WriteByte(sb, '[')
 		sb.writeSizeBoundaries(int64(at.Min()), int64(at.Max()))
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, ']')
 	}
 	sb.buildTypeString(at.ElementType(), typePrio)
 }
 
 func arrayExact(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteByte(sb, '{')
+	pio.WriteByte(sb, '{')
 	sb.joinValueTypes(typ.(dgo.Iterable), `,`, commaPrio)
-	util.WriteByte(sb, '}')
+	pio.WriteByte(sb, '}')
 }
 
 func binary(sb *typeBuilder, typ dgo.Type, _ int) {
 	st := typ.(dgo.BinaryType)
-	util.WriteString(sb, `binary`)
+	pio.WriteString(sb, `binary`)
 	if !st.Unbounded() {
-		util.WriteByte(sb, '[')
+		pio.WriteByte(sb, '[')
 		sb.writeSizeBoundaries(int64(st.Min()), int64(st.Max()))
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, ']')
 	}
 }
 
 func stringValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteQuotedString(sb, typ.(dgo.String).GoString())
+	pio.WriteQuotedString(sb, typ.(dgo.String).GoString())
 }
 
 func bigFloatValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, `big `)
-	util.WriteString(sb, typ.(dgo.BigFloat).GoBigFloat().String())
+	pio.WriteString(sb, `big `)
+	pio.WriteString(sb, typ.(dgo.BigFloat).GoBigFloat().String())
 }
 
 func bigIntValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, typ.(dgo.BigInt).GoBigInt().String())
+	pio.WriteString(sb, typ.(dgo.BigInt).GoBigInt().String())
 }
 
 func binaryValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, `binary `)
-	util.WriteQuotedString(sb, typ.(dgo.Binary).Encode())
+	pio.WriteString(sb, `binary `)
+	pio.WriteQuotedString(sb, typ.(dgo.Binary).Encode())
 }
 
 func booleanValue(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -118,24 +119,24 @@ func booleanValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	if typ.(dgo.Boolean).GoBool() {
 		s = `true`
 	}
-	util.WriteString(sb, s)
+	pio.WriteString(sb, s)
 }
 
 func errorValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, `error `)
-	util.WriteQuotedString(sb, typ.(error).Error())
+	pio.WriteString(sb, `error `)
+	pio.WriteQuotedString(sb, typ.(error).Error())
 }
 
 func exactValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
+	pio.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
 }
 
 func floatValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, util.Ftoa(typ.(dgo.Float).GoFloat()))
+	pio.WriteString(sb, util.Ftoa(typ.(dgo.Float).GoFloat()))
 }
 
 func intValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, strconv.FormatInt(typ.(dgo.Integer).GoInt(), 10))
+	pio.WriteString(sb, strconv.FormatInt(typ.(dgo.Integer).GoInt(), 10))
 }
 
 func nativeValue(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -143,7 +144,7 @@ func nativeValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	if rv.CanInterface() {
 		iv := rv.Interface()
 		if s, ok := iv.(fmt.Stringer); ok {
-			util.WriteString(sb, s.String())
+			pio.WriteString(sb, s.String())
 		} else {
 			util.Fprintf(sb, "%#v", iv)
 		}
@@ -153,13 +154,13 @@ func nativeValue(sb *typeBuilder, typ dgo.Type, _ int) {
 }
 
 func regexpValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, `regexp `)
-	util.WriteQuotedString(sb, typ.(dgo.Regexp).GoRegexp().String())
+	pio.WriteString(sb, `regexp `)
+	pio.WriteQuotedString(sb, typ.(dgo.Regexp).GoRegexp().String())
 }
 
 func timeValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteString(sb, `time `)
-	util.WriteQuotedString(sb, typ.(dgo.Time).GoTime().Format(time.RFC3339Nano))
+	pio.WriteString(sb, `time `)
+	pio.WriteQuotedString(sb, typ.(dgo.Time).GoTime().Format(time.RFC3339Nano))
 }
 
 func tuple(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -168,39 +169,39 @@ func tuple(sb *typeBuilder, typ dgo.Type, _ int) {
 
 func _map(sb *typeBuilder, typ dgo.Type, _ int) {
 	at := typ.(dgo.MapType)
-	util.WriteString(sb, `map[`)
+	pio.WriteString(sb, `map[`)
 	sb.buildTypeString(at.KeyType(), commaPrio)
 	if !at.Unbounded() {
-		util.WriteByte(sb, ',')
+		pio.WriteByte(sb, ',')
 		sb.writeSizeBoundaries(int64(at.Min()), int64(at.Max()))
 	}
-	util.WriteByte(sb, ']')
+	pio.WriteByte(sb, ']')
 	sb.buildTypeString(at.ValueType(), typePrio)
 }
 
 func mapExact(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteByte(sb, '{')
+	pio.WriteByte(sb, '{')
 	sb.joinValueTypes(typ.(dgo.Map), `,`, commaPrio)
-	util.WriteByte(sb, '}')
+	pio.WriteByte(sb, '}')
 }
 
 func _struct(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteByte(sb, '{')
+	pio.WriteByte(sb, '{')
 	st := typ.(dgo.StructMapType)
 	sb.joinStructMapEntries(st)
 	if st.Additional() {
 		if st.Len() > 0 {
-			util.WriteByte(sb, ',')
+			pio.WriteByte(sb, ',')
 		}
-		util.WriteString(sb, `...`)
+		pio.WriteString(sb, `...`)
 	}
-	util.WriteByte(sb, '}')
+	pio.WriteByte(sb, '}')
 }
 
 func mapEntryExact(sb *typeBuilder, typ dgo.Type, _ int) {
 	me := typ.(dgo.MapEntry)
 	sb.buildTypeString(typeAsType(me.Key()), commaPrio)
-	util.WriteByte(sb, ':')
+	pio.WriteByte(sb, ':')
 	sb.buildTypeString(typeAsType(me.Value()), commaPrio)
 }
 
@@ -211,13 +212,13 @@ func floatRange(sb *typeBuilder, typ dgo.Type, _ int) {
 		_, big = st.Max().(dgo.BigFloat)
 	}
 	if big {
-		util.WriteString(sb, `big `)
+		pio.WriteString(sb, `big `)
 		if st.Min() != nil {
-			util.WriteString(sb, st.Min().(dgo.BigFloat).GoBigFloat().String())
+			pio.WriteString(sb, st.Min().(dgo.BigFloat).GoBigFloat().String())
 		}
 		sb.writeRangeDots(st.Inclusive())
 		if st.Max() != nil {
-			util.WriteString(sb, st.Max().(dgo.BigFloat).GoBigFloat().String())
+			pio.WriteString(sb, st.Max().(dgo.BigFloat).GoBigFloat().String())
 		}
 	} else {
 		sb.writeRange(st.Min(), st.Max(), st.Inclusive())
@@ -230,11 +231,11 @@ func integerRange(sb *typeBuilder, typ dgo.Type, _ int) {
 }
 
 func sensitive(sb *typeBuilder, typ dgo.Type, prio int) {
-	util.WriteString(sb, `sensitive`)
+	pio.WriteString(sb, `sensitive`)
 	if op := typ.(dgo.UnaryType).Operand(); internal.DefaultAnyType != op {
-		util.WriteByte(sb, '[')
+		pio.WriteByte(sb, '[')
 		sb.buildTypeString(op, prio)
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, ']')
 	}
 }
 
@@ -244,17 +245,17 @@ func stringPattern(sb *typeBuilder, typ dgo.Type, _ int) {
 
 func stringSized(sb *typeBuilder, typ dgo.Type, _ int) {
 	st := typ.(dgo.StringType)
-	util.WriteString(sb, `string`)
+	pio.WriteString(sb, `string`)
 	if !st.Unbounded() {
-		util.WriteByte(sb, '[')
+		pio.WriteByte(sb, '[')
 		sb.writeSizeBoundaries(int64(st.Min()), int64(st.Max()))
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, ']')
 	}
 }
 
 func ciString(sb *typeBuilder, typ dgo.Type, _ int) {
-	util.WriteByte(sb, '~')
-	util.WriteString(sb, strconv.Quote(typ.(dgo.String).GoString()))
+	pio.WriteByte(sb, '~')
+	pio.WriteString(sb, strconv.Quote(typ.(dgo.String).GoString()))
 }
 
 func native(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -263,31 +264,31 @@ func native(sb *typeBuilder, typ dgo.Type, _ int) {
 
 func not(sb *typeBuilder, typ dgo.Type, _ int) {
 	nt := typ.(dgo.UnaryType)
-	util.WriteByte(sb, '!')
+	pio.WriteByte(sb, '!')
 	sb.buildTypeString(nt.Operand(), typePrio)
 }
 
 func meta(sb *typeBuilder, typ dgo.Type, prio int) {
 	nt := typ.(dgo.UnaryType)
-	util.WriteString(sb, `type`)
+	pio.WriteString(sb, `type`)
 	if op := nt.Operand(); internal.DefaultAnyType != op {
 		if op == nil {
-			util.WriteString(sb, `[type]`)
+			pio.WriteString(sb, `[type]`)
 		} else {
-			util.WriteByte(sb, '[')
+			pio.WriteByte(sb, '[')
 			sb.buildTypeString(op, prio)
-			util.WriteByte(sb, ']')
+			pio.WriteByte(sb, ']')
 		}
 	}
 }
 
 func function(sb *typeBuilder, typ dgo.Type, prio int) {
 	ft := typ.(dgo.FunctionType)
-	util.WriteString(sb, `func`)
+	pio.WriteString(sb, `func`)
 	sb.writeTupleArgs(ft.In(), '(', ')')
 	out := ft.Out()
 	if out.Len() > 0 {
-		util.WriteByte(sb, ' ')
+		pio.WriteByte(sb, ' ')
 		if out.Len() == 1 && !out.Variadic() {
 			sb.buildTypeString(out.ElementTypeAt(0), prio)
 		} else {
@@ -298,11 +299,11 @@ func function(sb *typeBuilder, typ dgo.Type, prio int) {
 
 func named(sb *typeBuilder, typ dgo.Type, _ int) {
 	nt := typ.(dgo.NamedType)
-	util.WriteString(sb, nt.Name())
+	pio.WriteString(sb, nt.Name())
 	if params := nt.Parameters(); params != nil {
-		util.WriteByte(sb, '[')
+		pio.WriteByte(sb, '[')
 		sb.joinValueTypes(params, `,`, commaPrio)
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, ']')
 	}
 }
 
@@ -362,7 +363,7 @@ func (sb *typeBuilder) joinX(v dgo.Iterable, tc func(dgo.Value) dgo.Type, s stri
 		if first {
 			first = false
 		} else {
-			util.WriteString(sb, s)
+			pio.WriteString(sb, s)
 		}
 		sb.buildTypeString(tc(v), prio)
 	})
@@ -374,31 +375,31 @@ func (sb *typeBuilder) joinStructMapEntries(v dgo.StructMapType) {
 		if first {
 			first = false
 		} else {
-			util.WriteByte(sb, ',')
+			pio.WriteByte(sb, ',')
 		}
 		sb.buildTypeString(e.Key().(dgo.Type), commaPrio)
 		if !e.Required() {
-			util.WriteByte(sb, '?')
+			pio.WriteByte(sb, '?')
 		}
-		util.WriteByte(sb, ':')
+		pio.WriteByte(sb, ':')
 		sb.buildTypeString(e.Value().(dgo.Type), commaPrio)
 	})
 }
 
 func (sb *typeBuilder) writeNativeType(rt reflect.Type) {
-	util.WriteString(sb, `native`)
+	pio.WriteString(sb, `native`)
 	if rt != nil {
-		util.WriteByte(sb, '[')
-		util.WriteString(sb, strconv.Quote(rt.String()))
-		util.WriteByte(sb, ']')
+		pio.WriteByte(sb, '[')
+		pio.WriteString(sb, strconv.Quote(rt.String()))
+		pio.WriteByte(sb, ']')
 	}
 }
 
 func (sb *typeBuilder) writeSizeBoundaries(min, max int64) {
-	util.WriteString(sb, strconv.FormatInt(min, 10))
+	pio.WriteString(sb, strconv.FormatInt(min, 10))
 	if max != math.MaxInt64 {
-		util.WriteByte(sb, ',')
-		util.WriteString(sb, strconv.FormatInt(max, 10))
+		pio.WriteByte(sb, ',')
+		pio.WriteString(sb, strconv.FormatInt(max, 10))
 	}
 }
 
@@ -407,7 +408,7 @@ func (sb *typeBuilder) writeRangeDots(inclusive bool) {
 	if inclusive {
 		op = `..`
 	}
-	util.WriteString(sb, op)
+	pio.WriteString(sb, op)
 }
 
 func (sb *typeBuilder) writeRange(min, max dgo.Number, inclusive bool) {
@@ -426,40 +427,40 @@ func (sb *typeBuilder) writeTupleArgs(tt dgo.TupleType, leftSep, rightSep byte) 
 		n := es.Len() - 1
 		sep := leftSep
 		for i := 0; i < n; i++ {
-			util.WriteByte(sb, sep)
+			pio.WriteByte(sb, sep)
 			sep = ','
 			sb.buildTypeString(es.Get(i).(dgo.Type), commaPrio)
 		}
-		util.WriteByte(sb, sep)
-		util.WriteString(sb, `...`)
+		pio.WriteByte(sb, sep)
+		pio.WriteString(sb, `...`)
 		sb.buildTypeString(es.Get(n).(dgo.Type), commaPrio)
-		util.WriteByte(sb, rightSep)
+		pio.WriteByte(sb, rightSep)
 	} else {
-		util.WriteByte(sb, leftSep)
+		pio.WriteByte(sb, leftSep)
 		sb.joinTypes(es, `,`, commaPrio)
-		util.WriteByte(sb, rightSep)
+		pio.WriteByte(sb, rightSep)
 	}
 }
 
 func (sb *typeBuilder) writeTernary(typ dgo.Type, tc func(dgo.Value) dgo.Type, prio int, op string, opPrio int) {
 	if prio >= orPrio {
-		util.WriteByte(sb, '(')
+		pio.WriteByte(sb, '(')
 	}
 	sb.joinX(typ.(dgo.TernaryType).Operands(), tc, op, opPrio)
 	if prio >= orPrio {
-		util.WriteByte(sb, ')')
+		pio.WriteByte(sb, ')')
 	}
 }
 
 func (sb *typeBuilder) buildTypeString(typ dgo.Type, prio int) {
 	ti := typ.TypeIdentifier()
 	if tn := sb.aliasMap.GetName(typ); tn != nil {
-		util.WriteString(sb, tn.GoString())
+		pio.WriteString(sb, tn.GoString())
 	} else if f, ok := complexTypes[ti]; ok {
 		if util.RecursionHit(sb.seen, typ) {
-			util.WriteString(sb, `<recursive self reference to `)
-			util.WriteString(sb, ti.String())
-			util.WriteString(sb, ` type>`)
+			pio.WriteString(sb, `<recursive self reference to `)
+			pio.WriteString(sb, ti.String())
+			pio.WriteString(sb, ` type>`)
 			return
 		}
 		os := sb.seen
@@ -467,7 +468,7 @@ func (sb *typeBuilder) buildTypeString(typ dgo.Type, prio int) {
 		f(sb, typ, prio)
 		sb.seen = os
 	} else {
-		util.WriteString(sb, ti.String())
+		pio.WriteString(sb, ti.String())
 	}
 }
 
