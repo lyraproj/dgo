@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -86,7 +87,7 @@ func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
 		panic(illegalArgument(`time`, `time|string`, []interface{}{arg}, 0))
 	}
 	if !t.Instance(tv) {
-		panic(IllegalAssignment(t, tv))
+		panic(catch.Error(IllegalAssignment(t, tv)))
 	}
 	return tv
 }
@@ -102,7 +103,7 @@ func Time(ts time.Time) dgo.Time {
 func TimeFromString(s string) dgo.Time {
 	ts, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
-		panic(err)
+		panic(catch.Error(err))
 	}
 	return &timeVal{ts}
 }

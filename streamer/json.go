@@ -8,6 +8,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/catch"
 )
 
 const (
@@ -99,12 +100,12 @@ func (j *jsonDecoder) decodeCollection(delim json.Delim) {
 				if ri, err := n.Int64(); err == nil {
 					j.consumer.AddRef(int(ri))
 					if j.nextToken() != json.Delim('}') {
-						panic(fmt.Errorf(`expected end of object after "%s": %d`, j.refKey, ri))
+						panic(catch.Error(`expected end of object after "%s": %d`, j.refKey, ri))
 					}
 					return
 				}
 			}
-			panic(fmt.Errorf(`expected integer after key "%s"`, j.refKey))
+			panic(catch.Error(`expected integer after key "%s"`, j.refKey))
 		}
 	} else {
 		j.consumer.AddArray(0, j.decodeArray)
@@ -132,7 +133,7 @@ func (j *jsonDecoder) nextToken() (t json.Token) {
 			if io.EOF == err {
 				err = io.ErrUnexpectedEOF
 			}
-			panic(err)
+			panic(catch.Error(err))
 		}
 	}
 	return
@@ -244,6 +245,6 @@ func (j *jsonEncoder) write(e dgo.Value) {
 
 func assertOk(_ int, err error) {
 	if err != nil {
-		panic(err)
+		panic(catch.Error(err))
 	}
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch"
 )
 
 type (
@@ -68,7 +69,7 @@ func newString(t dgo.Type, arg dgo.Value) dgo.String {
 	}
 
 	if !t.Instance(s) {
-		panic(IllegalAssignment(t, s))
+		panic(catch.Error(IllegalAssignment(t, s)))
 	}
 	return s
 }

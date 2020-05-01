@@ -1,10 +1,10 @@
 package internal
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -100,7 +100,7 @@ func (a *alias) ThawedCopy() dgo.Value {
 }
 
 func (a *alias) freezeAttempt() error {
-	return fmt.Errorf(`attempt to freeze unresolved alias '%s'`, a.Reference())
+	return catch.Error(`attempt to freeze unresolved alias '%s'`, a.Reference())
 }
 
 func (a *alias) Reference() dgo.String {
@@ -214,7 +214,7 @@ func (a *aliasAdder) Replace(t dgo.Value) dgo.Value {
 		if ra := a.GetType(t.Reference()); ra != nil {
 			return ra
 		}
-		panic(fmt.Errorf(`reference to unresolved type '%s'`, t.Reference()))
+		panic(catch.Error(`reference to unresolved type '%s'`, t.Reference()))
 	case dgo.AliasContainer:
 		t.Resolve(a)
 	}

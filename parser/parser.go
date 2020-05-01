@@ -1,18 +1,17 @@
 package parser
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"regexp"
 	"strconv"
 
-	"github.com/lyraproj/dgo/vf"
-
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/util"
+	"github.com/lyraproj/dgo/vf"
+	"github.com/tada/catch"
 )
 
 // States:
@@ -168,7 +167,7 @@ func DoParse(p Parser, fileName string) dgo.Value {
 			if fileName != `` || sr.Line() > 1 {
 				ln = fmt.Sprintf(`line: %d, `, sr.Line())
 			}
-			panic(fmt.Errorf("%s: (%s%scolumn: %d)", es, fn, ln, sr.Column()-tl))
+			panic(catch.Error("%s: (%s%scolumn: %d)", es, fn, ln, sr.Column()-tl))
 		}
 	}()
 	p.Parse(p.NextToken())
@@ -368,7 +367,7 @@ func (p *parser) arrayElement(t *Token, expectEntry int) int {
 	nt := p.PeekToken()
 	if t.Type == identifier && nt.Type == ':' || nt.Type == '?' {
 		if expectEntry == 0 {
-			panic(errors.New(`mix of elements and map entries`))
+			panic(catch.Error(`mix of elements and map entries`))
 		}
 		key = internal.String(t.Value)
 	} else {
@@ -383,7 +382,7 @@ func (p *parser) arrayElement(t *Token, expectEntry int) int {
 
 	if p.PeekToken().Type == ':' {
 		if expectEntry == 0 {
-			panic(errors.New(`mix of elements and map entries`))
+			panic(catch.Error(`mix of elements and map entries`))
 		}
 		// Map mapEntry
 		p.NextToken()
@@ -399,7 +398,7 @@ func (p *parser) arrayElement(t *Token, expectEntry int) int {
 		expectEntry = 2
 	} else {
 		if expectEntry == 2 {
-			panic(errors.New(`mix of elements and map entries`))
+			panic(catch.Error(`mix of elements and map entries`))
 		}
 		expectEntry = 0
 	}
@@ -741,7 +740,7 @@ func (p *parser) aliasDeclaration(t *Token) dgo.Value {
 			return tp
 		}
 	}
-	panic(fmt.Errorf(`attempt to redeclare identifier '%s'`, t.Value))
+	panic(catch.Error(`attempt to redeclare identifier '%s'`, t.Value))
 }
 
 func (p *parser) typeExpression(t *Token) {

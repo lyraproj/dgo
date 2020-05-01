@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 // CheckAssignableTo checks if the given type t implements the ReverseAssignable interface and if
@@ -85,9 +86,9 @@ func Generic(t dgo.Type) dgo.Type {
 
 func illegalArgument(name, expected interface{}, args []interface{}, argno int) error {
 	if len(args) == 1 {
-		return fmt.Errorf(`illegal argument for %s. Expected %s, got %v`, name, expected, Value(args[argno]))
+		return catch.Error(`illegal argument for %s. Expected %s, got %v`, name, expected, Value(args[argno]))
 	}
-	return fmt.Errorf(
+	return catch.Error(
 		`illegal argument %d for %s with %d arguments. Expected %s, got %v`,
 		argno+1, name, len(args), expected, Value(args[argno]))
 }
@@ -107,7 +108,7 @@ func illegalArgumentCount(name string, min, max, actual int) error {
 	if name != `` {
 		name = ` for ` + name
 	}
-	return fmt.Errorf(`illegal number of arguments%s. Expected %s, got %d`, name, exp, actual)
+	return catch.Error(`illegal number of arguments%s. Expected %s, got %d`, name, exp, actual)
 }
 
 var primitivePTypes = map[reflect.Kind]dgo.Type{

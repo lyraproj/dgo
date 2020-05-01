@@ -5,13 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/tf"
-
-	"github.com/lyraproj/dgo/test/require"
-
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/test/assert"
+	"github.com/lyraproj/dgo/test/require"
+	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )

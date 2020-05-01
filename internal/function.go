@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"errors"
 	"math"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -196,7 +196,7 @@ var DefaultFunctionType = &functionType{arguments: DefaultTupleType, returns: De
 // types.
 func FunctionType(args dgo.TupleType, returns dgo.TupleType) dgo.FunctionType {
 	if returns.Variadic() && !DefaultTupleType.Equals(returns) {
-		panic(errors.New(`tuple describing return values cannot be variadic`))
+		panic(catch.Error(`tuple describing return values cannot be variadic`))
 	}
 	if args == DefaultTupleType && returns == DefaultTupleType {
 		return DefaultFunctionType
@@ -261,7 +261,7 @@ func (t *functionType) Out() dgo.TupleType {
 
 func (t *functionType) ReflectType() reflect.Type {
 	// There is currently no way to build a goFunc type dynamically
-	panic(errors.New(`unable to build reflect.Type of go func dynamically`))
+	panic(catch.Error(`unable to build reflect.Type of go func dynamically`))
 }
 
 func (t *functionType) String() string {

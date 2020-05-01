@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 var reflectTypeType = reflect.TypeOf((*dgo.Type)(nil)).Elem()
@@ -85,7 +86,7 @@ func (t *metaType) New(arg dgo.Value) dgo.Value {
 		tv = AsType(arg)
 	}
 	if !t.Instance(tv) {
-		panic(IllegalAssignment(t, tv))
+		panic(catch.Error(IllegalAssignment(t, tv)))
 	}
 	return tv
 }

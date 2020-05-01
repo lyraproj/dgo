@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/lyraproj/dgo/util"
-
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/util"
 )
 
 const rndFactor = 1234

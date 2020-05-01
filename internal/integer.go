@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -33,7 +34,7 @@ var reflectIntegerType = reflect.TypeOf(int64(0))
 func Integer64Type(min, max int64, inclusive bool) dgo.IntegerType {
 	if min == max {
 		if !inclusive {
-			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+			panic(catch.Error(`non inclusive range cannot have equal min and max`))
 		}
 		return intVal(min).Type().(dgo.IntegerType)
 	}
@@ -64,7 +65,7 @@ func IntegerType(min, max dgo.Integer, inclusive bool) dgo.IntegerType {
 		cmp, _ := min.CompareTo(max)
 		if cmp == 0 {
 			if !inclusive {
-				panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+				panic(catch.Error(`non inclusive range cannot have equal min and max`))
 			}
 			return min.(dgo.IntegerType)
 		}
@@ -556,7 +557,7 @@ func newInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
 		i = intFromConvertible(arg, 0)
 	}
 	if !t.Instance(i) {
-		panic(IllegalAssignment(t, i))
+		panic(catch.Error(IllegalAssignment(t, i)))
 	}
 	return i
 }
@@ -584,5 +585,5 @@ func intFromConvertible(from dgo.Value, radix int) dgo.Integer {
 			}
 		}
 	}
-	panic(fmt.Errorf(`the value '%v' cannot be converted to an int`, from))
+	panic(catch.Error(`the value '%v' cannot be converted to an int`, from))
 }

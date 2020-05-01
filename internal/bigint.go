@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -161,7 +161,7 @@ func (v *bigIntVal) GoInt() int64 {
 	if i, ok := v.ToInt(); ok {
 		return i
 	}
-	panic(fmt.Errorf(`BigInt.ToInt(): value %d cannot fit into an int64`, v))
+	panic(catch.Error(`BigInt.ToInt(): value %d cannot fit into an int64`, v))
 }
 
 func (v *bigIntVal) HashCode() int {
@@ -256,7 +256,7 @@ func newBigInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
 		i = bigIntFromConvertible(arg, 0)
 	}
 	if !t.Instance(i) {
-		panic(IllegalAssignment(t, i))
+		panic(catch.Error(IllegalAssignment(t, i)))
 	}
 	return i
 }
@@ -279,5 +279,5 @@ func bigIntFromConvertible(from dgo.Value, radix int) dgo.Integer {
 			return BigInt(bi)
 		}
 	}
-	panic(fmt.Errorf(`the value '%v' cannot be converted to an int`, from))
+	panic(catch.Error(`the value '%v' cannot be converted to an int`, from))
 }

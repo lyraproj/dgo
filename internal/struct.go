@@ -1,12 +1,11 @@
 package internal
 
 import (
-	"errors"
-	"fmt"
 	"reflect"
 	"sort"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -255,7 +254,7 @@ func (v *structVal) Put(key, value interface{}) dgo.Value {
 			return old
 		}
 	}
-	panic(fmt.Errorf(`%s has no field named '%s'`, v.rs.Type(), key))
+	panic(catch.Error(`%s has no field named '%s'`, v.rs.Type(), key))
 }
 
 func (v *structVal) PutAll(associations dgo.Map) {
@@ -279,11 +278,11 @@ func (v *structVal) ReflectTo(value reflect.Value) {
 }
 
 func (v *structVal) Remove(_ interface{}) dgo.Value {
-	panic(errors.New(`struct fields cannot be removed`))
+	panic(catch.Error(`struct fields cannot be removed`))
 }
 
 func (v *structVal) RemoveAll(_ dgo.Array) {
-	panic(errors.New(`struct fields cannot be removed`))
+	panic(catch.Error(`struct fields cannot be removed`))
 }
 
 func (v *structVal) String() string {

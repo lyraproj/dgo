@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -33,7 +34,7 @@ var reflectFloatType = reflect.TypeOf(float64(0))
 func Float64Type(min, max float64, inclusive bool) dgo.FloatType {
 	if min == max {
 		if !inclusive {
-			panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+			panic(catch.Error(`non inclusive range cannot have equal min and max`))
 		}
 		return floatVal(min).Type().(dgo.FloatType)
 	}
@@ -64,7 +65,7 @@ func FloatType(min, max dgo.Float, inclusive bool) dgo.FloatType {
 		cmp, _ := min.CompareTo(max)
 		if cmp == 0 {
 			if !inclusive {
-				panic(fmt.Errorf(`non inclusive range cannot have equal min and max`))
+				panic(catch.Error(`non inclusive range cannot have equal min and max`))
 			}
 			return min.(dgo.FloatType)
 		}
@@ -468,7 +469,7 @@ func newFloat(t dgo.Type, arg dgo.Value) (f dgo.Float) {
 	}
 	f = floatFromConvertible(arg)
 	if !t.Instance(f) {
-		panic(IllegalAssignment(t, f))
+		panic(catch.Error(IllegalAssignment(t, f)))
 	}
 	return f
 }

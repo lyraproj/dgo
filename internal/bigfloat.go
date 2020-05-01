@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -132,7 +132,7 @@ func (v *bigFloatVal) GoFloat() float64 {
 	if f, ok := v.ToFloat(); ok {
 		return f
 	}
-	panic(fmt.Errorf(`BigFloat.ToFloat(): value %f cannot fit into a float64`, v))
+	panic(catch.Error(`BigFloat.ToFloat(): value %f cannot fit into a float64`, v))
 }
 
 func (v *bigFloatVal) HashCode() int {
@@ -229,7 +229,7 @@ func bigFloatFromConvertible(from dgo.Value, prec uint) dgo.Float {
 			return &bigFloatVal{f}
 		}
 	}
-	panic(fmt.Errorf(`the value '%s' cannot be converted to a big float`, from))
+	panic(catch.Error(`the value '%s' cannot be converted to a big float`, from))
 }
 
 var precType = Integer64Type(0, math.MaxUint32, true)
@@ -245,7 +245,7 @@ func newBigFloat(t dgo.Type, arg dgo.Value) (f dgo.Float) {
 	}
 	f = bigFloatFromConvertible(arg, prec)
 	if !t.Instance(f) {
-		panic(IllegalAssignment(t, f))
+		panic(catch.Error(IllegalAssignment(t, f)))
 	}
 	return f
 }

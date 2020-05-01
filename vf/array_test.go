@@ -5,7 +5,6 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/typ"
-
 	"github.com/lyraproj/dgo/vf"
 )
 

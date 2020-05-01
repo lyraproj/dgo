@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
+	"github.com/tada/catch"
 )
 
 type (
@@ -184,11 +185,11 @@ func newBoolean(t dgo.Type, arg dgo.Value) dgo.Value {
 		if boolStringType.Instance(arg) {
 			v = boolean(trueStringType.Instance(arg))
 		} else {
-			panic(fmt.Errorf(`unable to create a bool from %s`, arg))
+			panic(catch.Error(`unable to create a bool from %s`, arg))
 		}
 	}
 	if !t.Instance(v) {
-		panic(IllegalAssignment(t, v))
+		panic(catch.Error(IllegalAssignment(t, v)))
 	}
 	return v
 }

@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/util"
+	"github.com/tada/catch"
 )
 
 type (
@@ -287,13 +287,13 @@ func TupleType(types []interface{}) dgo.TupleType {
 	return newTupleType(types, false)
 }
 
-// VariadicTupleType returns a type that represents an Array value with a variadic number of elements. Each
+// VariadicTupleType returns a type that represents an Array value with a variadic number of elements. EachEntryType
 // given type determines the type of a corresponding element in an array except for the last one which
 // determines the remaining elements.
 func VariadicTupleType(types []interface{}) dgo.TupleType {
 	n := len(types)
 	if n == 0 {
-		panic(errors.New(`a variadic tuple must have at least one element`))
+		panic(catch.Error(`a variadic tuple must have at least one element`))
 	}
 	return newTupleType(types, true)
 }
@@ -706,7 +706,7 @@ func newArray(t dgo.Type, arg dgo.Value) dgo.Array {
 	}
 	a := Array(arg)
 	if !t.Instance(a) {
-		panic(IllegalAssignment(t, a))
+		panic(catch.Error(IllegalAssignment(t, a)))
 	}
 	return a
 }
@@ -1504,7 +1504,7 @@ func allInstance(guard dgo.RecursionGuard, t dgo.Type, vs []dgo.Value) bool {
 }
 
 func frozenArray(f string) error {
-	return fmt.Errorf(`%s called on a frozen Array`, f)
+	return catch.Error(`%s called on a frozen Array`, f)
 }
 
 func resolveSlice(ts []dgo.Value, ap dgo.AliasAdder) {
