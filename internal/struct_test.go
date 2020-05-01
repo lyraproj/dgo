@@ -6,13 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tada/dgo/util"
-
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/test/assert"
+	"github.com/tada/dgo/test/require"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/typ"
-
-	"github.com/tada/dgo/dgo"
-	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/util"
 	"github.com/tada/dgo/vf"
 )
 
@@ -23,27 +22,27 @@ func TestStruct(t *testing.T) {
 	}
 	m := vf.Map(&structA{1, 2})
 	tp := m.(dgo.StructMapType)
-	require.Same(t, m, tp)
-	require.Assignable(t, tp, m.Type())
-	require.False(t, tp.Additional())
-	require.Instance(t, tp, m)
-	require.Equal(t, tf.Map(typ.String, typ.Integer), typ.Generic(tp))
-	require.Equal(t, 2, tp.Max())
-	require.Equal(t, 2, tp.Min())
-	require.False(t, tp.Unbounded())
-	require.Equal(t, tf.StructMapEntry(`A`, 1, true), tp.GetEntryType(`A`))
+	assert.Same(t, m, tp)
+	assert.Assignable(t, tp, m.Type())
+	assert.False(t, tp.Additional())
+	assert.Instance(t, tp, m)
+	assert.Equal(t, tf.Map(typ.String, typ.Integer), typ.Generic(tp))
+	assert.Equal(t, 2, tp.Max())
+	assert.Equal(t, 2, tp.Min())
+	assert.False(t, tp.Unbounded())
+	assert.Equal(t, tf.StructMapEntry(`A`, 1, true), tp.GetEntryType(`A`))
 
 	m2 := tp.(dgo.Factory).New(vf.Map(`A`, 1, `B`, 2))
-	require.Equal(t, m, m2)
-	require.Equal(t, &structA{1, 2}, m2.(dgo.Struct).GoStruct())
-	require.Equal(t, `internal_test.structA`, tp.ReflectType().String())
+	assert.Equal(t, m, m2)
+	assert.Equal(t, &structA{1, 2}, m2.(dgo.Struct).GoStruct())
+	assert.Equal(t, `internal_test.structA`, tp.ReflectType().String())
 
 	c := 0
 	tp.EachEntryType(func(e dgo.StructMapEntry) {
 		c++
-		require.Equal(t, c, e.Value())
+		assert.Equal(t, c, e.Value())
 	})
-	require.Equal(t, 2, c)
+	assert.Equal(t, 2, c)
 }
 
 func TestStruct_Any(t *testing.T) {
@@ -53,10 +52,10 @@ func TestStruct_Any(t *testing.T) {
 		Third  string
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
-	require.False(t, m.Any(func(e dgo.MapEntry) bool {
+	assert.False(t, m.Any(func(e dgo.MapEntry) bool {
 		return e.Key().Equals(`Fourth`)
 	}))
-	require.True(t, m.Any(func(e dgo.MapEntry) bool {
+	assert.True(t, m.Any(func(e dgo.MapEntry) bool {
 		return e.Key().Equals(`Second`) && e.Value().Equals(2.0)
 	}))
 }
@@ -68,10 +67,10 @@ func TestStruct_AllKeys(t *testing.T) {
 		Third  string
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
-	require.False(t, m.AllKeys(func(k dgo.Value) bool {
+	assert.False(t, m.AllKeys(func(k dgo.Value) bool {
 		return len(k.String()) == 5
 	}))
-	require.True(t, m.AnyKey(func(k dgo.Value) bool {
+	assert.True(t, m.AnyKey(func(k dgo.Value) bool {
 		return len(k.String()) >= 5
 	}))
 }
@@ -83,10 +82,10 @@ func TestStruct_AnyKey(t *testing.T) {
 		Third  string
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
-	require.False(t, m.AnyKey(func(k dgo.Value) bool {
+	assert.False(t, m.AnyKey(func(k dgo.Value) bool {
 		return k.Equals(`Fourth`)
 	}))
-	require.True(t, m.AnyKey(func(k dgo.Value) bool {
+	assert.True(t, m.AnyKey(func(k dgo.Value) bool {
 		return k.Equals(`Second`)
 	}))
 }
@@ -98,10 +97,10 @@ func TestStruct_AnyValue(t *testing.T) {
 		Third  string
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
-	require.False(t, m.AnyValue(func(v dgo.Value) bool {
+	assert.False(t, m.AnyValue(func(v dgo.Value) bool {
 		return v.Equals(`four`)
 	}))
-	require.True(t, m.AnyValue(func(v dgo.Value) bool {
+	assert.True(t, m.AnyValue(func(v dgo.Value) bool {
 		return v.Equals(`three`)
 	}))
 }
@@ -112,9 +111,9 @@ func TestStruct_ContainsKey(t *testing.T) {
 		Second float64
 	}
 	m := vf.Map(&structA{})
-	require.True(t, m.ContainsKey(`First`))
-	require.False(t, m.ContainsKey(`Third`))
-	require.False(t, m.ContainsKey(1))
+	assert.True(t, m.ContainsKey(`First`))
+	assert.False(t, m.ContainsKey(`Third`))
+	assert.False(t, m.ContainsKey(1))
 }
 
 func TestStruct_Copy(t *testing.T) {
@@ -127,23 +126,23 @@ func TestStruct_Copy(t *testing.T) {
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.Copy(true).(dgo.Map)
-	require.False(t, m.Frozen())
-	require.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
-	require.True(t, c.Frozen())
-	require.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, m.Frozen())
+	assert.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, c.Frozen())
+	assert.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
 
 	m.Put(`A`, `Adam`)
-	require.Equal(t, `Adam`, m.Get(`A`))
-	require.Equal(t, `Alpha`, c.Get(`A`))
-	require.Same(t, c, c.Copy(true))
+	assert.Equal(t, `Adam`, m.Get(`A`))
+	assert.Equal(t, `Alpha`, c.Get(`A`))
+	assert.Same(t, c, c.Copy(true))
 
-	require.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
+	assert.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
 
 	d := c.Copy(false).(dgo.Map)
-	require.NotSame(t, c, d)
+	assert.NotSame(t, c, d)
 	d.Put(`A`, `Adam`)
-	require.Equal(t, `Adam`, d.Get(`A`))
-	require.Equal(t, `Alpha`, c.Get(`A`))
+	assert.Equal(t, `Adam`, d.Get(`A`))
+	assert.Equal(t, `Alpha`, c.Get(`A`))
 }
 
 func TestStruct_EachKey(t *testing.T) {
@@ -158,8 +157,8 @@ func TestStruct_EachKey(t *testing.T) {
 		vs = append(vs, v)
 	})
 
-	require.Equal(t, 3, len(vs))
-	require.Equal(t, vf.Values(`First`, `Second`, `Third`), vs)
+	assert.Equal(t, 3, len(vs))
+	assert.Equal(t, vf.Values(`First`, `Second`, `Third`), vs)
 }
 
 func TestStruct_EachValue(t *testing.T) {
@@ -174,8 +173,8 @@ func TestStruct_EachValue(t *testing.T) {
 		vs = append(vs, v)
 	})
 
-	require.Equal(t, 3, len(vs))
-	require.Equal(t, vf.Values(1, 2.0, `three`), vs)
+	assert.Equal(t, 3, len(vs))
+	assert.Equal(t, vf.Values(1, 2.0, `three`), vs)
 }
 
 func TestStruct_Each(t *testing.T) {
@@ -192,8 +191,8 @@ func TestStruct_Each(t *testing.T) {
 		vs = append(vs, e.Value())
 	})
 
-	require.Equal(t, 6, len(vs))
-	require.Equal(t, vf.Values(`First`, 1, `Second`, 2.0, `Third`, `three`), vs)
+	assert.Equal(t, 6, len(vs))
+	assert.Equal(t, vf.Values(`First`, 1, `Second`, 2.0, `Third`, `three`), vs)
 }
 
 func TestStruct_Get(t *testing.T) {
@@ -207,13 +206,13 @@ func TestStruct_Get(t *testing.T) {
 	c := `Charlie`
 	s := structA{A: `Alpha`, B: 32, C: &c, E: []string{`Echo`, `Foxtrot`}}
 	m := vf.Map(&s)
-	require.Equal(t, m.Get(`A`), `Alpha`)
-	require.Equal(t, m.Get(`B`), 32)
-	require.Equal(t, m.Get(`C`), c)
-	require.Equal(t, m.Get(`D`), vf.Nil)
-	require.Equal(t, m.Get(`E`), []string{`Echo`, `Foxtrot`})
-	require.Equal(t, m.Get(`F`), nil)
-	require.Equal(t, m.Get(10), nil)
+	assert.Equal(t, m.Get(`A`), `Alpha`)
+	assert.Equal(t, m.Get(`B`), 32)
+	assert.Equal(t, m.Get(`C`), c)
+	assert.Equal(t, m.Get(`D`), vf.Nil)
+	assert.Equal(t, m.Get(`E`), []string{`Echo`, `Foxtrot`})
+	assert.Equal(t, m.Get(`F`), nil)
+	assert.Equal(t, m.Get(10), nil)
 }
 
 func TestStruct_Find(t *testing.T) {
@@ -226,9 +225,9 @@ func TestStruct_Find(t *testing.T) {
 	found := m.Find(func(e dgo.MapEntry) bool {
 		return e.Key().Equals(`B`)
 	})
-	require.Equal(t, found.Value(), 32)
+	assert.Equal(t, found.Value(), 32)
 	found = m.Find(func(e dgo.MapEntry) bool { return false })
-	require.Nil(t, found)
+	assert.Nil(t, found)
 }
 
 func TestStruct_Freeze(t *testing.T) {
@@ -238,7 +237,7 @@ func TestStruct_Freeze(t *testing.T) {
 	s := structA{}
 	m := vf.Map(&s)
 	m.Freeze()
-	require.Panic(t, func() { m.Put(`A`, `Alpha`) }, `frozen`)
+	assert.Panic(t, func() { m.Put(`A`, `Alpha`) }, `frozen`)
 }
 
 func TestStruct_FrozenCopy(t *testing.T) {
@@ -251,17 +250,17 @@ func TestStruct_FrozenCopy(t *testing.T) {
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.FrozenCopy().(dgo.Map)
-	require.False(t, m.Frozen())
-	require.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
-	require.True(t, c.Frozen())
-	require.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, m.Frozen())
+	assert.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, c.Frozen())
+	assert.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
 
 	m.Put(`A`, `Adam`)
-	require.Equal(t, `Adam`, m.Get(`A`))
-	require.Equal(t, `Alpha`, c.Get(`A`))
-	require.Same(t, c, c.FrozenCopy())
+	assert.Equal(t, `Adam`, m.Get(`A`))
+	assert.Equal(t, `Alpha`, c.Get(`A`))
+	assert.Same(t, c, c.FrozenCopy())
 
-	require.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
+	assert.Panic(t, func() { c.Put(`A`, `Adam`) }, `frozen`)
 }
 
 func TestStruct_ThawedCopy(t *testing.T) {
@@ -275,15 +274,15 @@ func TestStruct_ThawedCopy(t *testing.T) {
 	m.Freeze()
 
 	c := m.ThawedCopy().(dgo.Map)
-	require.True(t, m.Frozen())
-	require.True(t, m.Get(`E`).(dgo.Freezable).Frozen())
-	require.False(t, c.Frozen())
-	require.False(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, m.Frozen())
+	assert.True(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, c.Frozen())
+	assert.False(t, c.Get(`E`).(dgo.Freezable).Frozen())
 
 	c.Put(`A`, `Adam`)
-	require.Equal(t, `Adam`, c.Get(`A`))
-	require.Equal(t, `Alpha`, m.Get(`A`))
-	require.NotSame(t, c, c.FrozenCopy())
+	assert.Equal(t, `Adam`, c.Get(`A`))
+	assert.Equal(t, `Alpha`, m.Get(`A`))
+	assert.NotSame(t, c, c.FrozenCopy())
 }
 
 func TestStruct_HashCode(t *testing.T) {
@@ -293,8 +292,8 @@ func TestStruct_HashCode(t *testing.T) {
 	}
 	s := structA{A: `Alpha`, B: 32}
 	m := vf.Map(&s)
-	require.NotEqual(t, 0, m.HashCode())
-	require.Equal(t, m.HashCode(), m.HashCode())
+	assert.NotEqual(t, 0, m.HashCode())
+	assert.Equal(t, m.HashCode(), m.HashCode())
 }
 
 func TestStruct_GoStruct(t *testing.T) {
@@ -316,7 +315,7 @@ func TestStruct_Keys(t *testing.T) {
 	}
 	s := structA{}
 	m := vf.Map(&s)
-	require.Equal(t, vf.Strings(`A`, `B`, `C`), m.Keys())
+	assert.Equal(t, vf.Strings(`A`, `B`, `C`), m.Keys())
 }
 
 func TestStruct_Map(t *testing.T) {
@@ -326,12 +325,12 @@ func TestStruct_Map(t *testing.T) {
 		C string
 	}
 	a := vf.Map(&structA{A: `value a`, B: `value b`, C: `value c`})
-	require.Equal(t,
+	assert.Equal(t,
 		vf.Map(map[string]string{`A`: `the a`, `B`: `the b`, `C`: `the c`}),
 		a.Map(func(e dgo.MapEntry) interface{} {
 			return strings.Replace(fmt.Sprintf("%v", e.Value()), `value`, `the`, 1)
 		}))
-	require.Equal(t, vf.Map(`A`, nil, `B`, vf.Nil, `C`, nil), a.Map(func(e dgo.MapEntry) interface{} {
+	assert.Equal(t, vf.Map(`A`, nil, `B`, vf.Nil, `C`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil
 	}))
 }
@@ -348,15 +347,15 @@ func TestStruct_Merge(t *testing.T) {
 		`Third`, `tres`,
 		`Fourth`, `cuatro`)
 
-	require.Equal(t, m1.Merge(m2), vf.Map(
+	assert.Equal(t, m1.Merge(m2), vf.Map(
 		`First`, 1,
 		`Second`, 2.0,
 		`Third`, `tres`,
 		`Fourth`, `cuatro`))
 
-	require.Same(t, m1, m1.Merge(m1))
-	require.Same(t, m1, m1.Merge(vf.Map()))
-	require.Same(t, m1, vf.Map().Merge(m1))
+	assert.Same(t, m1, m1.Merge(m1))
+	assert.Same(t, m1, m1.Merge(vf.Map()))
+	assert.Same(t, m1, vf.Map().Merge(m1))
 }
 
 func TestStruct_Put(t *testing.T) {
@@ -375,13 +374,13 @@ func TestStruct_Put(t *testing.T) {
 	m.Put(`D`, 42)
 	m.Put(`E`, []string{`Echo`, `Foxtrot`})
 
-	require.Panic(t, func() { m.Put(`F`, `nope`) }, `no field named 'F'`)
+	assert.Panic(t, func() { m.Put(`F`, `nope`) }, `no field named 'F'`)
 
-	require.Equal(t, s.A, `Alpha`)
-	require.Equal(t, s.B, 32)
-	require.Equal(t, *s.C, `Charlie`)
-	require.Equal(t, *s.D, 42)
-	require.Equal(t, s.E, []string{`Echo`, `Foxtrot`})
+	assert.Equal(t, s.A, `Alpha`)
+	assert.Equal(t, s.B, 32)
+	assert.Equal(t, *s.C, `Charlie`)
+	assert.Equal(t, *s.D, 42)
+	assert.Equal(t, s.E, []string{`Echo`, `Foxtrot`})
 }
 
 func TestStruct_PutAll(t *testing.T) {
@@ -392,8 +391,8 @@ func TestStruct_PutAll(t *testing.T) {
 	s := structA{}
 	m := vf.Map(&s)
 	m.PutAll(vf.Map(`A`, `Alpha`, `B`, 32))
-	require.Equal(t, s.A, `Alpha`)
-	require.Equal(t, s.B, 32)
+	assert.Equal(t, s.A, `Alpha`)
+	assert.Equal(t, s.B, 32)
 }
 
 func TestStruct_ReflectTo(t *testing.T) {
@@ -424,17 +423,17 @@ func TestStruct_ReflectTo(t *testing.T) {
 	// By pointer
 	xb := rv.FieldByName(`B`)
 	m.ReflectTo(xb)
-	require.Equal(t, x.B, &s)
-	require.Same(t, x.B, &s)
+	assert.Equal(t, x.B, &s)
+	assert.Same(t, x.B, &s)
 
 	// By value
 	m.ReflectTo(rv.FieldByName(`C`))
-	require.Equal(t, &x.C, &s)
-	require.NotSame(t, &x.C, &s)
+	assert.Equal(t, &x.C, &s)
+	assert.NotSame(t, &x.C, &s)
 
 	m.Freeze()
 	m.ReflectTo(xb)
-	require.NotSame(t, &x.B, &s)
+	assert.NotSame(t, &x.B, &s)
 }
 
 func TestStruct_Remove(t *testing.T) {
@@ -444,8 +443,8 @@ func TestStruct_Remove(t *testing.T) {
 	}
 	s := structA{}
 	m := vf.Map(&s)
-	require.Panic(t, func() { m.Remove(`B`) }, `cannot be removed`)
-	require.Panic(t, func() { m.RemoveAll(vf.Values(`A`, `B`)) }, `cannot be removed`)
+	assert.Panic(t, func() { m.Remove(`B`) }, `cannot be removed`)
+	assert.Panic(t, func() { m.RemoveAll(vf.Values(`A`, `B`)) }, `cannot be removed`)
 }
 
 func TestStruct_AppendTo(t *testing.T) {
@@ -454,7 +453,7 @@ func TestStruct_AppendTo(t *testing.T) {
 		B int
 	}
 	v := vf.Map(&structA{A: `hello`, B: 2})
-	require.Equal(t, `{
+	assert.Equal(t, `{
   "A": "hello",
   "B": 2
 }`, util.ToIndentedStringERP(v))
@@ -467,7 +466,7 @@ func TestStruct_String(t *testing.T) {
 	}
 	s := structA{A: `Alpha`, B: 32}
 	m := vf.Map(&s)
-	require.Equal(t, `{"A":"Alpha","B":32}`, m.String())
+	assert.Equal(t, `{"A":"Alpha","B":32}`, m.String())
 }
 
 func TestStruct_StringKeys(t *testing.T) {
@@ -477,7 +476,7 @@ func TestStruct_StringKeys(t *testing.T) {
 	}
 	s := structA{A: `Alpha`, B: 32}
 	m := vf.Map(&s)
-	require.True(t, m.StringKeys())
+	assert.True(t, m.StringKeys())
 }
 
 func TestStruct_Type(t *testing.T) {
@@ -488,8 +487,8 @@ func TestStruct_Type(t *testing.T) {
 	s := structA{A: `Alpha`, B: 32}
 	m := vf.Map(&s)
 	tp := m.Type()
-	require.Assignable(t, tp, tp)
-	require.Instance(t, tp, m)
+	assert.Assignable(t, tp, tp)
+	assert.Instance(t, tp, m)
 }
 
 func TestStruct_Validate(t *testing.T) {
@@ -500,10 +499,10 @@ func TestStruct_Validate(t *testing.T) {
 	s := structA{A: 3, B: 4}
 	tp := vf.Map(&s).Type().(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`A`, 3, `B`, 4))
-	require.Equal(t, 0, len(es))
+	assert.Equal(t, 0, len(es))
 
 	es = tp.Validate(nil, vf.Map(`A`, 2, `B`, 4))
-	require.Equal(t, 1, len(es))
+	assert.Equal(t, 1, len(es))
 }
 
 func TestStruct_ValidateVerbose(t *testing.T) {
@@ -514,8 +513,8 @@ func TestStruct_ValidateVerbose(t *testing.T) {
 	s := structA{A: 3, B: 4}
 	tp := vf.Map(&s).Type().(dgo.MapValidation)
 	out := util.NewIndenter(``)
-	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
-	require.Equal(t, `value is not a Map`, out.String())
+	assert.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
+	assert.Equal(t, `value is not a Map`, out.String())
 }
 
 func TestStruct_Values(t *testing.T) {
@@ -526,7 +525,7 @@ func TestStruct_Values(t *testing.T) {
 	}
 	m := vf.Map(&structA{1, 2.0, `three`})
 
-	require.True(t, m.Values().SameValues(vf.Values(1, 2.0, `three`)))
+	assert.True(t, m.Values().SameValues(vf.Values(1, 2.0, `three`)))
 }
 
 func TestStruct_With(t *testing.T) {
@@ -537,7 +536,7 @@ func TestStruct_With(t *testing.T) {
 	}
 	om := vf.Map(&structA{1, 2.0, `three`})
 	m := om.With(`Fourth`, `quad`)
-	require.Equal(t, m, vf.Map(`First`, 1, `Second`, 2.0, `Third`, `three`, `Fourth`, `quad`))
+	assert.Equal(t, m, vf.Map(`First`, 1, `Second`, 2.0, `Third`, `three`, `Fourth`, `quad`))
 }
 
 func TestStruct_Without(t *testing.T) {
@@ -548,20 +547,20 @@ func TestStruct_Without(t *testing.T) {
 	}
 	om := vf.Map(&structA{1, 2.0, `three`})
 	m := om.Without(`Second`)
-	require.Equal(t, m, map[string]interface{}{
+	assert.Equal(t, m, map[string]interface{}{
 		`First`: 1,
 		`Third`: `three`,
 	})
 
 	// Original is not modified
-	require.Equal(t, om, map[string]interface{}{
+	assert.Equal(t, om, map[string]interface{}{
 		`First`:  1,
 		`Second`: 2.0,
 		`Third`:  `three`,
 	})
 
 	m = om.Without(`NotPresent`)
-	require.Same(t, m, om)
+	assert.Same(t, m, om)
 }
 
 func TestStruct_WithoutAll(t *testing.T) {
@@ -572,12 +571,12 @@ func TestStruct_WithoutAll(t *testing.T) {
 	}
 	om := vf.Map(&structA{1, 2.0, `three`})
 	m := om.WithoutAll(vf.Strings(`First`, `Second`))
-	require.Equal(t, m, map[string]interface{}{
+	assert.Equal(t, m, map[string]interface{}{
 		`Third`: `three`,
 	})
 
 	// Original is not modified
-	require.Equal(t, om, map[string]interface{}{
+	assert.Equal(t, om, map[string]interface{}{
 		`First`:  1,
 		`Second`: 2.0,
 		`Third`:  `three`,

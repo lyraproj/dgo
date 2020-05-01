@@ -4,103 +4,94 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tada/dgo/tf"
-
 	"github.com/tada/dgo/dgo"
-
-	"github.com/tada/dgo/vf"
-
+	"github.com/tada/dgo/test/assert"
+	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/typ"
-
-	require "github.com/tada/dgo/dgo_test"
+	"github.com/tada/dgo/vf"
 )
 
 func TestSensitiveType(t *testing.T) {
 	var tp dgo.Type = typ.Sensitive
 	s := vf.Sensitive(vf.Integer(0))
-	require.Assignable(t, tp, tp)
-	require.NotAssignable(t, tp, typ.Any)
-	require.Assignable(t, tp, s.Type())
-	require.NotAssignable(t, s.Type(), tp)
-	require.Assignable(t, tf.Sensitive(typ.Integer), s.Type())
-	require.Instance(t, tp.Type(), s.Type())
+	assert.Assignable(t, tp, tp)
+	assert.NotAssignable(t, tp, typ.Any)
+	assert.Assignable(t, tp, s.Type())
+	assert.NotAssignable(t, s.Type(), tp)
+	assert.Assignable(t, tf.Sensitive(typ.Integer), s.Type())
+	assert.Instance(t, tp.Type(), s.Type())
 
 	tp = s.Type()
-	require.Equal(t, tp, tp)
-	require.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
-	require.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
-	require.NotEqual(t, tp, typ.Any)
-	require.NotEqual(t, tp, tf.Array(typ.String))
-
-	require.NotEqual(t, 0, tp.HashCode())
-	require.Equal(t, tp.HashCode(), tp.HashCode())
-
-	require.Instance(t, tp, s)
-	require.NotInstance(t, tp, vf.Integer(0))
-	require.True(t, reflect.TypeOf(s).AssignableTo(tp.ReflectType()))
-	require.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
-	require.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
-	require.Equal(t, `sensitive[int]`, s.Type().String())
-
-	require.Equal(t, tf.Sensitive(), tf.ParseType(`sensitive`))
-	require.Equal(t, tf.Sensitive(typ.Integer), tf.ParseType(`sensitive[int]`))
-	require.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.ParseType(`sensitive int`))
-	require.Equal(t, vf.Sensitive(34).Type(), tf.ParseType(`sensitive 34`))
-	require.Panic(t, func() { tf.ParseType(`sensitive[int, string]`) }, `illegal number of arguments`)
+	assert.Equal(t, tp, tp)
+	assert.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
+	assert.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
+	assert.NotEqual(t, tp, typ.Any)
+	assert.NotEqual(t, tp, tf.Array(typ.String))
+	assert.NotEqual(t, 0, tp.HashCode())
+	assert.Equal(t, tp.HashCode(), tp.HashCode())
+	assert.Instance(t, tp, s)
+	assert.NotInstance(t, tp, vf.Integer(0))
+	assert.True(t, reflect.TypeOf(s).AssignableTo(tp.ReflectType()))
+	assert.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
+	assert.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())
+	assert.Equal(t, `sensitive[int]`, s.Type().String())
+	assert.Equal(t, tf.Sensitive(), tf.ParseType(`sensitive`))
+	assert.Equal(t, tf.Sensitive(typ.Integer), tf.ParseType(`sensitive[int]`))
+	assert.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.ParseType(`sensitive int`))
+	assert.Equal(t, vf.Sensitive(34).Type(), tf.ParseType(`sensitive 34`))
+	assert.Panic(t, func() { tf.ParseType(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 
 func TestSensitiveType_New(t *testing.T) {
 	s := vf.Sensitive(`hide me`)
-	require.Equal(t, s, vf.New(typ.Sensitive, vf.Arguments(`hide me`)))
-	require.Equal(t, s, vf.New(typ.Sensitive, vf.String(`hide me`)))
-	require.Same(t, s, vf.New(typ.Sensitive, vf.Arguments(s)))
-	require.Same(t, s, vf.New(typ.Sensitive, s))
-
-	require.Panic(t, func() { vf.New(typ.Sensitive, vf.Arguments(`hide me`, `and me`)) }, `illegal number of arguments`)
+	assert.Equal(t, s, vf.New(typ.Sensitive, vf.Arguments(`hide me`)))
+	assert.Equal(t, s, vf.New(typ.Sensitive, vf.String(`hide me`)))
+	assert.Same(t, s, vf.New(typ.Sensitive, vf.Arguments(s)))
+	assert.Same(t, s, vf.New(typ.Sensitive, s))
+	assert.Panic(t, func() { vf.New(typ.Sensitive, vf.Arguments(`hide me`, `and me`)) }, `illegal number of arguments`)
 }
 
 func TestSensitive(t *testing.T) {
 	s := vf.Sensitive(vf.String(`a`))
-	require.Equal(t, s, s)
-	require.Equal(t, s, vf.Sensitive(vf.String(`a`)))
-	require.NotEqual(t, s, vf.Sensitive(vf.String(`b`)))
-	require.NotEqual(t, s, vf.Strings(`a`))
-
-	require.True(t, s.Frozen())
+	assert.Equal(t, s, s)
+	assert.Equal(t, s, vf.Sensitive(vf.String(`a`)))
+	assert.NotEqual(t, s, vf.Sensitive(vf.String(`b`)))
+	assert.NotEqual(t, s, vf.Strings(`a`))
+	assert.True(t, s.Frozen())
 	a := vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
-	require.False(t, s.Frozen())
+	assert.False(t, s.Frozen())
 	s.Freeze()
-	require.True(t, s.Frozen())
-	require.True(t, a.Frozen())
-	require.Same(t, s.Unwrap(), a)
+	assert.True(t, s.Frozen())
+	assert.True(t, a.Frozen())
+	assert.Same(t, s.Unwrap(), a)
 
 	a = vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	c := s.FrozenCopy().(dgo.Sensitive)
-	require.False(t, s.Frozen())
-	require.True(t, c.Frozen())
-	require.Equal(t, s.Unwrap(), c.Unwrap())
-	require.NotSame(t, s.Unwrap(), c.Unwrap())
+	assert.False(t, s.Frozen())
+	assert.True(t, c.Frozen())
+	assert.Equal(t, s.Unwrap(), c.Unwrap())
+	assert.NotSame(t, s.Unwrap(), c.Unwrap())
 
 	s = vf.Sensitive(vf.MutableValues(`a`))
-	require.False(t, s.Frozen())
+	assert.False(t, s.Frozen())
 	c = s.FrozenCopy().(dgo.Sensitive)
-	require.NotSame(t, s, c)
-	require.True(t, c.Frozen())
+	assert.NotSame(t, s, c)
+	assert.True(t, c.Frozen())
 	s = c.FrozenCopy().(dgo.Sensitive)
-	require.Same(t, s, c)
+	assert.Same(t, s, c)
 
 	c = s.ThawedCopy().(dgo.Sensitive)
-	require.NotSame(t, s, c)
-	require.False(t, c.Frozen()) // c no longer frozen
+	assert.NotSame(t, s, c)
+	assert.False(t, c.Frozen()) // c no longer frozen
 
 	s = vf.Sensitive(vf.String(`a`))
 	c = s.ThawedCopy().(dgo.Sensitive)
-	require.Same(t, s, c)
+	assert.Same(t, s, c)
 
-	require.Equal(t, `sensitive [value redacted]`, s.String())
+	assert.Equal(t, `sensitive [value redacted]`, s.String())
 
-	require.NotEqual(t, typ.Sensitive.HashCode(), s.HashCode())
-	require.Equal(t, s.HashCode(), s.HashCode())
+	assert.NotEqual(t, typ.Sensitive.HashCode(), s.HashCode())
+	assert.Equal(t, s.HashCode(), s.HashCode())
 }

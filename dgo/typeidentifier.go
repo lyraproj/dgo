@@ -25,6 +25,18 @@ const (
 	// TiArray is the type identifier for the Array type
 	TiArray
 
+	// TiBigFloat is the type identifier for the BigFloat type
+	TiBigFloat
+
+	// TiBigFloatRange is the type identifier for the BigFloat range type
+	TiBigFloatRange
+
+	// TiBigInt is the type identifier for the BigInt type
+	TiBigInt
+
+	// TiBigIntRange is the type identifier for the BigInt range type
+	TiBigIntRange
+
 	// TiBinary is the type identifier for the Binary type
 	TiBinary
 
@@ -104,6 +116,12 @@ const (
 	// TiArrayExact is the type identifier for the exact Array type
 	TiArrayExact
 
+	// TiBigFloatExact is the type identifier for the exact BigFloat type
+	TiBigFloatExact
+
+	// TiBigIntExact is the type identifier for the exact BigInt type
+	TiBigIntExact
+
 	// TiBinaryExact is the type identifier for the exact Binary type
 	TiBinaryExact
 
@@ -116,9 +134,6 @@ const (
 	// TiFloatExact is the type identifier for the exact Float type
 	TiFloatExact
 
-	// TiFunctionExact is the type identifier for for the exact Function type
-	TiFunctionExact
-
 	// TiIntegerExact is the type identifier for the exact Integer type
 	TiIntegerExact
 
@@ -130,6 +145,9 @@ const (
 
 	// TiNamedExact is the type identifier for for exact Named types
 	TiNamedExact
+
+	// TiNativeExact is the type identifier for exact Native type
+	TiNativeExact
 
 	// TiNil is the type identifier for the Nil type
 	TiNil
@@ -146,48 +164,55 @@ const (
 
 var tiLabels = map[TypeIdentifier]string{
 	TiAlias:         `alias`,
-	TiNil:           `nil`,
-	TiAny:           `any`,
-	TiMeta:          `type`,
-	TiBoolean:       `bool`,
-	TiBooleanExact:  `bool`,
-	TiInteger:       `int`,
-	TiIntegerExact:  `int`,
-	TiIntegerRange:  `int range`,
-	TiFloat:         `float`,
-	TiFloatExact:    `float`,
-	TiFloatRange:    `float range`,
-	TiBinary:        `binary`,
-	TiBinaryExact:   `binary`,
-	TiString:        `string`,
-	TiStringExact:   `string`,
-	TiStringSized:   `string`,
-	TiStringPattern: `pattern`,
-	TiCiString:      `string`,
-	TiRegexp:        `regexp`,
-	TiRegexpExact:   `regexp`,
-	TiTime:          `time`,
-	TiTimeExact:     `time`,
-	TiNative:        `native`,
-	TiArray:         `slice`,
-	TiArrayExact:    `slice`,
-	TiTuple:         `tuple`,
-	TiMap:           `map`,
-	TiMapExact:      `map`,
-	TiMapEntryExact: `map entry`,
-	TiStruct:        `struct`,
-	TiNot:           `not`,
 	TiAllOf:         `all of`,
 	TiAllOfValue:    `all of`,
 	TiAnyOf:         `any of`,
-	TiOneOf:         `one of`,
+	TiAny:           `any`,
+	TiArray:         `slice`,
+	TiArrayExact:    `slice`,
+	TiBigFloat:      `bigfloat`,
+	TiBigFloatExact: `bigfloat`,
+	TiBigFloatRange: `bigfloat range`,
+	TiBigInt:        `bigint`,
+	TiBigIntExact:   `bigint`,
+	TiBigIntRange:   `bigint range`,
+	TiBinary:        `binary`,
+	TiBinaryExact:   `binary`,
+	TiBoolean:       `bool`,
+	TiBooleanExact:  `bool`,
+	TiCiString:      `string`,
+	TiDgoString:     `dgo`,
 	TiError:         `error`,
 	TiErrorExact:    `error`,
-	TiDgoString:     `dgo`,
-	TiSensitive:     `sensitive`,
+	TiFloat:         `float`,
+	TiFloatExact:    `float`,
+	TiFloatRange:    `float range`,
 	TiFunction:      `function`,
-	TiFunctionExact: `function`,
+	TiInteger:       `int`,
+	TiIntegerExact:  `int`,
+	TiIntegerRange:  `int range`,
+	TiMap:           `map`,
+	TiMapEntryExact: `map entry`,
+	TiMapExact:      `map`,
+	TiMeta:          `type`,
 	TiNamed:         `named`,
+	TiNamedExact:    `named`,
+	TiNative:        `native`,
+	TiNativeExact:   `native`,
+	TiNil:           `nil`,
+	TiNot:           `not`,
+	TiOneOf:         `one of`,
+	TiRegexp:        `regexp`,
+	TiRegexpExact:   `regexp`,
+	TiSensitive:     `sensitive`,
+	TiString:        `string`,
+	TiStringExact:   `string`,
+	TiStringPattern: `pattern`,
+	TiStringSized:   `string`,
+	TiStruct:        `struct`,
+	TiTime:          `time`,
+	TiTimeExact:     `time`,
+	TiTuple:         `tuple`,
 }
 
 func (ti TypeIdentifier) String() string {

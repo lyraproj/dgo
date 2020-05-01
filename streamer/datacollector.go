@@ -12,6 +12,10 @@ func DataCollector() Collector {
 	return c
 }
 
+func (c *dataCollector) CanDoBigNumbers() bool {
+	return false
+}
+
 func (c *dataCollector) CanDoBinary() bool {
 	return false
 }

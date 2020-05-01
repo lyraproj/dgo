@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/util"
-
-	require "github.com/tada/dgo/dgo_test"
-
 	"github.com/tada/dgo/vf"
 )
 
@@ -37,7 +35,7 @@ func ExampleToIndentedStringERP() {
 func TestToIndentedStringERP_nonStringer(t *testing.T) {
 	ei := util.NewERPIndenter(` `)
 	ei.AppendValue(struct{ A string }{`hello`})
-	require.Equal(t, `struct { A string }{A:"hello"}`, ei.String())
+	assert.Equal(t, `struct { A string }{A:"hello"}`, ei.String())
 }
 
 func ExampleToStringERP_recursion() {

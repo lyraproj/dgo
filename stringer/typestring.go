@@ -1,10 +1,13 @@
 package stringer
 
 import (
+	"fmt"
 	"io"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tada/dgo/internal"
 
@@ -26,6 +29,10 @@ type typeBuilder struct {
 	io.Writer
 	aliasMap dgo.AliasMap
 	seen     []dgo.Value
+}
+
+func newTypeBuilder(w io.Writer, am dgo.AliasMap) *typeBuilder {
+	return &typeBuilder{Writer: w, aliasMap: am}
 }
 
 // TypeString produces a string with the go-like syntax for the given type.
@@ -90,11 +97,70 @@ func binary(sb *typeBuilder, typ dgo.Type, _ int) {
 }
 
 func stringValue(sb *typeBuilder, typ dgo.Type, _ int) {
-	_, _ = sb.Write([]byte(typ.String()))
+	util.WriteQuotedString(sb, typ.(dgo.String).GoString())
+}
+
+func bigFloatValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, `big `)
+	util.WriteString(sb, typ.(dgo.BigFloat).GoBigFloat().String())
+}
+
+func bigIntValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, typ.(dgo.BigInt).GoBigInt().String())
+}
+
+func binaryValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, `binary `)
+	util.WriteQuotedString(sb, typ.(dgo.Binary).Encode())
+}
+
+func booleanValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	s := `false`
+	if typ.(dgo.Boolean).GoBool() {
+		s = `true`
+	}
+	util.WriteString(sb, s)
+}
+
+func errorValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, `error `)
+	util.WriteQuotedString(sb, typ.(error).Error())
 }
 
 func exactValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	util.WriteString(sb, typ.(dgo.ExactType).ExactValue().String())
+}
+
+func floatValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, util.Ftoa(typ.(dgo.Float).GoFloat()))
+}
+
+func intValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, strconv.FormatInt(typ.(dgo.Integer).GoInt(), 10))
+}
+
+func nativeValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	rv := typ.(dgo.Native).ReflectValue()
+	if rv.CanInterface() {
+		iv := rv.Interface()
+		if s, ok := iv.(fmt.Stringer); ok {
+			util.WriteString(sb, s.String())
+		} else {
+			util.Fprintf(sb, "%#v", iv)
+		}
+		return
+	}
+	sb.writeNativeType(rv.Type())
+}
+
+func regexpValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, `regexp `)
+	util.WriteQuotedString(sb, typ.(dgo.Regexp).GoRegexp().String())
+}
+
+func timeValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	util.WriteString(sb, `time `)
+	util.WriteQuotedString(sb, typ.(dgo.Time).GoTime().Format(time.RFC3339Nano))
 }
 
 func tuple(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -141,12 +207,27 @@ func mapEntryExact(sb *typeBuilder, typ dgo.Type, _ int) {
 
 func floatRange(sb *typeBuilder, typ dgo.Type, _ int) {
 	st := typ.(dgo.FloatType)
-	sb.writeFloatRange(st.Min(), st.Max(), st.Inclusive())
+	_, big := st.Min().(dgo.BigFloat)
+	if !big {
+		_, big = st.Max().(dgo.BigFloat)
+	}
+	if big {
+		util.WriteString(sb, `big `)
+		if st.Min() != nil {
+			util.WriteString(sb, st.Min().(dgo.BigFloat).GoBigFloat().String())
+		}
+		sb.writeRangeDots(st.Inclusive())
+		if st.Max() != nil {
+			util.WriteString(sb, st.Max().(dgo.BigFloat).GoBigFloat().String())
+		}
+	} else {
+		sb.writeRange(st.Min(), st.Max(), st.Inclusive())
+	}
 }
 
 func integerRange(sb *typeBuilder, typ dgo.Type, _ int) {
 	st := typ.(dgo.IntegerType)
-	sb.writeIntRange(st.Min(), st.Max(), st.Inclusive())
+	sb.writeRange(st.Min(), st.Max(), st.Inclusive())
 }
 
 func sensitive(sb *typeBuilder, typ dgo.Type, prio int) {
@@ -156,6 +237,10 @@ func sensitive(sb *typeBuilder, typ dgo.Type, prio int) {
 		sb.buildTypeString(op, prio)
 		util.WriteByte(sb, ']')
 	}
+}
+
+func stringPattern(sb *typeBuilder, typ dgo.Type, _ int) {
+	internal.RegexpSlashQuote(sb, typ.(dgo.PatternType).GoRegexp().String())
 }
 
 func stringSized(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -174,13 +259,7 @@ func ciString(sb *typeBuilder, typ dgo.Type, _ int) {
 }
 
 func native(sb *typeBuilder, typ dgo.Type, _ int) {
-	rt := typ.(dgo.NativeType).GoType()
-	util.WriteString(sb, `native`)
-	if rt != nil {
-		util.WriteByte(sb, '[')
-		util.WriteString(sb, strconv.Quote(rt.String()))
-		util.WriteByte(sb, ']')
-	}
+	sb.writeNativeType(typ.(dgo.NativeType).GoType())
 }
 
 func not(sb *typeBuilder, typ dgo.Type, _ int) {
@@ -228,46 +307,46 @@ func named(sb *typeBuilder, typ dgo.Type, _ int) {
 	}
 }
 
-func newTypeBuilder(w io.Writer, am dgo.AliasMap) *typeBuilder {
-	return &typeBuilder{Writer: w, aliasMap: am}
-}
-
 var complexTypes map[dgo.TypeIdentifier]typeToString
 
 func init() {
 	complexTypes = map[dgo.TypeIdentifier]typeToString{
-		dgo.TiAnyOf:         anyOf,
-		dgo.TiOneOf:         oneOf,
 		dgo.TiAllOf:         allOf,
 		dgo.TiAllOfValue:    allOfValue,
+		dgo.TiAnyOf:         anyOf,
 		dgo.TiArray:         array,
 		dgo.TiArrayExact:    arrayExact,
+		dgo.TiBigFloatExact: bigFloatValue,
+		dgo.TiBigIntExact:   bigIntValue,
 		dgo.TiBinary:        binary,
-		dgo.TiBinaryExact:   stringValue,
-		dgo.TiBooleanExact:  stringValue,
-		dgo.TiTuple:         tuple,
+		dgo.TiBinaryExact:   binaryValue,
+		dgo.TiBooleanExact:  booleanValue,
+		dgo.TiCiString:      ciString,
+		dgo.TiErrorExact:    errorValue,
+		dgo.TiFloatExact:    floatValue,
+		dgo.TiFunction:      function,
+		dgo.TiIntegerExact:  intValue,
+		dgo.TiIntegerRange:  integerRange,
+		dgo.TiFloatRange:    floatRange,
 		dgo.TiMap:           _map,
 		dgo.TiMapExact:      mapExact,
 		dgo.TiMapEntryExact: mapEntryExact,
-		dgo.TiStruct:        _struct,
-		dgo.TiFloatExact:    stringValue,
-		dgo.TiFloatRange:    floatRange,
-		dgo.TiIntegerExact:  stringValue,
-		dgo.TiIntegerRange:  integerRange,
-		dgo.TiRegexpExact:   stringValue,
-		dgo.TiTimeExact:     stringValue,
+		dgo.TiMeta:          meta,
+		dgo.TiNamed:         named,
+		dgo.TiNamedExact:    exactValue,
+		dgo.TiNative:        native,
+		dgo.TiNativeExact:   nativeValue,
+		dgo.TiNot:           not,
+		dgo.TiOneOf:         oneOf,
+		dgo.TiRegexpExact:   regexpValue,
 		dgo.TiSensitive:     sensitive,
 		dgo.TiStringExact:   stringValue,
-		dgo.TiStringPattern: stringValue,
+		dgo.TiStringPattern: stringPattern,
 		dgo.TiStringSized:   stringSized,
-		dgo.TiCiString:      ciString,
-		dgo.TiNative:        native,
-		dgo.TiNot:           not,
-		dgo.TiMeta:          meta,
-		dgo.TiFunction:      function,
-		dgo.TiErrorExact:    stringValue,
-		dgo.TiNamed:         named,
-		dgo.TiNamedExact:    exactValue}
+		dgo.TiStruct:        _struct,
+		dgo.TiTimeExact:     timeValue,
+		dgo.TiTuple:         tuple,
+	}
 }
 
 func (sb *typeBuilder) joinTypes(v dgo.Iterable, s string, prio int) {
@@ -307,6 +386,15 @@ func (sb *typeBuilder) joinStructMapEntries(v dgo.StructMapType) {
 	})
 }
 
+func (sb *typeBuilder) writeNativeType(rt reflect.Type) {
+	util.WriteString(sb, `native`)
+	if rt != nil {
+		util.WriteByte(sb, '[')
+		util.WriteString(sb, strconv.Quote(rt.String()))
+		util.WriteByte(sb, ']')
+	}
+}
+
 func (sb *typeBuilder) writeSizeBoundaries(min, max int64) {
 	util.WriteString(sb, strconv.FormatInt(min, 10))
 	if max != math.MaxInt64 {
@@ -315,31 +403,21 @@ func (sb *typeBuilder) writeSizeBoundaries(min, max int64) {
 	}
 }
 
-func (sb *typeBuilder) writeIntRange(min, max int64, inclusive bool) {
-	if min != math.MinInt64 {
-		util.WriteString(sb, strconv.FormatInt(min, 10))
-	}
+func (sb *typeBuilder) writeRangeDots(inclusive bool) {
 	op := `...`
 	if inclusive {
 		op = `..`
 	}
 	util.WriteString(sb, op)
-	if max != math.MaxInt64 {
-		util.WriteString(sb, strconv.FormatInt(max, 10))
-	}
 }
 
-func (sb *typeBuilder) writeFloatRange(min, max float64, inclusive bool) {
-	if min != -math.MaxFloat64 {
-		util.WriteString(sb, util.Ftoa(min))
+func (sb *typeBuilder) writeRange(min, max dgo.Number, inclusive bool) {
+	if min != nil {
+		sb.buildTypeString(min.(dgo.Type), commaPrio)
 	}
-	op := `...`
-	if inclusive {
-		op = `..`
-	}
-	util.WriteString(sb, op)
-	if max != math.MaxFloat64 {
-		util.WriteString(sb, util.Ftoa(max))
+	sb.writeRangeDots(inclusive)
+	if max != nil {
+		sb.buildTypeString(max.(dgo.Type), commaPrio)
 	}
 }
 
@@ -375,13 +453,10 @@ func (sb *typeBuilder) writeTernary(typ dgo.Type, tc func(dgo.Value) dgo.Type, p
 }
 
 func (sb *typeBuilder) buildTypeString(typ dgo.Type, prio int) {
+	ti := typ.TypeIdentifier()
 	if tn := sb.aliasMap.GetName(typ); tn != nil {
 		util.WriteString(sb, tn.GoString())
-		return
-	}
-
-	ti := typ.TypeIdentifier()
-	if f, ok := complexTypes[ti]; ok {
+	} else if f, ok := complexTypes[ti]; ok {
 		if util.RecursionHit(sb.seen, typ) {
 			util.WriteString(sb, `<recursive self reference to `)
 			util.WriteString(sb, ti.String())

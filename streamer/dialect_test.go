@@ -3,16 +3,12 @@ package streamer_test
 import (
 	"testing"
 
-	"github.com/tada/dgo/vf"
-
+	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/streamer"
+	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/typ"
-
-	"github.com/tada/dgo/streamer"
-
-	require "github.com/tada/dgo/dgo_test"
-
-	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/vf"
 )
 
 func TestDgoDialect_names(t *testing.T) {
@@ -26,10 +22,10 @@ func TestDgoDialect_names(t *testing.T) {
 		`__type`:    streamer.Dialect.TypeKey,
 		`__value`:   streamer.Dialect.ValueKey,
 	} {
-		require.Equal(t, k, v(streamer.DgoDialect()))
+		assert.Equal(t, k, v(streamer.DgoDialect()))
 	}
 }
 
 func TestDgoDialect_ParseType(t *testing.T) {
-	require.Equal(t, tf.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
+	assert.Equal(t, tf.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
 }

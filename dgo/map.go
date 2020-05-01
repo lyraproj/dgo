@@ -29,7 +29,7 @@ type (
 
 	// Keyed is the simples possible interface for a key store.
 	Keyed interface {
-		// GetEntryType returns the value for the given key. The method will return nil when the key is not found. A
+		// Get returns the value for the given key. The method will return nil when the key is not found. A
 		// vf.Nil is returned if the key is found but associated with nil.
 		Get(key interface{}) Value
 	}
@@ -140,7 +140,7 @@ type (
 
 	// MapType is implemented by types representing implementations of the Map value
 	MapType interface {
-		SizedType
+		sizedType
 
 		// KeyType returns the type of the keys for instances of this type
 		KeyType() Type

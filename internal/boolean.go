@@ -157,10 +157,7 @@ func (v boolean) ReflectTo(value reflect.Value) {
 }
 
 func (v boolean) String() string {
-	if v {
-		return `true`
-	}
-	return `false`
+	return TypeString(v)
 }
 
 func (v boolean) Type() dgo.Type {
