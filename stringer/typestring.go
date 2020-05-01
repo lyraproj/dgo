@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tada/dgo/internal"
-
 	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 	"github.com/tada/dgo/util"
 )
 

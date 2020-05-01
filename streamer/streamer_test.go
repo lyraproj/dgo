@@ -7,11 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tada/dgo/test/require"
-
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/streamer"
 	"github.com/tada/dgo/test/assert"
+	"github.com/tada/dgo/test/require"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/typ"
 	"github.com/tada/dgo/vf"

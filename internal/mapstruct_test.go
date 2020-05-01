@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/tf"
@@ -41,22 +42,19 @@ func ExampleMap_Put_structTypeIllegalKey() {
 		Port int
 	}
 	m := vf.Map(&st{Host: `example.com`, Port: 22}).Copy(false)
-	if err := util.Catch(func() { m.Put(`Login`, `bob`) }); err != nil {
+	if err := catch.Do(func() { m.Put(`Login`, `bob`) }); err != nil {
 		fmt.Println(err)
 	}
 	// Output: internal_test.st has no field named 'Login'
 }
 
-func ExampleMap_Put_structTypeIllegalValue() {
+func TestMap_Put_structTypeIllegalValue(t *testing.T) {
 	type st struct {
 		Host string
 		Port int
 	}
 	m := vf.Map(&st{Host: `example.com`, Port: 22}).Copy(false)
-	if err := util.Catch(func() { m.Put(`Port`, `22`) }); err != nil {
-		fmt.Println(err)
-	}
-	// Output: reflect: call of reflect.Value.SetString on int Value
+	assert.Panic(t, func() { m.Put(`Port`, `22`) }, `reflect: call of reflect.Value.SetString on int Value`)
 }
 
 func TestStructType_Get(t *testing.T) {

@@ -4,11 +4,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/tada/dgo/stringer"
-
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/internal"
 	"github.com/tada/dgo/parser"
+	"github.com/tada/dgo/stringer"
 	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/typ"

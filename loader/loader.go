@@ -1,11 +1,11 @@
 package loader
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/vf"
@@ -193,14 +193,14 @@ func (l *loader) add(key, value dgo.Value) dgo.Value {
 		if old := l.entries.Get(key); old == nil {
 			l.entries.Put(key, value)
 		} else if !old.Equals(value) {
-			panic(fmt.Errorf(`attempt to override entry %q`, key))
+			panic(catch.Error(`attempt to override entry %q`, key))
 		}
 	}
 
 	if m, ok := value.(multipleEntries); ok {
 		value = m.Get(key)
 		if value == nil {
-			panic(fmt.Errorf(`map returned from finder doesn't contain original key %q`, key))
+			panic(catch.Error(`map returned from finder doesn't contain original key %q`, key))
 		}
 		m.EachEntry(func(e dgo.MapEntry) { addEntry(e.Key(), e.Value()) })
 	} else {
@@ -268,7 +268,7 @@ func (l *loader) Namespace(name string) dgo.Loader {
 			// Either the nsCreator did something wrong that resulted in the creation of this
 			// namespace or a another one has been created from another go routine.
 			if !old.Equals(ns) {
-				panic(fmt.Errorf(`namespace %q is already defined`, name))
+				panic(catch.Error(`namespace %q is already defined`, name))
 			}
 
 			// GetEntryType rid of the duplicate

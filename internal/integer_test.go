@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tada/dgo/internal"
-
 	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/internal"
 	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/test/require"
 	"github.com/tada/dgo/tf"

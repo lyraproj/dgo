@@ -1,10 +1,10 @@
 package internal
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/util"
 )
@@ -69,7 +69,7 @@ func NewNamedType(
 	t, loaded := namedTypes.LoadOrStore(name,
 		&named{name: name, ctor: ctor, extractor: extractor, implType: implType, ifdType: ifdType, asgChecker: asgChecker})
 	if loaded {
-		panic(fmt.Errorf(`attempt to redefine named type '%s'`, name))
+		panic(catch.Error(`attempt to redefine named type '%s'`, name))
 	}
 	return t.(*named)
 }
@@ -142,7 +142,7 @@ func (t *named) ExtractInitArg(value dgo.Value) dgo.Value {
 	if t.extractor != nil {
 		return t.extractor(value)
 	}
-	panic(fmt.Errorf(`creating new instances of %s is not possible`, t.name))
+	panic(catch.Error(`creating new instances of %s is not possible`, t.name))
 }
 
 func (t *named) Instance(value interface{}) bool {
@@ -280,11 +280,11 @@ func (t *exactNamed) TypeIdentifier() dgo.TypeIdentifier {
 func newNamed(rt dgo.NamedType, arg dgo.Value) dgo.Value {
 	t := Generic(rt).(*named)
 	if t.ctor == nil {
-		panic(fmt.Errorf(`creating new instances of %s is not possible`, rt.Name()))
+		panic(catch.Error(`creating new instances of %s is not possible`, rt.Name()))
 	}
 	v := t.ctor(arg)
 	if t.asgChecker == nil || t.asgChecker(rt, v.Type()) {
 		return v
 	}
-	panic(IllegalAssignment(rt, v))
+	panic(catch.Error(IllegalAssignment(rt, v)))
 }

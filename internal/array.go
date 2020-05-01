@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"sort"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/util"
 )
@@ -293,7 +293,7 @@ func TupleType(types []interface{}) dgo.TupleType {
 func VariadicTupleType(types []interface{}) dgo.TupleType {
 	n := len(types)
 	if n == 0 {
-		panic(errors.New(`a variadic tuple must have at least one element`))
+		panic(catch.Error(`a variadic tuple must have at least one element`))
 	}
 	return newTupleType(types, true)
 }
@@ -706,7 +706,7 @@ func newArray(t dgo.Type, arg dgo.Value) dgo.Array {
 	}
 	a := Array(arg)
 	if !t.Instance(a) {
-		panic(IllegalAssignment(t, a))
+		panic(catch.Error(IllegalAssignment(t, a)))
 	}
 	return a
 }
@@ -1504,7 +1504,7 @@ func allInstance(guard dgo.RecursionGuard, t dgo.Type, vs []dgo.Value) bool {
 }
 
 func frozenArray(f string) error {
-	return fmt.Errorf(`%s called on a frozen Array`, f)
+	return catch.Error(`%s called on a frozen Array`, f)
 }
 
 func resolveSlice(ts []dgo.Value, ap dgo.AliasAdder) {

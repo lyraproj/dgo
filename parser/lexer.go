@@ -2,14 +2,13 @@ package parser
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/internal"
-
 	"github.com/tada/dgo/util"
 )
 
@@ -90,9 +89,9 @@ func tokenString(t *Token) (s string) {
 
 func badToken(r rune) error {
 	if r == 0 {
-		return errors.New(`unexpected end`)
+		return catch.Error(`unexpected end`)
 	}
-	return fmt.Errorf("unexpected character '%c'", r)
+	return catch.Error("unexpected character '%c'", r)
 }
 
 func nextToken(sr *util.StringReader) (t *Token) {
@@ -219,7 +218,7 @@ func consumeExponent(sr *util.StringReader, buf io.Writer) {
 		r := sr.Next()
 		switch r {
 		case 0:
-			panic(errors.New("unexpected end"))
+			panic(catch.Error("unexpected end"))
 		case '+', '-':
 			util.WriteRune(buf, r)
 			r = sr.Next()
@@ -305,14 +304,14 @@ func ConsumeRegexp(sr *util.StringReader) string {
 			r = sr.Next()
 			switch r {
 			case 0:
-				panic(errors.New("unterminated regexp"))
+				panic(catch.Error("unterminated regexp"))
 			case '/': // Escape is removed
 			default:
 				util.WriteRune(buf, '\\')
 			}
 			util.WriteRune(buf, r)
 		case 0, '\n':
-			panic(errors.New("unterminated regexp"))
+			panic(catch.Error("unterminated regexp"))
 		default:
 			util.WriteRune(buf, r)
 		}
@@ -330,11 +329,11 @@ func ConsumeString(sr *util.StringReader, end rune) string {
 		}
 		switch r {
 		case 0:
-			panic(errors.New("unterminated string"))
+			panic(catch.Error("unterminated string"))
 		case '\\':
 			consumeEscape(sr.Next(), buf, end)
 		case '\n':
-			panic(errors.New("unterminated string"))
+			panic(catch.Error("unterminated string"))
 		default:
 			util.WriteRune(buf, r)
 		}
@@ -344,7 +343,7 @@ func ConsumeString(sr *util.StringReader, end rune) string {
 func consumeEscape(r rune, buf io.Writer, end rune) {
 	switch r {
 	case 0:
-		panic(errors.New("unterminated string"))
+		panic(catch.Error("unterminated string"))
 	case 'n':
 		r = '\n'
 	case 'r':
@@ -368,7 +367,7 @@ func consumeRawString(sr *util.StringReader) string {
 			return buf.String()
 		}
 		if r == 0 {
-			panic(errors.New("unterminated string"))
+			panic(catch.Error("unterminated string"))
 		}
 		util.WriteRune(buf, r)
 	}

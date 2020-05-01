@@ -1,8 +1,9 @@
 package util
 
 import (
-	"errors"
 	"unicode/utf8"
+
+	"github.com/tada/catch"
 )
 
 // StringReader is a helper for reading runes of a String. Its typical use is from a tokenizer
@@ -39,7 +40,7 @@ func (r *StringReader) Next() rune {
 		var size int
 		c, size = utf8.DecodeRuneInString(r.s[r.p:])
 		if c == utf8.RuneError {
-			panic(errors.New("unicode error"))
+			panic(catch.Error("unicode error"))
 		}
 		r.p += size
 		r.c++
@@ -56,7 +57,7 @@ func (r *StringReader) Peek() rune {
 	if c >= utf8.RuneSelf {
 		c, _ = utf8.DecodeRuneInString(r.s[r.p:])
 		if c == utf8.RuneError {
-			panic(errors.New("unicode error"))
+			panic(catch.Error("unicode error"))
 		}
 	}
 	return c
@@ -72,7 +73,7 @@ func (r *StringReader) Peek2() rune {
 	if c >= utf8.RuneSelf {
 		c, sz = utf8.DecodeRuneInString(r.s[r.p:])
 		if c == utf8.RuneError {
-			panic(errors.New("unicode error"))
+			panic(catch.Error("unicode error"))
 		}
 	} else {
 		sz = 1
@@ -87,7 +88,7 @@ func (r *StringReader) Peek2() rune {
 	if c >= utf8.RuneSelf {
 		c, _ = utf8.DecodeRuneInString(r.s[np:])
 		if c == utf8.RuneError {
-			panic(errors.New("unicode error"))
+			panic(catch.Error("unicode error"))
 		}
 	}
 	return c

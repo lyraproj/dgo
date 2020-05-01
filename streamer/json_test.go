@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/tada/dgo/dgo"
-
 	"github.com/tada/dgo/streamer"
 	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/vf"

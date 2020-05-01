@@ -2,9 +2,9 @@
 package streamer
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/vf"
 )
@@ -148,7 +148,7 @@ func (sc *context) emitNamed(t dgo.NamedType, value dgo.Value) {
 }
 
 func (sc *context) unknownSerialization(value dgo.Value) error {
-	return fmt.Errorf(`unable to serialize value of type %s`, value.Type())
+	return catch.Error(`unable to serialize value of type %s`, value.Type())
 }
 
 func (sc *context) process(value interface{}, doer dgo.Doer) {

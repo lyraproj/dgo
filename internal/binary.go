@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"unicode/utf8"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 )
 
@@ -165,7 +166,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 		bt := primitivePTypes[reflect.Uint8]
 		arg.EachWithIndex(func(v dgo.Value, i int) {
 			if !bt.Instance(v) {
-				panic(IllegalAssignment(bt, v))
+				panic(catch.Error(IllegalAssignment(bt, v)))
 			}
 			bs[i] = byte(v.(intVal))
 		})
@@ -176,7 +177,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 		panic(illegalArgument(`binary`, `binary, string, or array`, []interface{}{arg}, 0))
 	}
 	if !t.Instance(b) {
-		panic(IllegalAssignment(t, b))
+		panic(catch.Error(IllegalAssignment(t, b)))
 	}
 	return b
 }
@@ -226,7 +227,7 @@ func BinaryFromEncoded(str, enc string) dgo.Binary {
 		panic(illegalArgument(`binary`, `one of the supported format specifiers %B, %b, %s, %r, %u`, []interface{}{str, enc}, 1))
 	}
 	if err != nil {
-		panic(err)
+		panic(catch.Error(err))
 	}
 	return &binary{bytes: bs, frozen: true}
 }
@@ -235,7 +236,7 @@ func BinaryFromEncoded(str, enc string) dgo.Binary {
 func BinaryFromData(data io.Reader) dgo.Binary {
 	bs, err := ioutil.ReadAll(data)
 	if err != nil {
-		panic(err)
+		panic(catch.Error(err))
 	}
 	return &binary{bytes: bs, frozen: true}
 }

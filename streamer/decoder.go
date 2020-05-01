@@ -1,10 +1,10 @@
 package streamer
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/tf"
 	"github.com/tada/dgo/vf"
@@ -67,20 +67,20 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 	case ts.Equals(dl.TimeTypeName()):
 		t, err := time.Parse(time.RFC3339Nano, mv.(dgo.String).GoString())
 		if err != nil {
-			panic(err)
+			panic(catch.Error(err))
 		}
 		v = vf.Time(t)
 	case ts.Equals(dl.BigFloatTypeName()):
 		bf, _, err := big.ParseFloat(mv.(dgo.String).GoString(), 0, 0, big.ToNearestEven)
 		if err != nil {
-			panic(err)
+			panic(catch.Error(err))
 		}
 		v = vf.BigFloat(bf)
 	case ts.Equals(dl.BigIntTypeName()):
 		s := mv.(dgo.String).GoString()
 		bi, ok := new(big.Int).SetString(s, 16)
 		if !ok {
-			panic(fmt.Errorf(`unable to parse big integer %q`, s))
+			panic(catch.Error(`unable to parse big integer %q`, s))
 		}
 		v = vf.BigInt(bi)
 	case ts.Equals(dl.AliasTypeName()):
@@ -92,7 +92,7 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 	default:
 		tp := tf.Named(ts.GoString())
 		if tp == nil {
-			panic(fmt.Errorf(`unable to decode %s: %s`, dl.TypeKey(), ts))
+			panic(catch.Error(`unable to decode %s: %s`, dl.TypeKey(), ts))
 		}
 		v = tp.New(mv)
 	}

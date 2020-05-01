@@ -6,6 +6,7 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 )
 
@@ -148,7 +149,7 @@ func (t *structType) checkExactKeys() {
 	ks := t.keys.slice
 	for i := range ks {
 		if !dgo.IsExact(ks[i].(dgo.Type)) {
-			panic(`non exact key types is not yet supported`)
+			panic(catch.Error(`non exact key types is not yet supported`))
 		}
 	}
 }

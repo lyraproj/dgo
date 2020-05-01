@@ -6,9 +6,8 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/tada/dgo/util"
-
 	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/util"
 )
 
 type (

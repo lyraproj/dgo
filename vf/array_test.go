@@ -5,7 +5,6 @@ import (
 
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/typ"
-
 	"github.com/tada/dgo/vf"
 )
 

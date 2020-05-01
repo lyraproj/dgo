@@ -2,12 +2,12 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"reflect"
 	"regexp"
 	"time"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 )
 
@@ -20,14 +20,14 @@ func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 	}
 	if args, ok := argument.(dgo.Arguments); ok {
 		if args.Len() != 1 {
-			panic(fmt.Errorf(`unable to create a %v from arguments %v`, typ, args))
+			panic(catch.Error(`unable to create a %v from arguments %v`, typ, args))
 		}
 		argument = args.Get(0)
 	}
 	if typ.Instance(argument) {
 		return argument
 	}
-	panic(fmt.Errorf(`unable to create a %v from %v`, typ, argument))
+	panic(catch.Error(`unable to create a %v from %v`, typ, argument))
 }
 
 // Value returns the dgo.Value representation of its argument. If the argument type
@@ -102,7 +102,7 @@ func valueFromJSONNumber(v json.Number) dgo.Value {
 	}
 	f, err := v.Float64()
 	if err != nil {
-		panic(err)
+		panic(catch.Error(err))
 	}
 	return Float(f)
 }
@@ -160,7 +160,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 func FromValue(src dgo.Value, dest interface{}) {
 	dp := reflect.ValueOf(dest)
 	if reflect.Ptr != dp.Kind() {
-		panic("destination is not a pointer")
+		panic(catch.Error("destination is not a pointer"))
 	}
 	ReflectTo(src, dp.Elem())
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/tada/catch"
 	"github.com/tada/dgo/dgo"
 )
 
@@ -254,14 +255,14 @@ func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 		case reflect.Struct:
 			return FromReflectedStruct(rm)
 		}
-		panic(fmt.Errorf(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
+		panic(catch.Error(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
 		if frozen {
 			return Values(args).ToMap()
 		}
 		return MutableValues(args).ToMap()
 	default:
-		panic(fmt.Errorf(`the number of arguments to Map must be 1 or an even number, got: %d`, l))
+		panic(catch.Error(`the number of arguments to Map must be 1 or an even number, got: %d`, l))
 	}
 }
 

@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/tada/dgo/util"
-
 	"github.com/tada/dgo/dgo"
+	"github.com/tada/dgo/util"
 )
 
 const rndFactor = 1234
