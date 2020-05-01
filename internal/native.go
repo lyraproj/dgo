@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/tada/catch/pio"
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/util"
 )
@@ -113,7 +114,7 @@ func (v *native) Format(s fmt.State, format rune) {
 	if v.CanInterface() {
 		doFormat(v.Interface(), s, format)
 	} else {
-		util.WriteString(s, v.String())
+		pio.WriteString(s, v.String())
 	}
 }
 
