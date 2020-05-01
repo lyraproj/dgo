@@ -9,6 +9,9 @@ import (
 )
 
 type (
+	// Hash is the type returned by the Value.HashCode() method.
+	Hash = int32
+
 	// A Value represents an immutable value of some Type
 	//
 	// Values should not be compared using == (depending on value type, it may result in a panic: runtime error:
@@ -29,7 +32,7 @@ type (
 		Equals(other interface{}) bool
 
 		// HashCode returns the computed hash code of the value
-		HashCode() int
+		HashCode() Hash
 	}
 
 	// ReflectedValue is implemented by all values that can be assigned to a reflected value in

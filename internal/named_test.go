@@ -27,8 +27,8 @@ func (a testNamed) Equals(other interface{}) bool {
 	return a == other
 }
 
-func (a testNamed) HashCode() int {
-	return int(a)
+func (a testNamed) HashCode() dgo.Hash {
+	return dgo.Hash(a)
 }
 
 type testNamedB struct {
@@ -186,7 +186,8 @@ func TestNamedType_parameterized(t *testing.T) {
 		func(self dgo.NamedType, typ dgo.Type) bool {
 			if ot, ok := typ.(dgo.NamedType); ok && self.Name() == ot.Name() {
 				var oMin, oMax int
-				if et, ok := ot.(dgo.ExactType); ok {
+				var et dgo.ExactType
+				if et, ok = ot.(dgo.ExactType); ok {
 					oMin = int(et.ExactValue().(testNamed))
 					oMax = oMin
 				} else {

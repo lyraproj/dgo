@@ -9,7 +9,7 @@ import (
 type deepEqual interface {
 	deepEqual(seen []dgo.Value, other deepEqual) bool
 
-	deepHashCode(seen []dgo.Value) int
+	deepHashCode(seen []dgo.Value) dgo.Hash
 }
 
 type doubleSeen struct {
@@ -95,7 +95,7 @@ func Instance(guard dgo.RecursionGuard, a dgo.Type, b interface{}) bool {
 	return da.DeepInstance(guard, b)
 }
 
-func deepHashCode(seen []dgo.Value, e dgo.Value) int {
+func deepHashCode(seen []dgo.Value, e dgo.Value) dgo.Hash {
 	if de, ok := e.(deepEqual); ok {
 		if util.RecursionHit(seen, e) {
 			return 0

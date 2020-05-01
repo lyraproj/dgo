@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/tada/catch/pio"
-
 	"github.com/tada/dgo/dgo"
 )
 

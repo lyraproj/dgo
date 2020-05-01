@@ -61,8 +61,8 @@ func (t *nativeType) GoType() reflect.Type {
 	return t._rt
 }
 
-func (t *nativeType) HashCode() int {
-	h := int(dgo.TiNative)
+func (t *nativeType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiNative)
 	if t._rt != nil {
 		h += util.StringHash(t.Name()) * 31
 	}
@@ -130,9 +130,9 @@ func (v *native) GoValue() interface{} {
 	return v.Interface()
 }
 
-func (v *native) HashCode() int {
+func (v *native) HashCode() dgo.Hash {
 	if v.CanAddr() {
-		return int(v.UnsafeAddr())
+		return dgo.Hash(v.UnsafeAddr())
 	}
 	switch v.Kind() {
 	case reflect.Ptr:
@@ -141,15 +141,15 @@ func (v *native) HashCode() int {
 			return structHash(&ev)
 		}
 		p := v.Pointer()
-		return int(p ^ (p >> 32))
+		return dgo.Hash(p ^ (p >> 32))
 	case reflect.Struct:
 		return structHash(v.ReflectValue()) * 3
 	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		return int(v.Int())
+		return dgo.Hash(v.Int())
 	case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-		return int(v.Uint())
+		return dgo.Hash(v.Uint())
 	case reflect.Float64, reflect.Float32:
-		return int(v.Float())
+		return dgo.Hash(v.Float())
 	case reflect.Bool:
 		if v.Bool() {
 			return 1231
@@ -157,7 +157,7 @@ func (v *native) HashCode() int {
 		return 1237
 	default:
 		p := v.Pointer()
-		return int(p ^ (p >> 32))
+		return dgo.Hash(p ^ (p >> 32))
 	}
 }
 
@@ -196,9 +196,9 @@ func (v *native) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiNativeExact
 }
 
-func structHash(rv *reflect.Value) int {
+func structHash(rv *reflect.Value) dgo.Hash {
 	n := rv.NumField()
-	h := 1
+	h := dgo.Hash(1)
 	for i := 0; i < n; i++ {
 		h = h*31 + ValueFromReflected(rv.Field(i)).HashCode()
 	}

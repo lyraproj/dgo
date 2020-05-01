@@ -23,7 +23,7 @@ func (v *structVal) All(predicate dgo.EntryPredicate) bool {
 	rv := v.rs
 	rt := rv.Type()
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		if !predicate(&mapEntry{&hstring{s: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}) {
+		if !predicate(&mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}) {
 			return false
 		}
 	}
@@ -34,7 +34,7 @@ func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
 	rv := v.rs
 	rt := rv.Type()
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		if !predicate(&hstring{s: rt.Field(i).Name}) {
+		if !predicate(&hstring{string: rt.Field(i).Name}) {
 			return false
 		}
 	}
@@ -111,21 +111,21 @@ func (v *structVal) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return mapEqual(seen, v, other)
 }
 
-func (v *structVal) HashCode() int {
+func (v *structVal) HashCode() dgo.Hash {
 	return deepHashCode(nil, v)
 }
 
-func (v *structVal) deepHashCode(seen []dgo.Value) int {
+func (v *structVal) deepHashCode(seen []dgo.Value) dgo.Hash {
 	hs := make([]int, v.Len())
 	i := 0
 	v.EachEntry(func(e dgo.MapEntry) {
-		hs[i] = deepHashCode(seen, e)
+		hs[i] = int(deepHashCode(seen, e))
 		i++
 	})
 	sort.Ints(hs)
-	h := 1
+	h := dgo.Hash(1)
 	for i = range hs {
-		h = h*31 + hs[i]
+		h = h*31 + dgo.Hash(hs[i])
 	}
 	return h
 }
@@ -185,7 +185,7 @@ func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 	rv := v.rs
 	rt := rv.Type()
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		e := &mapEntry{&hstring{s: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}
+		e := &mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}
 		if predicate(e) {
 			return e
 		}
@@ -195,7 +195,7 @@ func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 
 func stringKey(key interface{}) (string, bool) {
 	if hs, ok := key.(*hstring); ok {
-		return hs.s, true
+		return hs.string, true
 	}
 	if s, ok := key.(string); ok {
 		return s, true

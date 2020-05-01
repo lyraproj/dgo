@@ -229,11 +229,11 @@ func (t *structType) Generic() dgo.Type {
 	return newMapType(Generic(t.KeyType()), Generic(t.ValueType()), 0, math.MaxInt64)
 }
 
-func (t *structType) HashCode() int {
+func (t *structType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *structType) deepHashCode(seen []dgo.Value) int {
+func (t *structType) deepHashCode(seen []dgo.Value) dgo.Hash {
 	h := boolsHash(t.required)*31 + deepHashCode(seen, &t.keys)*31 + deepHashCode(seen, &t.values)
 	if t.additional {
 		h *= 3
@@ -469,10 +469,10 @@ func (t *structEntry) Required() bool {
 	return t.required
 }
 
-func boolsHash(s []bool) int {
-	h := 1
+func boolsHash(s []bool) dgo.Hash {
+	h := dgo.Hash(1)
 	for i := range s {
-		m := 2
+		m := dgo.Hash(2)
 		if s[i] {
 			m = 3
 		}

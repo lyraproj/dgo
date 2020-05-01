@@ -34,7 +34,7 @@ func (v *mapKeyError) Error() string {
 	return fmt.Sprintf("key %q cannot be added to type %s", v.key, TypeString(v.mapType))
 }
 
-func (v *mapKeyError) HashCode() int {
+func (v *mapKeyError) HashCode() dgo.Hash {
 	return v.mapType.HashCode()*31 + v.key.HashCode()
 }
 
@@ -57,7 +57,7 @@ func (v *typeError) Error() string {
 	var what string
 	switch actual := v.actual.(type) {
 	case *hstring:
-		what = fmt.Sprintf(`the string %q`, actual.s)
+		what = fmt.Sprintf(`the string %q`, actual.string)
 	default:
 		if dgo.IsExact(actual) {
 			what = fmt.Sprintf(`the value %v`, actual)
@@ -68,7 +68,7 @@ func (v *typeError) Error() string {
 	return fmt.Sprintf("%v cannot be assigned to a variable of type %s", what, TypeString(v.expected))
 }
 
-func (v *typeError) HashCode() int {
+func (v *typeError) HashCode() dgo.Hash {
 	return v.expected.HashCode()*31 + v.actual.HashCode()
 }
 
@@ -92,8 +92,8 @@ func (v *sizeError) Error() string {
 		"size constraint violation on type %s when attempting resize to %d", TypeString(v.sizedType), v.attemptedSize)
 }
 
-func (v *sizeError) HashCode() int {
-	return v.sizedType.HashCode()*7 + v.attemptedSize
+func (v *sizeError) HashCode() dgo.Hash {
+	return v.sizedType.HashCode()*7 + dgo.Hash(v.attemptedSize)
 }
 
 func (v *sizeError) String() string {

@@ -52,12 +52,12 @@ func (t *sensitiveType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *sensitiveType) HashCode() int {
+func (t *sensitiveType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *sensitiveType) deepHashCode(seen []dgo.Value) int {
-	return int(dgo.TiSensitive)*31 + deepHashCode(seen, t.wrapped)
+func (t *sensitiveType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	return dgo.Hash(dgo.TiSensitive)*31 + deepHashCode(seen, t.wrapped)
 }
 
 func (t *sensitiveType) Instance(value interface{}) bool {
@@ -147,11 +147,11 @@ func (v *sensitive) ThawedCopy() dgo.Value {
 	return v
 }
 
-func (v *sensitive) HashCode() int {
+func (v *sensitive) HashCode() dgo.Hash {
 	return deepHashCode(nil, v)
 }
 
-func (v *sensitive) deepHashCode(seen []dgo.Value) int {
+func (v *sensitive) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return deepHashCode(seen, v.value) * 7
 }
 

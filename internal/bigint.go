@@ -164,7 +164,7 @@ func (v *bigIntVal) GoInt() int64 {
 	panic(catch.Error(`BigInt.ToInt(): value %d cannot fit into an int64`, v))
 }
 
-func (v *bigIntVal) HashCode() int {
+func (v *bigIntVal) HashCode() dgo.Hash {
 	return bigIntHash(v.Int)
 }
 
@@ -236,10 +236,10 @@ func (v *bigIntVal) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBigIntExact
 }
 
-func bigIntHash(v *big.Int) int {
-	hc := 0
+func bigIntHash(v *big.Int) dgo.Hash {
+	hc := dgo.Hash(0)
 	for _, w := range v.Bits() {
-		hc = hc*31 + int(w)
+		hc = hc*31 + dgo.Hash(w)
 	}
 	return hc
 }

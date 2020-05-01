@@ -122,8 +122,8 @@ func (t *floatType) Equals(other interface{}) bool {
 	return ok && t.inclusive == ot.Inclusive() && equals(nil, t.min, ot.Min()) && equals(nil, t.max, ot.Max())
 }
 
-func (t *floatType) HashCode() int {
-	h := int(dgo.TiFloatRange)
+func (t *floatType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiFloatRange)
 	if t.min != nil {
 		h = h*31 + t.min.HashCode()
 	}
@@ -211,8 +211,8 @@ func (t defaultFloatType) Equals(other interface{}) bool {
 	return ok
 }
 
-func (t defaultFloatType) HashCode() int {
-	return int(dgo.TiFloat)
+func (t defaultFloatType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiFloat)
 }
 
 func (t defaultFloatType) Instance(value interface{}) bool {
@@ -343,8 +343,8 @@ func (v floatVal) GoFloat() float64 {
 	return float64(v)
 }
 
-func (v floatVal) HashCode() int {
-	return int(v)
+func (v floatVal) HashCode() dgo.Hash {
+	return dgo.Hash(v)
 }
 
 func (v floatVal) Integer() dgo.Integer {

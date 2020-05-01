@@ -22,8 +22,8 @@ func (t anyType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t anyType) HashCode() int {
-	return int(dgo.TiAny)
+func (t anyType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiAny)
 }
 
 func (t anyType) Instance(value interface{}) bool {

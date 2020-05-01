@@ -73,11 +73,11 @@ func (v *mapEntry) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (v *mapEntry) HashCode() int {
+func (v *mapEntry) HashCode() dgo.Hash {
 	return deepHashCode(nil, v)
 }
 
-func (v *mapEntry) deepHashCode(seen []dgo.Value) int {
+func (v *mapEntry) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return deepHashCode(seen, v.key) ^ deepHashCode(seen, v.value)
 }
 
@@ -293,9 +293,9 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 	// Sort by key to always get predictable order
 	sort.Slice(se, func(i, j int) bool {
 		less := false
-		if cm, ok := se[i][0].(dgo.Comparable); ok {
+		if cmp, ok := se[i][0].(dgo.Comparable); ok {
 			var c int
-			if c, ok = cm.CompareTo(se[j][0]); ok {
+			if c, ok = cmp.CompareTo(se[j][0]); ok {
 				less = c < 0
 			}
 		}
@@ -569,23 +569,23 @@ func (g *hashMap) Get(key interface{}) dgo.Value {
 	return nil
 }
 
-func (g *hashMap) HashCode() int {
+func (g *hashMap) HashCode() dgo.Hash {
 	return deepHashCode(nil, g)
 }
 
-func (g *hashMap) deepHashCode(seen []dgo.Value) int {
+func (g *hashMap) deepHashCode(seen []dgo.Value) dgo.Hash {
 	// compute order independent hash code. This is necessary to withhold the
 	// contract that when two maps are equal, their hashes are equal.
 	hs := make([]int, g.len)
 	i := 0
 	for e := g.first; e != nil; e = e.next {
-		hs[i] = deepHashCode(seen, e)
+		hs[i] = int(deepHashCode(seen, e))
 		i++
 	}
 	sort.Ints(hs)
-	h := 1
+	h := dgo.Hash(1)
 	for i = range hs {
-		h = h*31 + hs[i]
+		h = h*31 + dgo.Hash(hs[i])
 	}
 	return h
 }
@@ -710,13 +710,13 @@ func (g *hashMap) ReflectTo(value reflect.Value) {
 	if ht.Kind() == reflect.Interface && ht.Name() == `` {
 		ht = g.Type().ReflectType()
 	}
-	keyType := ht.Key()
-	valueType := ht.Elem()
+	keyTp := ht.Key()
+	valueTp := ht.Elem()
 	m := reflect.MakeMapWithSize(ht, g.Len())
 	g.EachEntry(func(e dgo.MapEntry) {
-		rk := reflect.New(keyType).Elem()
+		rk := reflect.New(keyTp).Elem()
 		ReflectTo(e.Key(), rk)
-		rv := reflect.New(valueType).Elem()
+		rv := reflect.New(valueTp).Elem()
 		ReflectTo(e.Value(), rv)
 		m.SetMapIndex(rk, rv)
 	})
@@ -928,8 +928,8 @@ func frozenCopy(v dgo.Value) dgo.Value {
 	return v
 }
 
-func hash(h int) int {
-	return h ^ (h >> 16)
+func hash(h dgo.Hash) int {
+	return int(h ^ (h >> 16))
 }
 
 func mapTypeOne(args []interface{}) dgo.MapType {
@@ -1070,17 +1070,17 @@ func (t *sizedMapType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (t *sizedMapType) HashCode() int {
+func (t *sizedMapType) HashCode() dgo.Hash {
 	return deepHashCode(nil, t)
 }
 
-func (t *sizedMapType) deepHashCode(seen []dgo.Value) int {
-	h := int(dgo.TiMap)
+func (t *sizedMapType) deepHashCode(seen []dgo.Value) dgo.Hash {
+	h := dgo.Hash(dgo.TiMap)
 	if t.min > 0 {
-		h = h*31 + t.min
+		h = h*31 + dgo.Hash(t.min)
 	}
 	if t.max < math.MaxInt64 {
-		h = h*31 + t.max
+		h = h*31 + dgo.Hash(t.max)
 	}
 	if DefaultAnyType != t.keyType {
 		h = h*31 + deepHashCode(seen, t.keyType)
@@ -1182,8 +1182,8 @@ func (t defaultMapType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t defaultMapType) HashCode() int {
-	return int(dgo.TiMap)
+func (t defaultMapType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiMap)
 }
 
 func (t defaultMapType) Instance(value interface{}) bool {

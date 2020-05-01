@@ -135,7 +135,7 @@ func (v *bigFloatVal) GoFloat() float64 {
 	panic(catch.Error(`BigFloat.ToFloat(): value %f cannot fit into a float64`, v))
 }
 
-func (v *bigFloatVal) HashCode() int {
+func (v *bigFloatVal) HashCode() dgo.Hash {
 	return bigFloatHash(v._bf)
 }
 
@@ -206,7 +206,7 @@ func (v *bigFloatVal) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBigFloatExact
 }
 
-func bigFloatHash(v *big.Float) int {
+func bigFloatHash(v *big.Float) dgo.Hash {
 	ge, _ := v.GobEncode()
 	return bytesHash(ge)
 }

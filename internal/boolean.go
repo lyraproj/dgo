@@ -33,8 +33,8 @@ func (t booleanType) Equals(v interface{}) bool {
 	return t == v
 }
 
-func (t booleanType) HashCode() int {
-	return int(t.TypeIdentifier())
+func (t booleanType) HashCode() dgo.Hash {
+	return dgo.Hash(t.TypeIdentifier())
 }
 
 func (t booleanType) Instance(v interface{}) bool {
@@ -138,7 +138,7 @@ func (v boolean) GoBool() bool {
 	return bool(v)
 }
 
-func (v boolean) HashCode() int {
+func (v boolean) HashCode() dgo.Hash {
 	if v {
 		return 1231
 	}

@@ -28,8 +28,8 @@ func (t errType) Equals(other interface{}) bool {
 	return t == other
 }
 
-func (t errType) HashCode() int {
-	return int(t.TypeIdentifier())
+func (t errType) HashCode() dgo.Hash {
+	return dgo.Hash(t.TypeIdentifier())
 }
 
 func (t errType) Assignable(other dgo.Type) bool {
@@ -95,7 +95,7 @@ func (e *errw) Equals(other interface{}) bool {
 	return false
 }
 
-func (e *errw) HashCode() int {
+func (e *errw) HashCode() dgo.Hash {
 	return util.StringHash(e.error.Error())
 }
 

@@ -23,7 +23,7 @@ func (nilValue) CompareTo(other interface{}) (int, bool) {
 	return -1, true
 }
 
-func (nilValue) HashCode() int {
+func (nilValue) HashCode() dgo.Hash {
 	return 131
 }
 

@@ -35,8 +35,8 @@ func (t regexpType) Equals(v interface{}) bool {
 	return t == v
 }
 
-func (t regexpType) HashCode() int {
-	return int(dgo.TiRegexp)
+func (t regexpType) HashCode() dgo.Hash {
+	return dgo.Hash(dgo.TiRegexp)
 }
 
 func (t regexpType) Instance(v interface{}) bool {
@@ -114,7 +114,7 @@ func (v *regexpVal) Equals(other interface{}) bool {
 	return false
 }
 
-func (v *regexpVal) HashCode() int {
+func (v *regexpVal) HashCode() dgo.Hash {
 	return util.StringHash((*regexp.Regexp)(v).String())
 }
 

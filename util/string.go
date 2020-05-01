@@ -2,6 +2,8 @@ package util
 
 import (
 	"strconv"
+
+	"github.com/tada/dgo/dgo"
 )
 
 // Ftoa returns the given float as a string with almost all trailing zeroes removed. The resulting string will however
@@ -28,10 +30,10 @@ func ContainsString(strings []string, str string) bool {
 }
 
 // StringHash computes a non unique hash code for the given string
-func StringHash(s string) int {
-	h := 1
+func StringHash(s string) dgo.Hash {
+	h := dgo.Hash(1)
 	for i := range s {
-		h = 31*h + int(s[i])
+		h = 31*h + dgo.Hash(s[i])
 	}
 	return h
 }

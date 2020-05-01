@@ -241,8 +241,8 @@ func (v *testNamed) Equals(other interface{}) bool {
 	return false
 }
 
-func (v *testNamed) HashCode() int {
-	return int(reflect.ValueOf(v).Pointer())
+func (v *testNamed) HashCode() dgo.Hash {
+	return dgo.Hash(reflect.ValueOf(v).Pointer())
 }
 
 func TestEncode_namedUsingMap(t *testing.T) {

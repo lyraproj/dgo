@@ -84,13 +84,13 @@ func (t *binaryType) Equals(other interface{}) bool {
 	return false
 }
 
-func (t *binaryType) HashCode() int {
-	h := int(dgo.TiBinary)
+func (t *binaryType) HashCode() dgo.Hash {
+	h := dgo.Hash(dgo.TiBinary)
 	if t.min > 0 {
-		h = h*31 + t.min
+		h = h*31 + dgo.Hash(t.min)
 	}
 	if t.max < math.MaxInt64 {
-		h = h*31 + t.max
+		h = h*31 + dgo.Hash(t.max)
 	}
 	return h
 }
@@ -340,7 +340,7 @@ func (v *binary) GoBytes() []byte {
 	return v.bytes
 }
 
-func (v *binary) HashCode() int {
+func (v *binary) HashCode() dgo.Hash {
 	return bytesHash(v.bytes)
 }
 
@@ -401,10 +401,10 @@ func (v *binary) Unbounded() bool {
 	return false
 }
 
-func bytesHash(s []byte) int {
-	h := 1
+func bytesHash(s []byte) dgo.Hash {
+	h := dgo.Hash(1)
 	for i := range s {
-		h = 31*h + int(s[i])
+		h = 31*h + dgo.Hash(s[i])
 	}
 	return h
 }
