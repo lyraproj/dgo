@@ -4,9 +4,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/tada/dgo/parser"
+
 	"github.com/tada/dgo/dgo"
 	"github.com/tada/dgo/internal"
-	"github.com/tada/dgo/parser"
 	"github.com/tada/dgo/stringer"
 	"github.com/tada/dgo/test/assert"
 	"github.com/tada/dgo/tf"
@@ -15,12 +16,9 @@ import (
 )
 
 func TestAlias_Freeze(t *testing.T) {
-	alias := parser.NewAlias(vf.String(`hello`)).(dgo.Freezable)
+	alias := parser.NewAlias(vf.String(`hello`)).(dgo.Mutability)
 	assert.False(t, alias.Frozen())
 	assert.Same(t, alias, alias.ThawedCopy())
-	assert.Panic(t, func() {
-		alias.Freeze()
-	}, `attempt to freeze unresolved alias`)
 	assert.Panic(t, func() {
 		alias.FrozenCopy()
 	}, `attempt to freeze unresolved alias`)
@@ -59,11 +57,15 @@ func TestAddAliases(t *testing.T) {
 	})
 	assert.Same(t, bi, aliases)
 
+	mt := vf.MutableValues(`a`, `b`).Type()
 	tf.AddAliases(&aliases, &lock, func(aa dgo.AliasAdder) {
 		aa.Add(tf.String(10, 12), vf.String(`pnr`))
+		aa.Add(mt, vf.String(`mt`))
 	})
 	assert.NotSame(t, bi, aliases)
 	assert.Equal(t, aliases.GetType(vf.String(`pnr`)), tf.String(10, 12))
+	assert.False(t, mt.(dgo.Mutability).Frozen())
+	assert.True(t, aliases.GetType(vf.String(`mt`)).(dgo.Mutability).Frozen())
 	assert.Nil(t, bi.GetType(vf.String(`pnr`)))
 }
 

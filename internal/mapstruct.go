@@ -14,8 +14,8 @@ type (
 	// structType describes each mapEntry of a map
 	structType struct {
 		additional bool
-		keys       array
-		values     array
+		keys       arrayFrozen
+		values     arrayFrozen
 		required   []bool
 	}
 
@@ -52,8 +52,8 @@ func StructMapTypeUnresolved(additional bool, entries []dgo.StructMapEntry) dgo.
 
 	return &structType{
 		additional: additional,
-		keys:       array{slice: keys, frozen: true},
-		values:     array{slice: values, frozen: true},
+		keys:       arrayFrozen{array{slice: keys}},
+		values:     arrayFrozen{array{slice: values}},
 		required:   required}
 }
 
@@ -137,8 +137,8 @@ func StructMapTypeFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 
 	t := &structType{
 		additional: additional,
-		keys:       array{slice: keys, frozen: true},
-		values:     array{slice: values, frozen: true},
+		keys:       arrayFrozen{array{slice: keys}},
+		values:     arrayFrozen{array{slice: values}},
 		required:   required}
 
 	t.checkExactKeys()
@@ -283,7 +283,7 @@ func (t *structType) KeyType() dgo.Type {
 	case 1:
 		return t.keys.Get(0).(dgo.Type)
 	default:
-		return (*allOfType)(&t.keys)
+		return (*allOfType)(&t.keys.array)
 	}
 }
 
@@ -441,7 +441,7 @@ func (t *structType) ValueType() dgo.Type {
 	case 1:
 		return t.values.Get(0).(dgo.Type)
 	default:
-		return (*allOfType)(&t.values)
+		return (*allOfType)(&t.values.array)
 	}
 }
 

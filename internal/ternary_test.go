@@ -55,7 +55,8 @@ func TestAllOfType(t *testing.T) {
 	assert.Assignable(t, tf.ParseType(`/a/|/b/|/c/`), tp)
 
 	a := vf.Values(`a`, `b`, nil)
-	assert.Same(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).ExactValue(), a)
+	assert.Equal(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).ExactValue(), a)
+	assert.NotSame(t, a.Type().(dgo.ArrayType).ElementType().(dgo.ExactType).ExactValue(), a)
 	assert.Same(t, typ.Any, typ.Generic(a.Type()).(dgo.ArrayType).ElementType())
 }
 

@@ -235,124 +235,6 @@ func TestArrayElementType_multipleElements(t *testing.T) {
 	assert.Equal(t, `"hello"&"world"`, et.String())
 }
 
-func TestTupleType(t *testing.T) {
-	tt := typ.Tuple
-	assert.Same(t, tt, tf.VariadicTuple(typ.Any))
-	assert.Same(t, typ.Any, tt.ElementType())
-
-	tt = typ.EmptyTuple
-	assert.Same(t, tt, tf.Tuple())
-	assert.Assignable(t, tt, tf.Array(0, 0))
-	assert.Same(t, typ.Any, tt.ElementType())
-
-	tt = tf.Tuple(typ.String, typ.Any, typ.Float)
-	assert.Assignable(t, tt, tf.Tuple(typ.String, typ.Integer, typ.Float))
-	assert.Assignable(t, tt, vf.Values(`one`, 2, 3.0).Type())
-	assert.Equal(t, 3, tt.Min())
-	assert.Equal(t, 3, tt.Max())
-	assert.False(t, tt.Unbounded())
-
-	et := tf.String(1, 100)
-	tt = tf.Tuple(et)
-	assert.Same(t, tt.ElementType(), et)
-
-	tt = tf.Tuple(typ.String, typ.Integer, typ.Float)
-	assert.Assignable(t, tt, tt)
-	assert.Assignable(t, tt, tf.Tuple(typ.String, typ.Integer, typ.Float))
-	assert.NotAssignable(t, tt, tf.Tuple(typ.String, typ.Integer, typ.Boolean))
-	assert.Assignable(t, typ.Array, tt)
-	assert.Assignable(t, tf.Array(0, 3), tt)
-	assert.Assignable(t, tt, vf.Values(`one`, 2, 3.0).Type())
-	assert.NotAssignable(t, tt, vf.Values(`one`, 2, 3.0, `four`).Type())
-	assert.NotAssignable(t, tt, vf.Values(`one`, 2, 3).Type())
-	assert.NotAssignable(t, tt, typ.Array)
-	assert.NotAssignable(t, tt, typ.Tuple)
-	assert.NotEqual(t, tt, typ.String)
-	assert.Equal(t, 3, tt.Min())
-	assert.Equal(t, 3, tt.Max())
-	assert.False(t, tt.Unbounded())
-	assert.Assignable(t, tf.Array(tf.AnyOf(typ.String, typ.Integer, typ.Float)), tt)
-	assert.NotAssignable(t, tf.Array(tf.AnyOf(typ.String, typ.Integer)), tt)
-	assert.Assignable(t, tf.Array(tf.AnyOf(typ.String, typ.Integer, typ.Float, typ.Boolean)), tt)
-	assert.Assignable(t, tf.Array(tf.AnyOf(typ.String, typ.Integer, typ.Float), 0, 3), tt)
-	assert.NotAssignable(t, tf.Array(tf.AnyOf(typ.String, typ.Integer, typ.Float), 0, 2), tt)
-
-	okv := vf.Values(`hello`, 1, 2.0)
-	assert.Instance(t, tt, okv)
-	assert.NotInstance(t, tt, okv.Get(0))
-	assert.Assignable(t, tt, okv.Type())
-	assert.Assignable(t, typ.Array, tt)
-
-	okv = vf.Values(`hello`, 1, 2)
-	assert.NotInstance(t, tt, okv)
-
-	okv = vf.Values(`hello`, 1, 2.0, true)
-	assert.NotInstance(t, tt, okv)
-
-	okm := vf.MutableValues(`world`, 2, 3.0)
-	assert.Equal(t, `world`, okm.Set(0, `earth`))
-
-	tt = tf.Tuple(typ.String, typ.String)
-	assert.Assignable(t, tt, tf.Array(typ.String, 2, 2))
-	assert.Equal(t, tt.ReflectType(), tf.Array(typ.String).ReflectType())
-	assert.Assignable(t, tt, tf.Array(typ.String, 2, 2))
-	assert.NotAssignable(t, tt, tf.AnyOf(typ.Nil, tf.Array(typ.String, 2, 2)))
-	tt = tf.Tuple(typ.String, typ.Integer)
-	assert.NotAssignable(t, tt, tf.Array(typ.String, 2, 2))
-	assert.Equal(t, tt.ReflectType(), typ.Array.ReflectType())
-	assert.Equal(t, typ.Any, typ.Tuple.ElementType())
-	assert.Equal(t, tf.AllOf(typ.String, typ.Integer), tt.ElementType())
-	assert.Equal(t, vf.Values(typ.String, typ.Integer), tt.ElementTypes())
-	assert.Equal(t, typ.Array, typ.Generic(tt))
-	assert.Instance(t, tt.Type(), tt)
-	assert.Equal(t, `{string,int}`, tt.String())
-	assert.NotEqual(t, 0, tt.HashCode())
-	assert.Equal(t, tt.HashCode(), tt.HashCode())
-
-	tt = tf.Tuple(typ.String, typ.String)
-	assert.Equal(t, tf.Array(typ.String), typ.Generic(tt))
-
-	te := tf.Tuple(vf.String(`a`).Type(), vf.String(`b`).Type())
-	assert.Assignable(t, tt, te)
-	assert.NotAssignable(t, te, tt)
-	assert.Equal(t, tf.Array(typ.String), typ.Generic(te))
-}
-
-func TestTupleType_selfReference(t *testing.T) {
-	internal.ResetDefaultAliases()
-	tp := tf.ParseType(`x={string,x}`).(dgo.ArrayType)
-	d := vf.MutableValues()
-	d.Add(`hello`)
-	d.Add(d)
-	assert.Instance(t, tp, d)
-
-	internal.ResetDefaultAliases()
-	t2 := tf.ParseType(`x={string,{string,x}}`)
-	assert.Assignable(t, tp, t2)
-	assert.Equal(t, `x`, t2.String())
-
-	internal.ResetDefaultAliases()
-	assert.Equal(t, `{string,<recursive self reference to tuple type>}`, tp.String())
-}
-
-func TestVariadicTupleType(t *testing.T) {
-	tt := tf.ParseType(`{string,...string}`).(dgo.TupleType)
-	assert.Instance(t, tt, vf.Values(`one`))
-	assert.Instance(t, tt, vf.Values(`one`, `two`))
-	assert.NotInstance(t, tt, vf.Values(`one`, 2))
-	assert.NotInstance(t, tt, vf.Values(1))
-
-	tt = tf.VariadicTuple(typ.String, typ.String)
-	assert.NotInstance(t, tt, vf.Values())
-	assert.Instance(t, tt, vf.Values(`one`))
-	assert.Instance(t, tt, vf.Values(`one`, `two`))
-	assert.Instance(t, tt, vf.Values(`one`, `two`, `three`))
-	assert.True(t, tt.Unbounded())
-	assert.Equal(t, 1, tt.Min())
-	assert.Equal(t, math.MaxInt64, tt.Max())
-	assert.Panic(t, func() { tf.VariadicTuple() }, `must have at least one element`)
-}
-
 func TestMutableValues_withoutNil(t *testing.T) {
 	a := vf.MutableValues(nil)
 	assert.True(t, vf.Nil == a.Get(0))
@@ -633,7 +515,7 @@ func TestArray_CompareTo(t *testing.T) {
 func TestArray_Copy(t *testing.T) {
 	a := vf.Values(`a`, `b`, vf.MutableValues(`c`))
 	assert.Same(t, a, a.Copy(true))
-	assert.True(t, a.Get(2).(dgo.Freezable).Frozen())
+	assert.True(t, a.Get(2).(dgo.Mutability).Frozen())
 
 	c := a.Copy(false)
 	assert.False(t, c.Frozen())
@@ -644,11 +526,22 @@ func TestArray_Copy(t *testing.T) {
 	assert.Same(t, c, c.Copy(true))
 }
 
-func TestArray_Flatten(t *testing.T) {
-	a := vf.Values(`a`, `b`, vf.Values(`c`, `d`), vf.Values(`e`, vf.Values(`f`, `g`)))
-	b := vf.Values(`a`, `b`, `c`, `d`, `e`, `f`, `g`)
-	assert.Equal(t, b, a.Flatten())
+func TestArray_Flatten_mutable(t *testing.T) {
+	a := vf.MutableValues(`a`, `b`, vf.Values(`c`, `d`), vf.Values(`e`, vf.Values(`f`, `g`)))
+	af := a.Flatten()
+	b := vf.MutableValues(`a`, `b`, `c`, `d`, `e`, `f`, `g`)
+	assert.Equal(t, b, af)
 	assert.Same(t, b, b.Flatten())
+	assert.False(t, af.Frozen())
+}
+
+func TestArray_Flatten_frozen(t *testing.T) {
+	a := vf.Values(`a`, `b`, vf.Values(`c`, `d`), vf.Values(`e`, vf.Values(`f`, `g`)))
+	af := a.Flatten()
+	b := vf.Values(`a`, `b`, `c`, `d`, `e`, `f`, `g`)
+	assert.Equal(t, b, af)
+	assert.Same(t, b, b.Flatten())
+	assert.True(t, af.Frozen())
 }
 
 func TestArray_FromReflected(t *testing.T) {
@@ -707,6 +600,12 @@ func TestArray_EachWithIndex(t *testing.T) {
 	assert.Equal(t, 3, ni)
 }
 
+func TestArray_ElementType(t *testing.T) {
+	assert.Equal(t, typ.Any, vf.MutableValues().(dgo.ArrayType).ElementType())
+	v := vf.String(`hello`)
+	assert.Same(t, v, vf.MutableValues(v).(dgo.ArrayType).ElementType())
+}
+
 func TestArray_Find(t *testing.T) {
 	v := vf.Values(`a`, `b`, 3, `d`).Find(func(v dgo.Value) interface{} {
 		if v.Equals(3) {
@@ -722,22 +621,6 @@ func TestArray_Find_notFound(t *testing.T) {
 	assert.True(t, v == nil)
 }
 
-func TestArray_Freeze(t *testing.T) {
-	a := vf.MutableValues(`a`, `b`, vf.MutableValues(`c`))
-	assert.False(t, a.Frozen())
-
-	sa := a.Get(2).(dgo.Array)
-	assert.False(t, sa.Frozen())
-
-	// In place recursive freeze
-	a.Freeze()
-
-	// Sub Array is frozen in place
-	assert.Same(t, a.Get(2), sa)
-	assert.True(t, a.Frozen())
-	assert.True(t, sa.Frozen())
-}
-
 func TestArray_FrozenEqual(t *testing.T) {
 	f := vf.Values(1, 2, 3)
 	assert.True(t, f.Frozen(), `not frozen`)
@@ -747,7 +630,7 @@ func TestArray_FrozenEqual(t *testing.T) {
 	assert.Equal(t, f, a)
 	assert.Equal(t, a, f)
 
-	a.Freeze()
+	a = a.Copy(true)
 	assert.True(t, a.Frozen(), `not frozen`)
 	assert.Same(t, a, a.Copy(true))
 
@@ -797,6 +680,13 @@ func TestArray_Map(t *testing.T) {
 	}))
 	assert.Equal(t, vf.Values(vf.Nil, vf.Nil, vf.Nil), a.Map(func(e dgo.Value) interface{} {
 		return nil
+	}))
+
+	ma := a.Map(func(e dgo.Value) interface{} {
+		return vf.MutableValues(e)
+	})
+	assert.True(t, ma.All(func(e dgo.Value) bool {
+		return e.(dgo.Mutability).Frozen()
 	}))
 }
 
@@ -904,12 +794,20 @@ func TestArray_RemoveValue(t *testing.T) {
 }
 
 func TestArray_Reject(t *testing.T) {
-	assert.Equal(t, vf.Values(1, 2, 4, 5), vf.Values(1, 2, vf.Nil, 4, 5).Reject(func(e dgo.Value) bool {
+	vr := vf.Values(1, 2, vf.Nil, 4, 5).Reject(func(e dgo.Value) bool {
 		return e == vf.Nil
-	}))
+	})
+	assert.Equal(t, vf.Values(1, 2, 4, 5), vr)
+	assert.True(t, vr.Frozen())
+
+	vr = vf.MutableValues(1, 2, vf.Nil, 4, 5).Reject(func(e dgo.Value) bool {
+		return e == vf.Nil
+	})
+	assert.Equal(t, vf.Values(1, 2, 4, 5), vr)
+	assert.False(t, vr.Frozen())
 }
 
-func TestContainsAll(t *testing.T) {
+func TestArray_ContainsAll(t *testing.T) {
 	assert.True(t, vf.Values(1, 2, 3).ContainsAll(vf.Values(2, 1)))
 	assert.False(t, vf.Values(1, 2).ContainsAll(vf.Values(3, 2, 1)))
 	assert.False(t, vf.Values(1, 2).ContainsAll(vf.Values(1, 4)))
@@ -926,9 +824,17 @@ func TestArray_SameValues(t *testing.T) {
 }
 
 func TestArray_Select(t *testing.T) {
-	assert.Equal(t, vf.Values(1, 2, 4, 5), vf.Values(1, 2, vf.Nil, 4, 5).Select(func(e dgo.Value) bool {
+	vr := vf.Values(1, 2, vf.Nil, 4, 5).Select(func(e dgo.Value) bool {
 		return e != vf.Nil
-	}))
+	})
+	assert.Equal(t, vf.Values(1, 2, 4, 5), vr)
+	assert.True(t, vr.Frozen())
+
+	vr = vf.MutableValues(1, 2, vf.Nil, 4, 5).Select(func(e dgo.Value) bool {
+		return e != vf.Nil
+	})
+	assert.Equal(t, vf.Values(1, 2, 4, 5), vr)
+	assert.False(t, vr.Frozen())
 }
 
 func TestArray_Slice(t *testing.T) {
@@ -942,9 +848,9 @@ func TestArray_Slice(t *testing.T) {
 	assert.Equal(t, a, b)
 	assert.NotSame(t, a, b)
 
-	// Setting a value in b should not affect a
+	// Setting a value in b should affect a
 	b.Set(2, 8)
-	assert.Equal(t, a.Get(2), 3)
+	assert.Equal(t, a.Get(2), 8)
 }
 
 func TestArray_Sort(t *testing.T) {
@@ -968,6 +874,18 @@ func TestArray_Sort(t *testing.T) {
 	a = vf.Values(4.2, `hello`, -3.14)
 	b = a.Sort()
 	assert.Equal(t, b, vf.Values(-3.14, 4.2, `hello`))
+	assert.True(t, b.Frozen())
+
+	a = vf.MutableValues(4.2, `hello`, -3.14)
+	b = a.Sort()
+	assert.Equal(t, b, vf.Values(-3.14, 4.2, `hello`))
+	assert.False(t, b.Frozen())
+
+	a = vf.Values(`hello`)
+	assert.Same(t, a, a.Sort())
+
+	a = vf.MutableValues(`hello`)
+	assert.Same(t, a, a.Sort())
 }
 
 func TestArray_ToMap(t *testing.T) {
@@ -990,8 +908,19 @@ func TestArray_ToMapFromEntries(t *testing.T) {
 	b, ok = a.ToMapFromEntries()
 	assert.True(t, ok)
 	assert.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))
+	assert.True(t, b.Frozen())
+
+	a = a.Copy(false)
+	b, ok = a.ToMapFromEntries()
+	assert.True(t, ok)
+	assert.Equal(t, b, vf.Map(`a`, `b`, `c`, `d`))
+	assert.False(t, b.Frozen())
 
 	a = vf.Values(vf.Strings(`a`, `b`), `c`)
+	_, ok = a.ToMapFromEntries()
+	assert.False(t, ok)
+
+	a = vf.Values(vf.Strings(`a`, `b`), vf.Strings(`c`))
 	_, ok = a.ToMapFromEntries()
 	assert.False(t, ok)
 }
@@ -1001,9 +930,10 @@ func TestArray_String(t *testing.T) {
 }
 
 func TestArray_Unique(t *testing.T) {
-	a := vf.Strings(`and`, `some`, `more`, `arbitrary`, `unsorted`, `yes`, `unsorted`, `and`, `yes`, `arbitrary`, `words`)
+	a := vf.MutableValues(`and`, `some`, `more`, `arbitrary`, `unsorted`, `yes`, `unsorted`, `and`, `yes`, `arbitrary`, `words`)
 	b := a.Unique()
 	assert.NotEqual(t, a, b)
+	assert.False(t, b.Frozen())
 	c := vf.Strings(`and`, `some`, `more`, `arbitrary`, `unsorted`, `yes`, `words`)
 	assert.Equal(t, b, c)
 	assert.NotSame(t, b, c)
@@ -1014,14 +944,47 @@ func TestArray_Unique(t *testing.T) {
 	assert.Same(t, a, a.Unique())
 }
 
-func TestArray_WithAll(t *testing.T) {
-	a := vf.Values(`a`)
-	c := a.WithAll(vf.Values(`b`))
+func TestArray_With(t *testing.T) {
+	a := vf.Values(`a`).With(vf.MutableValues(`b`))
+	assert.True(t, a.Get(1).(dgo.Mutability).Frozen())
+
+	a = vf.MutableValues(`a`).With(vf.MutableValues(`b`))
+	assert.False(t, a.Get(1).(dgo.Mutability).Frozen())
+}
+
+func TestArray_WithAll_mutable(t *testing.T) {
+	a := vf.MutableValues(`a`)
+	assert.Same(t, a, a.WithAll(vf.Values()))
+	c := a.WithAll(vf.MutableValues(vf.MutableValues(`b`)))
+	assert.False(t, c.Get(1).(dgo.Mutability).Frozen())
 	assert.Equal(t, vf.Values(`a`), a)
-	assert.Equal(t, vf.Values(`a`, `b`), c)
+	assert.Equal(t, vf.Values(`a`, vf.Values(`b`)), c)
+
+	m := vf.MutableMap(`c`, `C`, `d`, `D`)
+	c = a.WithAll(m)
+	assert.Equal(t, vf.Values(`a`, internal.NewMapEntry(`c`, `C`), internal.NewMapEntry(`d`, `D`)), c)
+	assert.False(t, c.Frozen())
+}
+
+func TestArray_WithAll_frozen(t *testing.T) {
+	a := vf.Values(`a`)
+	assert.Same(t, a, a.WithAll(vf.Values()))
+	c := a.WithAll(vf.MutableValues(vf.MutableValues(`b`)))
+	assert.True(t, c.Get(1).(dgo.Mutability).Frozen())
+	assert.Equal(t, vf.Values(`a`), a)
+	assert.Equal(t, vf.Values(`a`, vf.Values(`b`)), c)
 
 	m := vf.Map(`c`, `C`, `d`, `D`)
 	c = a.WithAll(m)
 	assert.Equal(t, vf.Values(`a`, internal.NewMapEntry(`c`, `C`), internal.NewMapEntry(`d`, `D`)), c)
 	assert.True(t, c.Frozen())
+}
+
+func TestArray_WithValues_mutable(t *testing.T) {
+	a := vf.MutableValues(`a`)
+	assert.Same(t, a, a.WithValues())
+	c := a.WithValues(vf.MutableValues(`b`))
+	assert.False(t, c.Get(1).(dgo.Mutability).Frozen())
+	assert.Equal(t, vf.Values(`a`), a)
+	assert.Equal(t, vf.Values(`a`, vf.Values(`b`)), c)
 }

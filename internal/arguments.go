@@ -5,7 +5,7 @@ import (
 )
 
 type arguments struct {
-	array
+	arrayFrozen
 }
 
 // Arguments returns an immutable Arguments instance that represents the given slice
@@ -15,7 +15,7 @@ func Arguments(values []interface{}) dgo.Arguments {
 
 // ArgumentsFromArray returns an Arguments instance backed by the given array
 func ArgumentsFromArray(values dgo.Array) dgo.Arguments {
-	a := values.(*array)
+	a := values.Copy(true).(*arrayFrozen)
 	return &arguments{*a}
 }
 

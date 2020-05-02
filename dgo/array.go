@@ -7,18 +7,8 @@ type (
 	// Predicate returns true of false based on the given value
 	Predicate func(value Value) bool
 
-	// Freezable is implemented by objects that might be mutable but can present themselves in an immutable form
-	Freezable interface {
-
-		// Freeze makes a mutable object immutable. It does nothing when called on an immutable object.
-		//
-		// The freeze operation is recursive so collections containing objects that implement this
-		// interface will receive a call to this method.
-		//
-		// All Arrays returned by methods on a frozen Array will also be frozen with the exception of
-		// the method Copy when called with frozen = false.
-		Freeze()
-
+	// Mutability is implemented by objects that can either be mutable or immutable
+	Mutability interface {
 		// Frozen returns true if the object is frozen, false otherwise
 		Frozen() bool
 
@@ -32,10 +22,10 @@ type (
 
 	// Iterable enables the implementor to express how iteration is performed over contained elements
 	Iterable interface {
-		Freezable
+		Mutability
 		Value
 
-		// EachEntryType calls the given function once for each value of this Iterable.
+		// Each calls the given function once for each value of this Iterable.
 		Each(actor Consumer)
 
 		// Len returns the number of values in this Iterable or -1 if that number cannot be determined.
@@ -95,7 +85,7 @@ type (
 		// for every element that is an array, extract its elements into the new array.
 		Flatten() Array
 
-		// GetEntryType returns the value at the given position. A negative position or a position
+		// Get returns the value at the given position. A negative position or a position
 		// that is greater or equal to the length of the array will result in a panic.
 		Get(position int) Value
 

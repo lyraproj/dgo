@@ -130,19 +130,6 @@ func (v *structVal) deepHashCode(seen []dgo.Value) dgo.Hash {
 	return h
 }
 
-func (v *structVal) Freeze() {
-	// Perform a shallow copy of the struct
-	if !v.frozen {
-		v.frozen = true
-		v.rs = reflect.ValueOf(v.rs.Interface())
-		v.EachValue(func(e dgo.Value) {
-			if f, ok := e.(dgo.Freezable); ok {
-				f.Freeze()
-			}
-		})
-	}
-}
-
 func (v *structVal) Frozen() bool {
 	return v.frozen
 }
@@ -159,7 +146,7 @@ func (v *structVal) FrozenCopy() dgo.Value {
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
 		ev := ValueFromReflected(ef)
-		if f, ok := ev.(dgo.Freezable); ok && !f.Frozen() {
+		if f, ok := ev.(dgo.Mutability); ok && !f.Frozen() {
 			ReflectTo(f.FrozenCopy(), ef)
 		}
 	}
@@ -174,7 +161,7 @@ func (v *structVal) ThawedCopy() dgo.Value {
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
 		ev := ValueFromReflected(ef)
-		if f, ok := ev.(dgo.Freezable); ok {
+		if f, ok := ev.(dgo.Mutability); ok {
 			ReflectTo(f.ThawedCopy(), ef)
 		}
 	}

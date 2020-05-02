@@ -80,27 +80,16 @@ func NewAlias(s dgo.String) dgo.Alias {
 	return &alias{s.Type().(dgo.StringType)}
 }
 
-// Freeze will panic. The reason for this is that an alias is a type reference and as such, it may be replaced by
-// an actual type when an AliasContainer is resolved. An AliasContainer in turn, can be used as a key in a hash. When
-// it does, all its aliases must have been replaced or the hash code of the container will change.
-func (a *alias) Freeze() {
-	panic(a.freezeAttempt())
-}
-
 func (a *alias) Frozen() bool {
 	return false
 }
 
 func (a *alias) FrozenCopy() dgo.Value {
-	panic(a.freezeAttempt())
+	panic(catch.Error(`attempt to freeze unresolved alias '%s'`, a.Reference()))
 }
 
 func (a *alias) ThawedCopy() dgo.Value {
 	return a
-}
-
-func (a *alias) freezeAttempt() error {
-	return catch.Error(`attempt to freeze unresolved alias '%s'`, a.Reference())
 }
 
 func (a *alias) Reference() dgo.String {
@@ -171,11 +160,12 @@ func (a *aliasMap) update(am *aliasAdder) dgo.AliasMap {
 	rs.EachEntry(func(e dgo.MapEntry) {
 		name := e.Key().(dgo.String)
 		t := e.Value().(dgo.Type)
+		if mt, mutable := t.(dgo.Mutability); mutable {
+			t = mt.FrozenCopy().(dgo.Type)
+		}
 		c.namedTypes.Put(name, t)
 		c.typeNames.Put(t, name)
 	})
-	c.namedTypes.Freeze()
-	c.typeNames.Freeze()
 	return c
 }
 

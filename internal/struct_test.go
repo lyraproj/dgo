@@ -127,9 +127,9 @@ func TestStruct_Copy(t *testing.T) {
 
 	c := m.Copy(true).(dgo.Map)
 	assert.False(t, m.Frozen())
-	assert.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, m.Get(`E`).(dgo.Mutability).Frozen())
 	assert.True(t, c.Frozen())
-	assert.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, c.Get(`E`).(dgo.Mutability).Frozen())
 
 	m.Put(`A`, `Adam`)
 	assert.Equal(t, `Adam`, m.Get(`A`))
@@ -236,7 +236,7 @@ func TestStruct_Freeze(t *testing.T) {
 	}
 	s := structA{}
 	m := vf.Map(&s)
-	m.Freeze()
+	m = m.Copy(true)
 	assert.Panic(t, func() { m.Put(`A`, `Alpha`) }, `frozen`)
 }
 
@@ -250,10 +250,11 @@ func TestStruct_FrozenCopy(t *testing.T) {
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.FrozenCopy().(dgo.Map)
+
 	assert.False(t, m.Frozen())
-	assert.False(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, m.Get(`E`).(dgo.Mutability).Frozen())
 	assert.True(t, c.Frozen())
-	assert.True(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, c.Get(`E`).(dgo.Mutability).Frozen())
 
 	m.Put(`A`, `Adam`)
 	assert.Equal(t, `Adam`, m.Get(`A`))
@@ -267,17 +268,19 @@ func TestStruct_ThawedCopy(t *testing.T) {
 	type structA struct {
 		A string
 		E dgo.Array
+		B dgo.Binary
 	}
-	s := structA{A: `Alpha`}
+	b := vf.Binary([]byte{1, 2, 3}, false)
+	s := structA{A: `Alpha`, B: b}
 	m := vf.Map(&s)
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
-	m.Freeze()
+	m = m.Copy(true)
 
 	c := m.ThawedCopy().(dgo.Map)
 	assert.True(t, m.Frozen())
-	assert.True(t, m.Get(`E`).(dgo.Freezable).Frozen())
+	assert.True(t, m.Get(`E`).(dgo.Mutability).Frozen())
 	assert.False(t, c.Frozen())
-	assert.False(t, c.Get(`E`).(dgo.Freezable).Frozen())
+	assert.False(t, c.Get(`E`).(dgo.Mutability).Frozen())
 
 	c.Put(`A`, `Adam`)
 	assert.Equal(t, `Adam`, c.Get(`A`))
@@ -431,7 +434,7 @@ func TestStruct_ReflectTo(t *testing.T) {
 	assert.Equal(t, &x.C, &s)
 	assert.NotSame(t, &x.C, &s)
 
-	m.Freeze()
+	m = m.Copy(true)
 	m.ReflectTo(xb)
 	assert.NotSame(t, &x.B, &s)
 }

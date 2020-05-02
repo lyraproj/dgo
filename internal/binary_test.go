@@ -118,7 +118,7 @@ func TestExactBinaryType(t *testing.T) {
 
 type badReader int
 
-func (badReader) Read(p []byte) (n int, err error) {
+func (badReader) Read(_ []byte) (n int, err error) {
 	return 0, errors.New(`oops`)
 }
 
@@ -188,6 +188,10 @@ func TestBinary_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 0, c)
 
+	c, ok = a.CompareTo(b.FrozenCopy())
+	assert.True(t, ok)
+	assert.Equal(t, 0, c)
+
 	bs := []byte{'a', 'b', 'c'}
 	c, ok = a.CompareTo(bs)
 	assert.True(t, ok)
@@ -251,20 +255,13 @@ func TestBinary_Equal(t *testing.T) {
 	assert.True(t, a.Equals(vf.Value(reflect.ValueOf([]uint8{1, 2}))))
 }
 
-func TestBinary_Freeze(t *testing.T) {
-	a := vf.Binary([]byte{1, 2}, false)
-	assert.False(t, a.Frozen())
-	a.Freeze()
-	assert.True(t, a.Frozen())
-}
-
 func TestBinary_FrozenCopy(t *testing.T) {
 	a := vf.Binary([]byte{1, 2}, false)
 	b := a.FrozenCopy().(dgo.Binary)
 	assert.False(t, a.Frozen())
 	assert.True(t, b.Frozen())
-	a.Freeze()
 
+	a = a.FrozenCopy().(dgo.Binary)
 	b = a.FrozenCopy().(dgo.Binary)
 	assert.Same(t, a, b)
 	assert.True(t, a.Frozen())
@@ -279,7 +276,7 @@ func TestBinary_FrozenEqual(t *testing.T) {
 	assert.Equal(t, f, a)
 	assert.Equal(t, a, f)
 
-	a.Freeze()
+	a = a.FrozenCopy().(dgo.Binary)
 	assert.True(t, a.Frozen(), `not frozen`)
 	assert.Same(t, a, a.Copy(true))
 
@@ -291,9 +288,18 @@ func TestBinary_FrozenEqual(t *testing.T) {
 
 func TestBinary_ReflectTo(t *testing.T) {
 	var s []byte
-	b := vf.Binary([]byte{1, 2}, true)
+	ba := []byte{1, 2}
+	b := vf.Binary(ba, true)
 	b.ReflectTo(reflect.ValueOf(&s).Elem())
-	assert.Equal(t, b, s)
+	assert.True(t, bytes.Equal(ba, s))
+	s[0] = 2
+	assert.Equal(t, ba[0], 1)
+
+	bm := vf.Binary(ba, false)
+	bm.ReflectTo(reflect.ValueOf(&s).Elem())
+	assert.True(t, bytes.Equal(ba, s))
+	s[0] = 2
+	assert.Equal(t, ba[0], 2)
 
 	s = nil
 	sp := &s

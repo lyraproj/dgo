@@ -4,7 +4,7 @@ type (
 	// MapEntry is a key-value association in a Map
 	MapEntry interface {
 		Value
-		Freezable
+		Mutability
 
 		Key() Value
 

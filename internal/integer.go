@@ -275,7 +275,7 @@ func IntEnumType(ints []int) dgo.Type {
 	for i := range ints {
 		ts[i] = intVal(ints[i]).Type()
 	}
-	return &anyOfType{slice: ts, frozen: true}
+	return &anyOfType{slice: ts}
 }
 
 // Integer returns the dgo.Integer for the given int64
