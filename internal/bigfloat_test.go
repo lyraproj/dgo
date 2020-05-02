@@ -45,6 +45,12 @@ func TestBigFloatType_New(t *testing.T) {
 	assert.Equal(t, big.NewFloat(0), vf.New(typ.BigFloat, vf.Boolean(false)))
 	assert.Equal(t, big.NewFloat(1), vf.New(typ.BigFloat, vf.Boolean(true)))
 
+	_, ok := vf.New(typ.BigFloat, vf.Float(1.2)).(dgo.BigFloat)
+	assert.True(t, ok)
+
+	bf := vf.BigFloat(ex)
+	assert.Same(t, bf, vf.New(typ.BigFloat, bf))
+
 	assert.Panic(t, func() {
 		vf.New(typ.BigFloat, vf.Binary([]byte{1, 2}, false))
 	}, `cannot be converted`)

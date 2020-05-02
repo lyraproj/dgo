@@ -13,7 +13,7 @@ type (
 	Binary interface {
 		Value
 		Comparable
-		Freezable
+		Mutability
 		ReflectedValue
 
 		// Copy returns a copy of the Binary. The copy is frozen or mutable depending on

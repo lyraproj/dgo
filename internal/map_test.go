@@ -289,6 +289,14 @@ func TestMap_EntryType(t *testing.T) {
 		assert.False(t, v.Frozen())
 		assert.NotSame(t, v, v.ThawedCopy())
 	})
+
+	m = vf.MutableMap()
+	m.Put(`a`, 1)
+	m.Put(`b`, `string`)
+	m.EachEntry(func(v dgo.MapEntry) {
+		assert.True(t, v.Frozen())
+		assert.Same(t, v, v.ThawedCopy())
+	})
 }
 
 func TestNewMapType_max_min(t *testing.T) {
@@ -382,7 +390,7 @@ func TestMap_fromStruct(t *testing.T) {
 	m := vf.Map(&s)
 	assert.Equal(t, 5, m.Len())
 	assert.False(t, m.Frozen())
-	m.Freeze()
+	m = m.Copy(true)
 	assert.True(t, m.Frozen())
 	assert.Equal(t, `Alpha`, m.Get(`A`))
 	assert.Equal(t, 32, m.Get(`B`))
@@ -616,13 +624,20 @@ func TestMap_StringKeys(t *testing.T) {
 	assert.True(t, m.StringKeys())
 }
 
-func TestMap_Freeze_recursive(t *testing.T) {
-	m := vf.MutableMap()
+func TestHashMap_ThawedCopy(t *testing.T) {
 	mr := vf.MutableMap()
 	mr.Put(`hello`, `world`)
-	m.Put(1, mr)
-	m.Freeze()
-	assert.True(t, mr.Frozen(), `recursive freeze not applied`)
+	bs := vf.Binary([]byte{1, 2, 3}, false)
+	m := vf.Map(1, mr, 2, bs, 3, `string`)
+	assert.True(t, m.Get(1).(dgo.Map).Frozen())
+	assert.True(t, m.Get(2).(dgo.Binary).Frozen())
+
+	mt := m.ThawedCopy().(dgo.Map)
+	assert.True(t, m.Get(1).(dgo.Map).Frozen())
+	assert.True(t, m.Get(2).(dgo.Binary).Frozen())
+
+	assert.False(t, mt.Get(1).(dgo.Map).Frozen())
+	assert.False(t, mt.Get(2).(dgo.Binary).Frozen())
 }
 
 func TestMap_Copy_freeze_recursive(t *testing.T) {
@@ -656,11 +671,6 @@ func TestMap_Copy_freeze_recursive(t *testing.T) {
 	assert.True(t, mcr.(dgo.Map).Frozen(), `recursive copy freeze not applied`)
 	assert.False(t, k.Frozen(), `recursive freeze affected key`)
 	assert.False(t, mr.Frozen(), `recursive freeze affected original`)
-
-	m.Freeze()
-	assert.True(t, m.All(func(e dgo.MapEntry) bool {
-		return e.Frozen()
-	}), `map entries are not frozen after freeze`)
 }
 
 func TestMap_selfReference(t *testing.T) {
@@ -969,7 +979,7 @@ func TestMapEntry_Frozen(t *testing.T) {
 }
 
 func TestMapEntry_Thawed(t *testing.T) {
-	e := internal.NewMapEntry(`a`, 1)
+	e := internal.NewMapEntry(`a`, vf.MutableValues(1))
 	assert.NotSame(t, e, e.ThawedCopy())
 
 	e = e.FrozenCopy().(dgo.MapEntry)
@@ -980,6 +990,9 @@ func TestMapEntry_Thawed(t *testing.T) {
 	c.Value().(dgo.Array).Set(0, `b`)
 	assert.Equal(t, vf.Values(`a`), e.Value())
 	assert.Equal(t, vf.Values(`b`), c.Value())
+
+	e = internal.NewMapEntry(`a`, `b`)
+	assert.Same(t, e, e.ThawedCopy())
 }
 
 func TestMapEntry_String(t *testing.T) {

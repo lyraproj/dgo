@@ -167,7 +167,7 @@ func EnumType(strings []string) dgo.Type {
 	for i := range strings {
 		ts[i] = makeHString(strings[i]).Type()
 	}
-	return &anyOfType{slice: ts, frozen: true}
+	return &anyOfType{slice: ts}
 }
 
 // CiEnumType returns a StringType that represents all strings that are equal to one of the given strings
@@ -183,7 +183,7 @@ func CiEnumType(strings []string) dgo.Type {
 	for i := range strings {
 		ts[i] = CiStringType(strings[i])
 	}
-	return &anyOfType{slice: ts, frozen: true}
+	return &anyOfType{slice: ts}
 }
 
 // String returns the dgo.String for the given string

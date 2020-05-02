@@ -39,7 +39,7 @@ func AllOfType(types []interface{}) dgo.Type {
 	for i := range types {
 		ts[i] = AsType(Value(types[i]))
 	}
-	return &allOfType{slice: ts, frozen: true}
+	return &allOfType{slice: ts}
 }
 
 func (t *allOfType) Assignable(other dgo.Type) bool {
@@ -114,7 +114,7 @@ func (t *allOfType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bo
 }
 
 func (t *allOfType) Operands() dgo.Array {
-	return (*array)(t)
+	return &arrayFrozen{array{slice: t.slice}}
 }
 
 func (t *allOfType) Operator() dgo.TypeOp {
@@ -242,7 +242,7 @@ func (t *allOfValueType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t *allOfValueType) ExactValue() dgo.Value {
-	return (*array)(t)
+	return &arrayFrozen{array{slice: t.slice}}
 }
 
 var notAnyType = &notType{DefaultAnyType}
@@ -261,7 +261,7 @@ func AnyOfType(types []interface{}) dgo.Type {
 	for i := range types {
 		ts[i] = AsType(Value(types[i]))
 	}
-	return &anyOfType{slice: ts, frozen: true}
+	return &anyOfType{slice: ts}
 }
 
 func (t *anyOfType) Assignable(other dgo.Type) bool {
@@ -326,7 +326,7 @@ func (t *anyOfType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bo
 }
 
 func (t *anyOfType) Operands() dgo.Array {
-	return (*array)(t)
+	return &arrayFrozen{array{slice: t.slice}}
 }
 
 func (t *anyOfType) Operator() dgo.TypeOp {
@@ -370,7 +370,7 @@ func OneOfType(types []interface{}) dgo.Type {
 	for i := range types {
 		ts[i] = AsType(Value(types[i]))
 	}
-	return &oneOfType{slice: ts, frozen: true}
+	return &oneOfType{slice: ts}
 }
 
 func (t *oneOfType) Assignable(other dgo.Type) bool {
@@ -449,7 +449,7 @@ func (t *oneOfType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bo
 }
 
 func (t *oneOfType) Operands() dgo.Array {
-	return (*array)(t)
+	return &arrayFrozen{array{slice: t.slice}}
 }
 
 func (t *oneOfType) Operator() dgo.TypeOp {
@@ -532,7 +532,7 @@ func sameValues(seen []dgo.Value, a, b dgo.Array, fc func(dgo.Value) dgo.Type) b
 		if fc != nil {
 			b = b.Map(func(e dgo.Value) interface{} { return fc(e) })
 		}
-		return a.(*array).deepContainsAll(seen, b)
+		return a.(arraySlice)._deepContainsAll(seen, b)
 	}
 	return false
 }

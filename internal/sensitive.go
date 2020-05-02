@@ -120,28 +120,22 @@ func (v *sensitive) deepEqual(seen []dgo.Value, other deepEqual) bool {
 	return false
 }
 
-func (v *sensitive) Freeze() {
-	if f, ok := v.value.(dgo.Freezable); ok {
-		f.Freeze()
-	}
-}
-
 func (v *sensitive) Frozen() bool {
-	if f, ok := v.value.(dgo.Freezable); ok {
+	if f, ok := v.value.(dgo.Mutability); ok {
 		return f.Frozen()
 	}
 	return true
 }
 
 func (v *sensitive) FrozenCopy() dgo.Value {
-	if f, ok := v.value.(dgo.Freezable); ok && !f.Frozen() {
+	if f, ok := v.value.(dgo.Mutability); ok && !f.Frozen() {
 		return &sensitive{f.FrozenCopy()}
 	}
 	return v
 }
 
 func (v *sensitive) ThawedCopy() dgo.Value {
-	if f, ok := v.value.(dgo.Freezable); ok {
+	if f, ok := v.value.(dgo.Mutability); ok {
 		return &sensitive{f.ThawedCopy()}
 	}
 	return v

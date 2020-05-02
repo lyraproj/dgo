@@ -41,9 +41,9 @@ type (
 	// hashMap is an unsorted Map that uses a hash table
 	hashMap struct {
 		table  []*hashNode
-		len    int
 		first  *hashNode
 		last   *hashNode
+		len    uint32
 		frozen bool
 	}
 )
@@ -87,34 +87,23 @@ func (v *mapEntry) Format(s fmt.State, ch rune) {
 	formatValue(v.value, s, ch)
 }
 
-func (v *mapEntry) Freeze() {
-	if f, ok := v.value.(dgo.Freezable); ok {
-		f.Freeze()
-	}
-}
-
 func (v *mapEntry) Frozen() bool {
-	if f, ok := v.value.(dgo.Freezable); ok && !f.Frozen() {
-		return false
-	}
-	return true
+	f, mutable := v.value.(dgo.Mutability)
+	return !mutable || f.Frozen()
 }
 
 func (v *mapEntry) FrozenCopy() dgo.Value {
-	if v.Frozen() {
-		return v
+	if f, mutable := v.value.(dgo.Mutability); mutable && !f.Frozen() {
+		return &mapEntry{key: v.key, value: f.FrozenCopy()}
 	}
-	c := &mapEntry{key: v.key, value: v.value}
-	c.copyFreeze()
-	return c
+	return v
 }
 
 func (v *mapEntry) ThawedCopy() dgo.Value {
-	c := &mapEntry{key: v.key, value: v.value}
-	if f, ok := v.value.(dgo.Freezable); ok {
-		v.value = f.ThawedCopy()
+	if f, mutable := v.value.(dgo.Mutability); mutable {
+		return &mapEntry{key: v.key, value: f.ThawedCopy()}
 	}
-	return c
+	return v
 }
 
 func (v *mapEntry) Assignable(other dgo.Type) bool {
@@ -154,32 +143,29 @@ func (v *mapEntry) Value() dgo.Value {
 }
 
 func (v *mapEntry) copyFreeze() {
-	if f, ok := v.value.(dgo.Freezable); ok {
+	if f, ok := v.value.(dgo.Mutability); ok {
 		v.value = f.FrozenCopy()
 	}
 }
 
-func (v *mapEntry) copyThaw() {
-	if f, ok := v.value.(dgo.Freezable); ok {
+func (v *mapEntry) thaw() {
+	if f, ok := v.value.(dgo.Mutability); ok {
 		v.value = f.ThawedCopy()
 	}
 }
 
 func (v *hashNode) FrozenCopy() dgo.Value {
-	if v.Frozen() {
-		return v
+	if f, mutable := v.value.(dgo.Mutability); mutable && !f.Frozen() {
+		return &hashNode{mapEntry: mapEntry{key: v.key, value: f.FrozenCopy()}}
 	}
-	c := &hashNode{mapEntry: mapEntry{key: v.key, value: v.value}}
-	c.copyFreeze()
-	return c
+	return v
 }
 
 func (v *hashNode) ThawedCopy() dgo.Value {
-	c := &hashNode{mapEntry: mapEntry{key: v.key, value: v.value}}
-	if f, ok := v.value.(dgo.Freezable); ok {
-		v.value = f.ThawedCopy()
+	if f, mutable := v.value.(dgo.Mutability); mutable {
+		return &hashNode{mapEntry: mapEntry{key: v.key, value: f.ThawedCopy()}}
 	}
-	return c
+	return v
 }
 
 var emptyMap = &hashMap{frozen: true}
@@ -302,7 +288,7 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 		return less
 	})
 
-	m := &hashMap{table: tbl, len: top, frozen: frozen}
+	m := &hashMap{table: tbl, len: uint32(top), frozen: frozen}
 	for i := range se {
 		e := se[i]
 		k := e[0]
@@ -426,7 +412,7 @@ func (g *hashMap) Copy(frozen bool) dgo.Map {
 		}
 	} else {
 		for e := c.first; e != nil; e = e.next {
-			e.copyThaw()
+			e.thaw()
 		}
 	}
 	return c
@@ -510,15 +496,6 @@ func (g *hashMap) formatNV(s fmt.State, ch rune) {
 	_, _ = s.Write(rc)
 }
 
-func (g *hashMap) Freeze() {
-	if !g.frozen {
-		g.frozen = true
-		for e := g.first; e != nil; e = e.next {
-			e.Freeze()
-		}
-	}
-}
-
 func (g *hashMap) Frozen() bool {
 	return g.frozen
 }
@@ -591,11 +568,11 @@ func (g *hashMap) deepHashCode(seen []dgo.Value) dgo.Hash {
 }
 
 func (g *hashMap) Keys() dgo.Array {
-	return arrayFromIterator(g.len, g.EachKey)
+	return arrayFromIterator(int(g.len), g.EachKey)
 }
 
 func (g *hashMap) Len() int {
-	return g.len
+	return int(g.len)
 }
 
 func (g *hashMap) Map(mapper dgo.EntryMapper) dgo.Map {
@@ -616,7 +593,7 @@ func (g *hashMap) Merge(associations dgo.Map) dgo.Map {
 		return associations
 	}
 	c := &hashMap{len: l}
-	g.resize(c, l+associations.Len())
+	g.resize(c, int(l)+associations.Len())
 	c.PutAll(associations)
 	c.frozen = g.frozen
 	return c
@@ -672,7 +649,7 @@ func (g *hashMap) PutAll(associations dgo.Map) {
 		panic(frozenMap(`PutAll`))
 	}
 
-	l := g.len
+	l := int(g.len)
 	if float64(l+al) > float64(l)*loadFactor {
 		g.resize(g, al)
 	}
@@ -698,7 +675,7 @@ func (g *hashMap) PutAll(associations dgo.Map) {
 		tbl[hk] = nd
 		l++
 	})
-	g.len = l
+	g.len = uint32(l)
 }
 
 func (g *hashMap) ReflectTo(value reflect.Value) {
@@ -869,7 +846,10 @@ func (g *hashMap) Type() dgo.Type {
 }
 
 func (g *hashMap) Values() dgo.Array {
-	return &array{slice: g.values(), frozen: g.frozen}
+	if g.frozen {
+		return &arrayFrozen{array{slice: g.values()}}
+	}
+	return &array{slice: g.values()}
 }
 
 func (g *hashMap) values() []dgo.Value {
@@ -922,7 +902,7 @@ func tableSizeFor(cap int) int {
 }
 
 func frozenCopy(v dgo.Value) dgo.Value {
-	if f, ok := v.(dgo.Freezable); ok {
+	if f, ok := v.(dgo.Mutability); ok {
 		v = f.FrozenCopy()
 	}
 	return v
@@ -1298,7 +1278,8 @@ func keyType(g dgo.Map) dgo.Type {
 	if l == 0 {
 		return DefaultAnyType
 	}
-	return (*allOfValueType)(arrayFromIterator(l, g.EachKey))
+	a := arrayFromIterator(l, g.EachKey).(*arrayFrozen)
+	return (*allOfValueType)(&a.array)
 }
 
 func (g *hashMap) Max() int {
@@ -1342,7 +1323,8 @@ func valueType(g dgo.Map) dgo.Type {
 	if l == 0 {
 		return DefaultAnyType
 	}
-	return (*allOfValueType)(arrayFromIterator(l, g.EachValue))
+	a := arrayFromIterator(l, g.EachValue).(*arrayFrozen)
+	return (*allOfValueType)(&a.array)
 }
 
 func frozenMap(f string) error {

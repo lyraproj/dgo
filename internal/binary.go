@@ -20,9 +20,13 @@ type (
 		max int
 	}
 
+	// binary must be a struct because the []byte slice isn't hashable.
 	binary struct {
-		bytes  []byte
-		frozen bool
+		bytes []byte
+	}
+
+	binaryFrozen struct {
+		binary
 	}
 )
 
@@ -96,13 +100,16 @@ func (t *binaryType) HashCode() dgo.Hash {
 }
 
 func (t *binaryType) Instance(value interface{}) bool {
-	if ov, ok := value.(*binary); ok {
-		return t.IsInstance(ov.bytes)
+	yes := false
+	switch ov := value.(type) {
+	case *binary:
+		yes = t.IsInstance(ov.bytes)
+	case *binaryFrozen:
+		yes = t.IsInstance(ov.bytes)
+	case []byte:
+		yes = t.IsInstance(ov)
 	}
-	if ov, ok := value.([]byte); ok {
-		return t.IsInstance(ov)
-	}
-	return false
+	return yes
 }
 
 func (t *binaryType) IsInstance(v []byte) bool {
@@ -170,7 +177,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 			}
 			bs[i] = byte(v.(intVal))
 		})
-		b = Binary(bs, true)
+		b = &binaryFrozen{binary{bytes: bs}}
 	case dgo.String:
 		b = BinaryFromEncoded(arg.GoString(), enc)
 	default:
@@ -187,14 +194,12 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 // is simply wrapped and modifications to its elements will also modify the binary.
 func Binary(bs []byte, frozen bool) dgo.Binary {
 	if frozen {
-		c := make([]byte, len(bs))
-		copy(c, bs)
-		bs = c
+		return &binaryFrozen{binary{bytes: bytesCopy(bs)}}
 	}
-	return &binary{bytes: bs, frozen: frozen}
+	return &binary{bytes: bs}
 }
 
-// BinaryFromEncoded creates a new Binary from the given string and encoding. Enocding can be one of:
+// BinaryFromEncoded creates a new Binary from the given string and encoding. Encoding can be one of:
 //
 // `%b`: base64.StdEncoding
 //
@@ -229,7 +234,7 @@ func BinaryFromEncoded(str, enc string) dgo.Binary {
 	if err != nil {
 		panic(catch.Error(err))
 	}
-	return &binary{bytes: bs, frozen: true}
+	return &binaryFrozen{binary{bytes: bs}}
 }
 
 // BinaryFromData creates a new frozen Binary based on data read from the given io.Reader.
@@ -238,56 +243,38 @@ func BinaryFromData(data io.Reader) dgo.Binary {
 	if err != nil {
 		panic(catch.Error(err))
 	}
-	return &binary{bytes: bs, frozen: true}
+	return &binaryFrozen{binary{bytes: bs}}
 }
 
 func (v *binary) Copy(frozen bool) dgo.Binary {
-	if frozen && v.frozen {
+	cp := bytesCopy(v.bytes)
+	if frozen {
+		return &binaryFrozen{binary{bytes: cp}}
+	}
+	return &binary{bytes: cp}
+}
+
+func (v *binaryFrozen) Copy(frozen bool) dgo.Binary {
+	if frozen {
 		return v
 	}
-	cp := make([]byte, len(v.bytes))
-	copy(cp, v.bytes)
-	return &binary{bytes: cp, frozen: frozen}
+	return &binary{bytes: bytesCopy(v.bytes)}
 }
 
 func (v *binary) CompareTo(other interface{}) (int, bool) {
-	var b []byte
-	var ob *binary
-	var ok bool
-	if ob, ok = other.(*binary); ok {
-		if v == ob {
-			return 0, true
-		}
-		b = ob.bytes
-	} else {
-		b, ok = other.([]byte)
-		if !ok {
-			if other == nil || other == Nil {
-				return 1, true
-			}
-			return 0, false
-		}
-	}
-	a := v.bytes
-	top := len(a)
-	max := len(b)
 	r := 0
-	if top < max {
-		r = -1
-		max = top
-	} else if top > max {
+	ok := true
+	switch ov := other.(type) {
+	case nil, nilValue:
 		r = 1
-	}
-	for i := 0; i < max; i++ {
-		c := int(a[i]) - int(b[i])
-		if c != 0 {
-			if c > 0 {
-				r = 1
-			} else {
-				r = -1
-			}
-			break
-		}
+	case *binary:
+		r = bytes.Compare(v.bytes, ov.bytes)
+	case *binaryFrozen:
+		r = bytes.Compare(v.bytes, ov.bytes)
+	case []byte:
+		r = bytes.Compare(v.bytes, ov)
+	default:
+		ok = false
 	}
 	return r, ok
 }
@@ -297,30 +284,24 @@ func (v *binary) Encode() string {
 }
 
 func (v *binary) Equals(other interface{}) bool {
-	if ot, ok := other.(*binary); ok {
-		return bytes.Equal(v.bytes, ot.bytes)
+	yes := false
+	switch ov := other.(type) {
+	case *binary:
+		yes = bytes.Equal(v.bytes, ov.bytes)
+	case *binaryFrozen:
+		yes = bytes.Equal(v.bytes, ov.bytes)
+	case []byte:
+		yes = bytes.Equal(v.bytes, ov)
 	}
-	if ot, ok := other.([]byte); ok {
-		return bytes.Equal(v.bytes, ot)
-	}
-	return false
+	return yes
 }
 
 func (v *binary) Format(s fmt.State, format rune) {
 	doFormat(v.bytes, s, format)
 }
 
-func (v *binary) Freeze() {
-	if !v.frozen {
-		bs := v.bytes
-		v.bytes = make([]byte, len(bs))
-		copy(v.bytes, bs)
-		v.frozen = true
-	}
-}
-
 func (v *binary) Frozen() bool {
-	return v.frozen
+	return false
 }
 
 func (v *binary) FrozenCopy() dgo.Value {
@@ -332,11 +313,6 @@ func (v *binary) ThawedCopy() dgo.Value {
 }
 
 func (v *binary) GoBytes() []byte {
-	if v.frozen {
-		c := make([]byte, len(v.bytes))
-		copy(c, v.bytes)
-		return c
-	}
 	return v.bytes
 }
 
@@ -345,15 +321,19 @@ func (v *binary) HashCode() dgo.Hash {
 }
 
 func (v *binary) ReflectTo(value reflect.Value) {
+	setReflected(value, v.bytes)
+}
+
+func setReflected(value reflect.Value, bs []byte) {
 	switch value.Kind() {
 	case reflect.Ptr:
 		x := reflect.New(reflectBinaryType)
-		x.Elem().SetBytes(v.GoBytes())
+		x.Elem().SetBytes(bs)
 		value.Set(x)
 	case reflect.Slice:
-		value.SetBytes(v.GoBytes())
+		value.SetBytes(bs)
 	default:
-		value.Set(reflect.ValueOf(v.GoBytes()))
+		value.Set(reflect.ValueOf(bs))
 	}
 }
 
@@ -399,6 +379,28 @@ func (v *binary) TypeIdentifier() dgo.TypeIdentifier {
 
 func (v *binary) Unbounded() bool {
 	return false
+}
+
+func (v *binaryFrozen) Frozen() bool {
+	return true
+}
+
+func (v *binaryFrozen) FrozenCopy() dgo.Value {
+	return v
+}
+
+func (v *binaryFrozen) GoBytes() []byte {
+	return bytesCopy(v.bytes)
+}
+
+func (v *binaryFrozen) ReflectTo(value reflect.Value) {
+	setReflected(value, bytesCopy(v.bytes))
+}
+
+func bytesCopy(bs []byte) []byte {
+	c := make([]byte, len(bs))
+	copy(c, bs)
+	return c
 }
 
 func bytesHash(s []byte) dgo.Hash {

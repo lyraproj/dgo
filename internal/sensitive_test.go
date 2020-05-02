@@ -61,10 +61,6 @@ func TestSensitive(t *testing.T) {
 	a := vf.MutableValues(`a`)
 	s = vf.Sensitive(a)
 	assert.False(t, s.Frozen())
-	s.Freeze()
-	assert.True(t, s.Frozen())
-	assert.True(t, a.Frozen())
-	assert.Same(t, s.Unwrap(), a)
 
 	a = vf.MutableValues(`a`)
 	s = vf.Sensitive(a)

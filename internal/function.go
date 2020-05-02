@@ -57,7 +57,7 @@ func (t *exactFunctionTuple) ElementType() dgo.Type {
 }
 
 func (t *exactFunctionTuple) ElementTypes() dgo.Array {
-	return &array{slice: t.typeSlice(), frozen: true}
+	return &array{slice: t.typeSlice()}
 }
 
 func (t *exactFunctionTuple) Equals(other interface{}) bool {
