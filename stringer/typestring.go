@@ -3,7 +3,6 @@ package stringer
 import (
 	"fmt"
 	"io"
-	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -397,7 +396,7 @@ func (sb *typeBuilder) writeNativeType(rt reflect.Type) {
 
 func (sb *typeBuilder) writeSizeBoundaries(min, max int64) {
 	pio.WriteString(sb, strconv.FormatInt(min, 10))
-	if max != math.MaxInt64 {
+	if max != dgo.UnboundedSize {
 		pio.WriteByte(sb, ',')
 		pio.WriteString(sb, strconv.FormatInt(max, 10))
 	}

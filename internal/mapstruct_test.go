@@ -2,7 +2,6 @@ package internal_test
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"regexp"
 	"testing"
@@ -242,7 +241,7 @@ func TestStructType(t *testing.T) {
 	assert.Equal(t, tps, tf.ParseType(`{a:int,...}`))
 	assert.NotAssignable(t, tp, tps)
 	assert.Equal(t, tps.Min(), 1)
-	assert.Equal(t, tps.Max(), math.MaxInt64)
+	assert.Equal(t, tps.Max(), dgo.UnboundedSize)
 	assert.True(t, tps.Additional())
 	assert.NotEqual(t, 0, tp.HashCode())
 	assert.NotEqual(t, tp.HashCode(), tf.ParseType(`{a:int,b?:string,...}`).HashCode())

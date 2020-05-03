@@ -30,7 +30,7 @@ func TestPattern(t *testing.T) {
 	assert.NotAssignable(t, tf.Pattern(regexp.MustCompile(`doh`)), tp)
 	assert.True(t, tp.Unbounded())
 	assert.Equal(t, 0, tp.Min())
-	assert.Equal(t, math.MaxInt64, tp.Max())
+	assert.Equal(t, dgo.UnboundedSize, tp.Max())
 	assert.Equal(t, tp, tf.Pattern(regexp.MustCompile(`^doh$`)))
 	assert.NotEqual(t, tp, typ.String)
 	assert.NotEqual(t, 0, tp.HashCode())
@@ -69,7 +69,7 @@ func TestStringDefault(t *testing.T) {
 	assert.NotAssignable(t, tf.Enum(`doh`), tp)
 	assert.NotAssignable(t, tf.Pattern(regexp.MustCompile(`doh`)), tp)
 	assert.Equal(t, 0, tp.Min())
-	assert.Equal(t, math.MaxInt64, tp.Max())
+	assert.Equal(t, dgo.UnboundedSize, tp.Max())
 	assert.True(t, tp.Unbounded())
 	assert.Equal(t, tp.HashCode(), tp.HashCode())
 	assert.NotEqual(t, 0, tp.HashCode())
@@ -137,14 +137,14 @@ func TestStringType(t *testing.T) {
 	tp := tf.String()
 	assert.Same(t, tp, typ.String)
 
-	tp = tf.String(0, math.MaxInt64)
+	tp = tf.String(0, dgo.UnboundedSize)
 	assert.Same(t, tp, typ.String)
 
 	tp = tf.String(`hello`)
 	assert.Equal(t, tp, vf.String(`hello`).Type())
 
 	tp = tf.String(1)
-	assert.Equal(t, tp, tf.String(1, math.MaxInt64))
+	assert.Equal(t, tp, tf.String(1, dgo.UnboundedSize))
 	assert.Assignable(t, tp, typ.DgoString)
 
 	tp = tf.String(2)
@@ -215,7 +215,7 @@ func TestDgoStringType(t *testing.T) {
 	assert.Assignable(t, typ.DgoString, vf.String(s).Type())
 	assert.False(t, typ.DgoString.Unbounded())
 	assert.Equal(t, 1, typ.DgoString.Min())
-	assert.Equal(t, math.MaxInt64, typ.DgoString.Max())
+	assert.Equal(t, dgo.UnboundedSize, typ.DgoString.Max())
 	assert.Equal(t, `dgo`, typ.DgoString.String())
 
 	s = `hello`

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"reflect"
 	"unicode/utf8"
 
@@ -16,8 +15,7 @@ import (
 
 type (
 	binaryType struct {
-		min int
-		max int
+		sizeRange
 	}
 
 	// binary must be a struct because the []byte slice isn't hashable.
@@ -31,7 +29,7 @@ type (
 )
 
 // DefaultBinaryType is the unconstrained Binary type
-var DefaultBinaryType = &binaryType{0, math.MaxInt64}
+var DefaultBinaryType = &binaryType{sizeRange{0, dgo.UnboundedSize}}
 
 // BinaryType returns a new dgo.BinaryType. It can be called with two optional integer arguments denoting
 // the min and max length of the binary. If only one integer is given, it represents the min length.
@@ -41,7 +39,7 @@ func BinaryType(args ...interface{}) dgo.BinaryType {
 		return DefaultBinaryType
 	case 1:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
-			return SizedBinaryType(int(a0.GoInt()), math.MaxInt64)
+			return SizedBinaryType(int(a0.GoInt()), dgo.UnboundedSize)
 		}
 		panic(illegalArgument(`BinaryType`, `Integer`, args, 0))
 	case 2:
@@ -68,15 +66,15 @@ func SizedBinaryType(min, max int) dgo.BinaryType {
 		max = min
 		min = tmp
 	}
-	if min == 0 && max == math.MaxInt64 {
+	if min == 0 && max == dgo.UnboundedSize {
 		return DefaultBinaryType
 	}
-	return &binaryType{min: min, max: max}
+	return &binaryType{sizeRange: sizeRange{min: uint32(min), max: uint32(max)}}
 }
 
 func (t *binaryType) Assignable(other dgo.Type) bool {
 	if ot, ok := other.(dgo.BinaryType); ok {
-		return t.min <= ot.Min() && t.max >= ot.Max()
+		return int(t.min) <= ot.Min() && int(t.max) >= ot.Max()
 	}
 	return CheckAssignableTo(nil, other, t)
 }
@@ -89,14 +87,7 @@ func (t *binaryType) Equals(other interface{}) bool {
 }
 
 func (t *binaryType) HashCode() dgo.Hash {
-	h := dgo.Hash(dgo.TiBinary)
-	if t.min > 0 {
-		h = h*31 + dgo.Hash(t.min)
-	}
-	if t.max < math.MaxInt64 {
-		h = h*31 + dgo.Hash(t.max)
-	}
-	return h
+	return t.sizeRangeHash(dgo.TiBinary)
 }
 
 func (t *binaryType) Instance(value interface{}) bool {
@@ -113,16 +104,7 @@ func (t *binaryType) Instance(value interface{}) bool {
 }
 
 func (t *binaryType) IsInstance(v []byte) bool {
-	l := len(v)
-	return t.min <= l && l <= t.max
-}
-
-func (t *binaryType) Max() int {
-	return t.max
-}
-
-func (t *binaryType) Min() int {
-	return t.min
+	return t.inRange(len(v))
 }
 
 func (t *binaryType) New(arg dgo.Value) dgo.Value {
@@ -145,10 +127,6 @@ func (t *binaryType) Type() dgo.Type {
 
 func (t *binaryType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBinary
-}
-
-func (t *binaryType) Unbounded() bool {
-	return t.min == 0 && t.max == math.MaxInt64
 }
 
 var encType = EnumType([]string{`%B`, `%b`, `%u`, `%s`, `%r`})

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 
@@ -30,9 +29,8 @@ type (
 
 	// sizedArrayType represents array with element type constraint and a size constraint
 	sizedArrayType struct {
+		sizeRange
 		elementType dgo.Type
-		min         int
-		max         int
 	}
 )
 
@@ -42,9 +40,9 @@ const DefaultArrayType = defaultArrayType(0)
 func arrayTypeOne(args []interface{}) dgo.ArrayType {
 	switch a0 := Value(args[0]).(type) {
 	case dgo.Integer:
-		return newArrayType(nil, int(a0.GoInt()), math.MaxInt64)
+		return newArrayType(nil, a0.GoInt(), dgo.UnboundedSize)
 	case dgo.Type:
-		return newArrayType(a0, 0, math.MaxInt64)
+		return newArrayType(a0, 0, dgo.UnboundedSize)
 	default:
 		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
 	}
@@ -57,9 +55,9 @@ func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	}
 	switch a0 := Value(args[0]).(type) {
 	case dgo.Integer:
-		return newArrayType(nil, int(a0.GoInt()), int(a1.GoInt()))
+		return newArrayType(nil, a0.GoInt(), a1.GoInt())
 	case dgo.Type:
-		return newArrayType(a0, int(a1.GoInt()), math.MaxInt64)
+		return newArrayType(a0, a1.GoInt(), dgo.UnboundedSize)
 	default:
 		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
 	}
@@ -78,7 +76,7 @@ func arrayTypeThree(args []interface{}) dgo.ArrayType {
 	if !ok {
 		panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
 	}
-	return newArrayType(a0, int(a1.GoInt()), int(a2.GoInt()))
+	return newArrayType(a0, a1.GoInt(), a2.GoInt())
 }
 
 // ArrayType returns a type that represents an Array value
@@ -101,7 +99,7 @@ func makeFrozenArray(slice []dgo.Value) dgo.Array {
 	return &arrayFrozen{array{slice: slice}}
 }
 
-func newArrayType(elementType dgo.Type, min, max int) dgo.ArrayType {
+func newArrayType(elementType dgo.Type, min, max int64) dgo.ArrayType {
 	if min < 0 {
 		min = 0
 	}
@@ -116,14 +114,14 @@ func newArrayType(elementType dgo.Type, min, max int) dgo.ArrayType {
 	if elementType == nil {
 		elementType = DefaultAnyType
 	}
-	if min == 0 && max == math.MaxInt64 && elementType == DefaultAnyType {
+	if min == 0 && max == dgo.UnboundedSize && elementType == DefaultAnyType {
 		// Unbounded
 		return DefaultArrayType
 	}
 	if min == 1 && min == max && dgo.IsExact(elementType) {
 		return makeFrozenArray([]dgo.Value{elementType}).(dgo.ArrayType)
 	}
-	return &sizedArrayType{elementType: elementType, min: min, max: max}
+	return &sizedArrayType{sizeRange: sizeRange{min: uint32(min), max: uint32(max)}, elementType: elementType}
 }
 
 func (t defaultArrayType) Assignable(other dgo.Type) bool {
@@ -149,7 +147,7 @@ func (t defaultArrayType) Instance(value interface{}) bool {
 }
 
 func (t defaultArrayType) Max() int {
-	return math.MaxInt64
+	return dgo.UnboundedSize
 }
 
 func (t defaultArrayType) Min() int {
@@ -191,7 +189,7 @@ func (t *sizedArrayType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type
 	case dgo.Array:
 		return t.DeepInstance(guard, ot)
 	case dgo.ArrayType:
-		return t.min <= ot.Min() && ot.Max() <= t.max && t.elementType.Assignable(ot.ElementType())
+		return int(t.min) <= ot.Min() && ot.Max() <= int(t.max) && t.elementType.Assignable(ot.ElementType())
 	}
 	return CheckAssignableTo(guard, other, t)
 }
@@ -216,13 +214,7 @@ func (t *sizedArrayType) HashCode() dgo.Hash {
 }
 
 func (t *sizedArrayType) deepHashCode(seen []dgo.Value) dgo.Hash {
-	h := dgo.Hash(dgo.TiArray)
-	if t.min > 0 {
-		h = h*31 + dgo.Hash(t.min)
-	}
-	if t.max < math.MaxInt64 {
-		h = h*31 + dgo.Hash(t.max)
-	}
+	h := t.sizeRangeHash(dgo.TiArray)
 	if DefaultAnyType != t.elementType {
 		h = h*31 + deepHashCode(seen, t.elementType)
 	}
@@ -236,18 +228,9 @@ func (t *sizedArrayType) Instance(value interface{}) bool {
 func (t *sizedArrayType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
 	if ov, ok := value.(arraySlice); ok {
 		os := ov._slice()
-		l := len(os)
-		return t.min <= l && l <= t.max && allInstance(guard, t.elementType, os)
+		return t.inRange(len(os)) && allInstance(guard, t.elementType, os)
 	}
 	return false
-}
-
-func (t *sizedArrayType) Max() int {
-	return t.max
-}
-
-func (t *sizedArrayType) Min() int {
-	return t.min
 }
 
 func (t *sizedArrayType) New(arg dgo.Value) dgo.Value {
@@ -274,10 +257,6 @@ func (t *sizedArrayType) Type() dgo.Type {
 
 func (t *sizedArrayType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiArray
-}
-
-func (t *sizedArrayType) Unbounded() bool {
-	return t.min == 0 && t.max == math.MaxInt64
 }
 
 // Array returns a frozen dgo.Array that represents a copy of the given value. The value can be
@@ -1283,7 +1262,7 @@ func (v *array) ElementTypes() dgo.Array {
 }
 
 func (v *array) Generic() dgo.Type {
-	return &sizedArrayType{elementType: Generic(v.ElementType()), min: 0, max: math.MaxInt64}
+	return &sizedArrayType{sizeRange: sizeRange{min: 0, max: dgo.UnboundedSize}, elementType: Generic(v.ElementType())}
 }
 
 func (v *array) Instance(value interface{}) bool {
