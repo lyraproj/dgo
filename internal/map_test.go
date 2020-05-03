@@ -2,7 +2,6 @@ package internal_test
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -67,7 +66,7 @@ func TestNewMapType_DefaultType(t *testing.T) {
 	mt = tf.Map(typ.Any, typ.Any)
 	assert.Same(t, typ.Map, mt)
 
-	mt = tf.Map(typ.Any, typ.Any, 0, math.MaxInt64)
+	mt = tf.Map(typ.Any, typ.Any, 0, dgo.UnboundedSize)
 	assert.Same(t, typ.Map, mt)
 
 	m1 := vf.Map(
@@ -83,7 +82,7 @@ func TestNewMapType_DefaultType(t *testing.T) {
 	assert.Equal(t, mt.KeyType(), typ.Any)
 	assert.Equal(t, mt.ValueType(), typ.Any)
 	assert.Equal(t, mt.Min(), 0)
-	assert.Equal(t, mt.Max(), math.MaxInt64)
+	assert.Equal(t, mt.Max(), dgo.UnboundedSize)
 	assert.True(t, mt.Unbounded())
 	assert.True(t, mt.HashCode() > 0)
 	assert.Equal(t, mt.HashCode(), mt.HashCode())
@@ -946,7 +945,19 @@ func TestMap_Values(t *testing.T) {
 		`first`, 1,
 		`second`, 2.0,
 		`third`, `three`)
-	assert.True(t, m.Values().SameValues(vf.Values(1, 2.0, `three`)))
+	a := m.Values()
+	assert.True(t, a.Frozen())
+	assert.Equal(t, a, vf.Values(1, 2.0, `three`))
+}
+
+func TestMap_Values_mutable(t *testing.T) {
+	m := vf.MutableMap(
+		`first`, 1,
+		`second`, 2.0,
+		`third`, `three`)
+	a := m.Values()
+	assert.False(t, a.Frozen())
+	assert.Equal(t, a, vf.Values(1, 2.0, `three`))
 }
 
 func TestMap_String(t *testing.T) {

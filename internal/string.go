@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -18,8 +17,7 @@ type (
 	// sizedStringType is a size constrained String type. It only represents all strings whose
 	// length is within the inclusive min, max range
 	sizedStringType struct {
-		min int
-		max int
+		sizeRange
 	}
 
 	// defaultStringType represents an string without constraints
@@ -136,7 +134,7 @@ func (t defaultDgoStringType) TypeIdentifier() dgo.TypeIdentifier {
 }
 
 func (t defaultDgoStringType) Max() int {
-	return math.MaxInt64
+	return dgo.UnboundedSize
 }
 
 func (t defaultDgoStringType) Min() int {
@@ -218,7 +216,7 @@ func (t defaultStringType) Instance(value interface{}) bool {
 }
 
 func (t defaultStringType) Max() int {
-	return math.MaxInt64
+	return dgo.UnboundedSize
 }
 
 func (t defaultStringType) Min() int {
@@ -322,14 +320,14 @@ func StringType(args []interface{}) dgo.StringType {
 		case dgo.String:
 			return a0.Type().(dgo.StringType) // Exact string type
 		case dgo.Integer:
-			return SizedStringType(int(a0.GoInt()), math.MaxInt64)
+			return SizedStringType(a0.GoInt(), dgo.UnboundedSize)
 		}
 		panic(illegalArgument(`StringType`, `Integer or String`, args, 0))
 	case 2:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			var a1 dgo.Integer
 			if a1, ok = Value(args[1]).(dgo.Integer); ok {
-				return SizedStringType(int(a0.GoInt()), int(a1.GoInt()))
+				return SizedStringType(a0.GoInt(), a1.GoInt())
 			}
 			panic(illegalArgument(`StringType`, `Integer`, args, 1))
 		}
@@ -374,7 +372,7 @@ func (t *patternType) Instance(v interface{}) bool {
 }
 
 func (t *patternType) Max() int {
-	return math.MaxInt64
+	return dgo.UnboundedSize
 }
 
 func (t *patternType) Min() int {
@@ -411,7 +409,7 @@ func (t *patternType) Unbounded() bool {
 
 // SizedStringType returns a StringType that is constrained to strings whose length is within the
 // inclusive range given by min and max.
-func SizedStringType(min, max int) dgo.StringType {
+func SizedStringType(min, max int64) dgo.StringType {
 	if min < 0 {
 		min = 0
 	}
@@ -420,10 +418,10 @@ func SizedStringType(min, max int) dgo.StringType {
 		max = min
 		min = tmp
 	}
-	if min == 0 && max == math.MaxInt64 {
+	if min == 0 && max == dgo.UnboundedSize {
 		return DefaultStringType
 	}
-	return &sizedStringType{min: min, max: max}
+	return &sizedStringType{sizeRange: sizeRange{min: uint32(min), max: uint32(max)}}
 }
 
 func (t *sizedStringType) Assignable(other dgo.Type) bool {
@@ -448,14 +446,7 @@ func (t *sizedStringType) Equals(v interface{}) bool {
 }
 
 func (t *sizedStringType) HashCode() dgo.Hash {
-	h := dgo.Hash(dgo.TiStringSized)
-	if t.min > 0 {
-		h = h*31 + dgo.Hash(t.min)
-	}
-	if t.max < math.MaxInt64 {
-		h = h*31 + dgo.Hash(t.max)
-	}
-	return h
+	return t.sizeRangeHash(dgo.TiStringSized)
 }
 
 func (t *sizedStringType) Instance(v interface{}) bool {
@@ -469,16 +460,7 @@ func (t *sizedStringType) Instance(v interface{}) bool {
 }
 
 func (t *sizedStringType) IsInstance(v string) bool {
-	l := len(v)
-	return t.min <= l && l <= t.max
-}
-
-func (t *sizedStringType) Max() int {
-	return t.max
-}
-
-func (t *sizedStringType) Min() int {
-	return t.min
+	return t.inRange(len(v))
 }
 
 func (t *sizedStringType) New(arg dgo.Value) dgo.Value {
@@ -499,10 +481,6 @@ func (t *sizedStringType) Type() dgo.Type {
 
 func (t *sizedStringType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiStringSized
-}
-
-func (t *sizedStringType) Unbounded() bool {
-	return t.min == 0 && t.max == math.MaxInt64
 }
 
 func makeHString(s string) *hstring {

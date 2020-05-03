@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"math"
 	"reflect"
 
 	"github.com/tada/catch"
@@ -195,7 +194,7 @@ func tupleEquals(seen []dgo.Value, t dgo.TupleType, other interface{}) bool {
 }
 
 func (t *tupleType) Generic() dgo.Type {
-	return newArrayType(Generic(t.ElementType()), 0, math.MaxInt64)
+	return newArrayType(Generic(t.ElementType()), 0, dgo.UnboundedSize)
 }
 
 func (t *tupleType) HashCode() dgo.Hash {
@@ -276,7 +275,7 @@ func (t *tupleType) Max() int {
 func tupleMax(t dgo.TupleType) int {
 	n := t.Len()
 	if t.Variadic() {
-		n = math.MaxInt64
+		n = dgo.UnboundedSize
 	}
 	return n
 }

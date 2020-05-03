@@ -33,9 +33,9 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 	kind := vt.Kind()
 	switch kind {
 	case reflect.Slice, reflect.Array:
-		return ArrayType([]interface{}{TypeFromReflected(vt.Elem()), 0, math.MaxInt64})
+		return ArrayType([]interface{}{TypeFromReflected(vt.Elem()), 0, dgo.UnboundedSize})
 	case reflect.Map:
-		return MapType([]interface{}{TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, math.MaxInt64})
+		return MapType([]interface{}{TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, dgo.UnboundedSize})
 	case reflect.Ptr:
 		return OneOfType([]interface{}{TypeFromReflected(vt.Elem()), Nil})
 	case reflect.Func:
@@ -96,7 +96,7 @@ func illegalArgument(name, expected interface{}, args []interface{}, argno int) 
 func illegalArgumentCount(name string, min, max, actual int) error {
 	var exp string
 	switch {
-	case max == math.MaxInt64:
+	case max == dgo.UnboundedSize:
 		exp = fmt.Sprintf(`at least %d`, min)
 	case min == max:
 		exp = strconv.Itoa(min)

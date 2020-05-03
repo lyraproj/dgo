@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"math"
 	"testing"
 
 	"github.com/tada/dgo/dgo"
@@ -126,6 +125,6 @@ func TestVariadicTupleType(t *testing.T) {
 	assert.Instance(t, tt, vf.Values(`one`, `two`, `three`))
 	assert.True(t, tt.Unbounded())
 	assert.Equal(t, 1, tt.Min())
-	assert.Equal(t, math.MaxInt64, tt.Max())
+	assert.Equal(t, dgo.UnboundedSize, tt.Max())
 	assert.Panic(t, func() { tf.VariadicTuple() }, `must have at least one element`)
 }

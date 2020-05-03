@@ -3,7 +3,6 @@ package internal_test
 import (
 	"bytes"
 	"errors"
-	"math"
 	"reflect"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestBinaryType(t *testing.T) {
 	assert.Assignable(t, tf.Binary(3, 3), tp)
 	assert.Assignable(t, tp, tf.Binary(3, 3))
 	assert.Same(t, typ.Binary, tf.Binary())
-	assert.Same(t, typ.Binary, tf.Binary(0, math.MaxInt64))
+	assert.Same(t, typ.Binary, tf.Binary(0, dgo.UnboundedSize))
 	assert.NotAssignable(t, tf.Binary(4), tp)
 	assert.NotAssignable(t, tf.Binary(0, 2), tp)
 	assert.Equal(t, tf.Binary(1, 2), tf.Binary(2, 1))

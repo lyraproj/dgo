@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"math"
 	"reflect"
 
 	"github.com/tada/catch"
@@ -321,7 +320,7 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 	if t.IsVariadic() {
 		nv := t.NumIn() - 1 // number of non variadic
 		if mx < nv {
-			panic(illegalArgumentCount(t.Name(), nv, math.MaxInt64, mx))
+			panic(illegalArgumentCount(t.Name(), nv, dgo.UnboundedSize, mx))
 		}
 		rr := make([]reflect.Value, nv+1)
 		for i := 0; i < nv; i++ {

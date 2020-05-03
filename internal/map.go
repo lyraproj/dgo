@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 
@@ -20,10 +19,9 @@ type (
 
 	// sizedMapType represents a map with constraints on key type, value type, and size
 	sizedMapType struct {
+		sizeRange
 		keyType   dgo.Type
 		valueType dgo.Type
-		min       int
-		max       int
 	}
 
 	mapEntry struct {
@@ -918,7 +916,7 @@ func mapTypeOne(args []interface{}) dgo.MapType {
 	if !ok {
 		panic(illegalArgument(`Map`, `Integer`, args, 0))
 	}
-	return newMapType(nil, nil, int(a0.GoInt()), math.MaxInt64)
+	return newMapType(nil, nil, a0.GoInt(), dgo.UnboundedSize)
 }
 
 func mapTypeTwo(args []interface{}) dgo.MapType {
@@ -929,13 +927,13 @@ func mapTypeTwo(args []interface{}) dgo.MapType {
 		if !ok {
 			panic(illegalArgument(`Map`, `Integer`, args, 1))
 		}
-		return newMapType(nil, nil, int(a0.GoInt()), int(a1.GoInt()))
+		return newMapType(nil, nil, a0.GoInt(), a1.GoInt())
 	case dgo.Type:
 		a1, ok := Value(args[1]).(dgo.Type)
 		if !ok {
 			panic(illegalArgument(`Map`, `Type`, args, 1))
 		}
-		return newMapType(a0, a1, 0, math.MaxInt64)
+		return newMapType(a0, a1, 0, dgo.UnboundedSize)
 	default:
 		panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
 	}
@@ -955,7 +953,7 @@ func mapTypeThree(args []interface{}) dgo.MapType {
 	if !ok {
 		panic(illegalArgument(`Map`, `Integer`, args, 2))
 	}
-	return newMapType(a0, a1, int(a2.GoInt()), math.MaxInt64)
+	return newMapType(a0, a1, a2.GoInt(), dgo.UnboundedSize)
 }
 
 func mapTypeFour(args []interface{}) dgo.MapType {
@@ -976,7 +974,7 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 	if !ok {
 		panic(illegalArgument(`Map`, `Integer`, args, 3))
 	}
-	return newMapType(a0, a1, int(a2.GoInt()), int(a3.GoInt()))
+	return newMapType(a0, a1, a2.GoInt(), a3.GoInt())
 }
 
 // MapType returns a type that represents an Map value
@@ -997,7 +995,7 @@ func MapType(args []interface{}) dgo.MapType {
 	}
 }
 
-func newMapType(kt, vt dgo.Type, min, max int) dgo.MapType {
+func newMapType(kt, vt dgo.Type, min, max int64) dgo.MapType {
 	if min < 0 {
 		min = 0
 	}
@@ -1015,13 +1013,13 @@ func newMapType(kt, vt dgo.Type, min, max int) dgo.MapType {
 	if vt == nil {
 		vt = DefaultAnyType
 	}
-	if min == 0 && max == math.MaxInt64 {
+	if min == 0 && max == dgo.UnboundedSize {
 		// Unbounded
 		if kt == DefaultAnyType && vt == DefaultAnyType {
 			return DefaultMapType
 		}
 	}
-	return &sizedMapType{keyType: kt, valueType: vt, min: min, max: max}
+	return &sizedMapType{sizeRange: sizeRange{min: uint32(min), max: uint32(max)}, keyType: kt, valueType: vt}
 }
 
 func (t *sizedMapType) Assignable(other dgo.Type) bool {
@@ -1033,7 +1031,7 @@ func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) 
 	case dgo.Map:
 		return t.Instance(ot)
 	case dgo.MapType:
-		return t.min <= ot.Min() && ot.Max() <= t.max &&
+		return int(t.min) <= ot.Min() && ot.Max() <= int(t.max) &&
 			Assignable(guard, t.keyType, ot.KeyType()) && Assignable(guard, t.valueType, ot.ValueType())
 	}
 	return CheckAssignableTo(guard, other, t)
@@ -1055,13 +1053,7 @@ func (t *sizedMapType) HashCode() dgo.Hash {
 }
 
 func (t *sizedMapType) deepHashCode(seen []dgo.Value) dgo.Hash {
-	h := dgo.Hash(dgo.TiMap)
-	if t.min > 0 {
-		h = h*31 + dgo.Hash(t.min)
-	}
-	if t.max < math.MaxInt64 {
-		h = h*31 + dgo.Hash(t.max)
-	}
+	h := t.sizeRangeHash(dgo.TiMap)
 	if DefaultAnyType != t.keyType {
 		h = h*31 + deepHashCode(seen, t.keyType)
 	}
@@ -1077,8 +1069,7 @@ func (t *sizedMapType) Instance(value interface{}) bool {
 
 func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value interface{}) bool {
 	if ov, ok := value.(dgo.Map); ok {
-		l := ov.Len()
-		if t.min <= l && l <= t.max {
+		if t.inRange(ov.Len()) {
 			kt := t.keyType
 			vt := t.valueType
 			if DefaultAnyType == kt {
@@ -1098,14 +1089,6 @@ func (t *sizedMapType) DeepInstance(guard dgo.RecursionGuard, value interface{})
 
 func (t *sizedMapType) KeyType() dgo.Type {
 	return t.keyType
-}
-
-func (t *sizedMapType) Max() int {
-	return t.max
-}
-
-func (t *sizedMapType) Min() int {
-	return t.min
 }
 
 func (t *sizedMapType) New(arg dgo.Value) dgo.Value {
@@ -1143,10 +1126,6 @@ func (t *sizedMapType) ValueType() dgo.Type {
 	return t.valueType
 }
 
-func (t *sizedMapType) Unbounded() bool {
-	return t.min == 0 && t.max == math.MaxInt64
-}
-
 // DefaultMapType is the unconstrained Map type
 const DefaultMapType = defaultMapType(0)
 
@@ -1176,7 +1155,7 @@ func (t defaultMapType) KeyType() dgo.Type {
 }
 
 func (t defaultMapType) Max() int {
-	return math.MaxInt64
+	return dgo.UnboundedSize
 }
 
 func (t defaultMapType) Min() int {
@@ -1247,11 +1226,7 @@ func genericMapType(g dgo.MapType) dgo.Type {
 	if kt == DefaultAnyType && vt == DefaultAnyType {
 		return DefaultMapType
 	}
-	return &sizedMapType{
-		keyType:   kt,
-		valueType: vt,
-		min:       0,
-		max:       math.MaxInt64}
+	return &sizedMapType{sizeRange: sizeRange{min: 0, max: dgo.UnboundedSize}, keyType: kt, valueType: vt}
 }
 
 func (g *hashMap) GetEntryType(key interface{}) dgo.StructMapEntry {

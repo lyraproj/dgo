@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 
 	"github.com/tada/catch"
@@ -226,7 +225,7 @@ func (t *structType) deepEqual(seen []dgo.Value, other deepEqual) bool {
 }
 
 func (t *structType) Generic() dgo.Type {
-	return newMapType(Generic(t.KeyType()), Generic(t.ValueType()), 0, math.MaxInt64)
+	return newMapType(Generic(t.KeyType()), Generic(t.ValueType()), 0, dgo.UnboundedSize)
 }
 
 func (t *structType) HashCode() dgo.Hash {
@@ -294,7 +293,7 @@ func (t *structType) Len() int {
 func (t *structType) Max() int {
 	m := len(t.required)
 	if m == 0 || t.additional {
-		return math.MaxInt64
+		return dgo.UnboundedSize
 	}
 	return m
 }

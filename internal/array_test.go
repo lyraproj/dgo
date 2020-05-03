@@ -2,7 +2,6 @@ package internal_test
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"testing"
 
@@ -34,7 +33,7 @@ func TestArray_negative_min_max(t *testing.T) {
 }
 
 func TestArray_explicit_unbounded(t *testing.T) {
-	tp := tf.Array(0, math.MaxInt64)
+	tp := tf.Array(0, dgo.UnboundedSize)
 	assert.Equal(t, tp, typ.Array)
 	assert.True(t, tp.Unbounded())
 }
@@ -74,7 +73,7 @@ func TestArrayType(t *testing.T) {
 	assert.Assignable(t, tp, tf.AnyOf(tf.Array(tf.String(5, 5)), tf.Array(tf.String(8, 8))))
 	assert.Equal(t, typ.Any, tp.ElementType())
 	assert.Equal(t, 0, tp.Min())
-	assert.Equal(t, math.MaxInt64, tp.Max())
+	assert.Equal(t, dgo.UnboundedSize, tp.Max())
 	assert.True(t, tp.Unbounded())
 	assert.Instance(t, tp.Type(), tp)
 	assert.Equal(t, `[]any`, tp.String())

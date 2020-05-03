@@ -1,10 +1,14 @@
 package dgo
 
 import (
+	"math"
 	"reflect"
 	"regexp"
 	"time"
 )
+
+// UnboundedSize is returned by the Max() function of types that have a size constraint but no upper bound
+const UnboundedSize = math.MaxUint32
 
 type (
 	// A Type describes an immutable Value. The Type is in itself also a Value
@@ -90,7 +94,8 @@ type (
 	sizedType interface {
 		Type
 
-		// Max returns the maximum size for instances of this type
+		// Max returns the maximum size for instances of this type or
+		// the constant UnboundedSize if here is no max limit
 		Max() int
 
 		// Min returns the minimum size for instances of this type
