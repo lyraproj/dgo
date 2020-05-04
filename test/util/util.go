@@ -1,5 +1,3 @@
-// +build test
-
 // Package util contains utility function for the assert and require packages.
 package util
 

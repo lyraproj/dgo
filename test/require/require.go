@@ -1,5 +1,3 @@
-// +build test
-
 // Package require contains the test helper functions for easy testing of assignability, instance of, equality, and
 // panic requirements. When a requirement is false, all methods here will fail the test and prevent further execution.
 package require
