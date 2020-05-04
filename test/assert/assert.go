@@ -1,5 +1,3 @@
-// +build test
-
 // Package assert contains the test helper functions for easy testing of assignability, instance of, equality, and
 // panic assertions. When an assertion is false, all methods here will fail the test but continue execution.
 package assert
