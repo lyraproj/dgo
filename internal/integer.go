@@ -24,8 +24,8 @@ type (
 	}
 )
 
-// DefaultIntegerType is the unconstrained Integer type
-const DefaultIntegerType = defaultIntegerType(0)
+// DefaultIntegerType is the unconstrained Int64 type
+const DefaultIntegerType = defaultIntegerType(dgo.TiInteger)
 
 var reflectIntegerType = reflect.TypeOf(int64(0))
 
@@ -149,12 +149,14 @@ func (t *integerType) Inclusive() bool {
 func (t *integerType) Instance(value interface{}) bool {
 	yes := false
 	switch ov := value.(type) {
-	case intVal:
+	case dgo.Integer:
 		yes = t.isInstance(ov)
 	case int:
 		yes = t.isInstance(intVal(ov))
-	case *bigIntVal:
-		yes = t.isInstance(ov)
+	case uint:
+		yes = t.isInstance(uintVal(ov))
+	case uint64:
+		yes = t.isInstance(uintVal(ov))
 	case *big.Int:
 		yes = t.isInstance(&bigIntVal{ov})
 	default:
@@ -260,7 +262,7 @@ func (t defaultIntegerType) Type() dgo.Type {
 }
 
 func (t defaultIntegerType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiInteger
+	return dgo.TypeIdentifier(t)
 }
 
 // IntEnumType returns a Type that represents any of the given integers
@@ -278,8 +280,8 @@ func IntEnumType(ints []int) dgo.Type {
 	return &anyOfType{slice: ts}
 }
 
-// Integer returns the dgo.Integer for the given int64
-func Integer(v int64) dgo.Integer {
+// Int64 returns the dgo.Integer for the given int64
+func Int64(v int64) dgo.Integer {
 	return intVal(v)
 }
 
@@ -287,60 +289,67 @@ func (v intVal) Assignable(other dgo.Type) bool {
 	return v.Equals(other) || CheckAssignableTo(nil, other, v)
 }
 
+func (v intVal) compare64(fv int64) int {
+	r := 0
+	switch {
+	case int64(v) > fv:
+		r = 1
+	case int64(v) < fv:
+		r = -1
+	}
+	return r
+}
+
+func (v intVal) compareBig(ov *big.Int) int {
+	r := 0
+	if ov.IsInt64() {
+		r = v.compare64(ov.Int64())
+	} else {
+		r = -ov.Sign()
+	}
+	return r
+}
+
+func (v intVal) compareU64(ov uint64) int {
+	r := 0
+	if ov > math.MaxInt64 {
+		r = -1
+	} else {
+		r = v.compare64(int64(ov))
+	}
+	return r
+}
+
 func (v intVal) CompareTo(other interface{}) (int, bool) {
 	r := 0
 	ok := true
-
-	mv := int64(v)
-	compare64 := func(fv int64) {
-		switch {
-		case mv > fv:
-			r = 1
-		case mv < fv:
-			r = -1
-		}
-	}
-
-	compareBig := func(ov *big.Int) {
-		if ov.IsInt64() {
-			compare64(ov.Int64())
-		} else {
-			r = -ov.Sign()
-		}
-	}
 
 	switch ov := other.(type) {
 	case nil, nilValue:
 		r = 1
 	case intVal:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
 	case int:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
 	case int64:
-		compare64(ov)
+		r = v.compare64(ov)
+	case uintVal:
+		r = v.compareU64(uint64(ov))
 	case uint:
-		if ov > math.MaxInt64 {
-			r = -1
-		} else {
-			compare64(int64(ov))
-		}
+		r = v.compareU64(uint64(ov))
 	case uint64:
-		if ov > math.MaxInt64 {
-			r = -1
-		} else {
-			compare64(int64(ov))
-		}
+		r = v.compareU64(ov)
 	case *bigIntVal:
-		compareBig(ov.Int)
+		r = v.compareBig(ov.Int)
 	case *big.Int:
-		compareBig(ov)
+		r = v.compareBig(ov)
 	case dgo.Float:
 		r, ok = v.Float().CompareTo(ov)
 	default: // all other int types
 		var iv int64
 		iv, ok = ToInt(other)
 		if ok {
-			compare64(iv)
+			r = v.compare64(iv)
 		}
 	}
 	return r, ok
@@ -477,6 +486,13 @@ func (v intVal) ToInt() (int64, bool) {
 	return int64(v), true
 }
 
+func (v intVal) ToUint() (uint64, bool) {
+	if v >= 0 {
+		return uint64(v), true
+	}
+	return 0, false
+}
+
 func (v intVal) Type() dgo.Type {
 	return v
 }
@@ -485,9 +501,7 @@ func (v intVal) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiIntegerExact
 }
 
-// ToInt returns the given value as a *big.Int if the value type is one of the go int types, a *big.Int,
-// a dgo.Integer or a dgo.BigInt, and the value fits an int64 value. An additional boolean is returned
-// to indicate if that was the case or not.
+// ToInt returns the (value as an int64, true) if it fits into that data type, (0, false) if not
 func ToInt(value interface{}) (int64, bool) {
 	ok := true
 	v := int64(0)
@@ -516,6 +530,12 @@ func ToInt(value interface{}) (int64, bool) {
 		} else {
 			ok = false
 		}
+	case uintVal:
+		if value <= math.MaxInt64 {
+			v = int64(value)
+		} else {
+			ok = false
+		}
 	case uint32:
 		v = int64(value)
 	case uint16:
@@ -534,13 +554,6 @@ func ToInt(value interface{}) (int64, bool) {
 		ok = false
 	}
 	return v, ok
-}
-
-func unsignedToInteger(v uint64) dgo.Integer {
-	if v <= math.MaxInt64 {
-		return intVal(int64(v))
-	}
-	return &bigIntVal{new(big.Int).SetUint64(v)}
 }
 
 var radixType = IntEnumType([]int{0, 2, 8, 10, 16})
@@ -575,12 +588,15 @@ func intFromConvertible(from dgo.Value, radix int) dgo.Integer {
 		s := from.GoString()
 		i, err := strconv.ParseInt(s, radix, 64)
 		if err == nil {
-			return Integer(i)
+			return Int64(i)
 		}
 		numErr, ok := err.(*strconv.NumError)
 		if ok && numErr.Err == strconv.ErrRange {
 			var bi *big.Int
 			if bi, ok = new(big.Int).SetString(s, radix); ok {
+				if bi.IsUint64() {
+					return uintVal(bi.Uint64())
+				}
 				return BigInt(bi)
 			}
 		}

@@ -20,7 +20,7 @@ func TestNil_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 0, c)
 
-	c, ok = vf.Nil.CompareTo(vf.Integer(1))
+	c, ok = vf.Nil.CompareTo(vf.Int64(1))
 	assert.True(t, ok)
 	assert.Equal(t, -1, c)
 	assert.Nil(t, vf.Nil.GoNil())

@@ -42,7 +42,7 @@ func TestBigIntType_New(t *testing.T) {
 		vf.New(newBigInt(t, `42`).Type(), vf.String(`42`)).(dgo.BigInt).GoBigInt()) == 0)
 
 	assert.Equal(t, new(big.Int).SetInt64(123), vf.New(typ.BigInt, vf.Float(123)))
-	assert.Equal(t, big.NewInt(123), vf.New(typ.BigInt, vf.Integer(123)))
+	assert.Equal(t, big.NewInt(123), vf.New(typ.BigInt, vf.Int64(123)))
 	assert.Equal(t, big.NewInt(0), vf.New(typ.BigInt, vf.Boolean(false)))
 	assert.Equal(t, big.NewInt(1), vf.New(typ.BigInt, vf.Boolean(true)))
 
@@ -54,7 +54,7 @@ func TestBigIntType_New(t *testing.T) {
 	}, `cannot be converted`)
 
 	assert.Panic(t, func() {
-		vf.New(newBigIntRange(t, `4`, `10`, true), vf.Integer(3))
+		vf.New(newBigIntRange(t, `4`, `10`, true), vf.Int64(3))
 	}, `cannot be assigned`)
 }
 
@@ -125,7 +125,7 @@ func TestBigInt_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
-	c, ok = b.CompareTo(vf.Integer(140))
+	c, ok = b.CompareTo(vf.Int64(140))
 	assert.True(t, ok)
 	assert.Equal(t, -1, c)
 
@@ -198,16 +198,25 @@ func TestBigInt_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 0, c)
 
+	c, ok = b.CompareTo(vf.Uint64(uint64(math.MaxUint64) - 1))
+	assert.True(t, ok)
+	assert.Equal(t, 1, c)
+
 	c, ok = b.CompareTo(math.MaxInt64)
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
-	i := vf.Integer(123)
+	i := vf.Int64(123)
 	c, ok = i.CompareTo(big.NewInt(140))
 	assert.True(t, ok)
 	assert.Equal(t, -1, c)
 
 	c, ok = i.CompareTo(vf.BigInt(big.NewInt(120)))
+	assert.True(t, ok)
+	assert.Equal(t, 1, c)
+
+	b = vf.New(typ.BigInt, vf.String(`0x10000000000000000`)).(dgo.BigInt)
+	c, ok = b.CompareTo(uint(math.MaxUint64))
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 }
@@ -219,7 +228,7 @@ func TestBigInt_Equals(t *testing.T) {
 	assert.True(t, b.Equals(vf.BigInt(big.NewInt(140))))
 	assert.True(t, b.Equals(140))
 	assert.True(t, b.Equals(uint(140)))
-	assert.True(t, b.Equals(vf.Integer(140)))
+	assert.True(t, b.Equals(vf.Int64(140)))
 	assert.False(t, b.Equals(float64(140)))
 
 	b = vf.BigInt(new(big.Int).SetUint64(uint64(math.MaxUint64)))
@@ -307,7 +316,7 @@ func TestBigInt_ToBigFloat(t *testing.T) {
 
 func TestBigInt_ToInt(t *testing.T) {
 	// Number that requires more than 53 bits precision
-	i := vf.Integer(123)
+	i := vf.Int64(123)
 	bf := vf.BigInt(big.NewInt(123))
 	f2, ok := bf.ToInt()
 	assert.True(t, ok)
@@ -319,6 +328,23 @@ func TestBigInt_ToInt_out_of_bounds(t *testing.T) {
 	_, ok := newBigInt(t, `0x10000000000000000`).ToInt()
 	assert.False(t, ok)
 	_, ok = newBigInt(t, `-0x10000000000000000`).ToInt()
+	assert.False(t, ok)
+}
+
+func TestBigInt_ToUint(t *testing.T) {
+	// Number that requires more than 53 bits precision
+	i := vf.Uint64(0x8000000000000000)
+	bf := vf.BigInt(new(big.Int).SetUint64(0x8000000000000000))
+	f2, ok := bf.ToUint()
+	assert.True(t, ok)
+	assert.Equal(t, i, f2)
+}
+
+func TestBigInt_ToUint_out_of_bounds(t *testing.T) {
+	// Number that requires more than 53 bits precision
+	_, ok := newBigInt(t, `0x10000000000000000`).ToUint()
+	assert.False(t, ok)
+	_, ok = newBigInt(t, `-1`).ToUint()
 	assert.False(t, ok)
 }
 

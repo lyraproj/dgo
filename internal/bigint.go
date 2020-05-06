@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"math"
 	"math/big"
 	"reflect"
 
@@ -23,8 +22,8 @@ type (
 	}
 )
 
-// DefaultBigIntType is the unconstrained Integer type
-var DefaultBigIntType = &defaultBigIntType{}
+// DefaultBigIntType is the unconstrained Int64 type
+var DefaultBigIntType = &defaultBigIntType{defaultIntegerType(dgo.TiBigInt)}
 
 var reflectBigIntType = reflect.TypeOf(&big.Int{})
 
@@ -34,10 +33,6 @@ func (t *defaultBigIntType) New(arg dgo.Value) dgo.Value {
 
 func (t *defaultBigIntType) ReflectType() reflect.Type {
 	return reflectBigIntType
-}
-
-func (t *defaultBigIntType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiBigInt
 }
 
 func (t *bigIntType) New(arg dgo.Value) dgo.Value {
@@ -61,23 +56,41 @@ func (v *bigIntVal) Assignable(other dgo.Type) bool {
 	return v.Equals(other) || CheckAssignableTo(nil, other, v)
 }
 
+func (v *bigIntVal) compare64(ov int64) int {
+	r := 0
+	if v.IsInt64() {
+		iv := v.Int64()
+		switch {
+		case iv > ov:
+			r = 1
+		case iv < ov:
+			r = -1
+		}
+	} else {
+		r = v.Sign()
+	}
+	return r
+}
+
+func (v *bigIntVal) compareU64(ov uint64) int {
+	r := 0
+	if v.IsUint64() {
+		iv := v.Uint64()
+		switch {
+		case iv > ov:
+			r = 1
+		case iv < ov:
+			r = -1
+		}
+	} else {
+		r = v.Sign()
+	}
+	return r
+}
+
 func (v *bigIntVal) CompareTo(other interface{}) (int, bool) {
 	r := 0
 	ok := true
-
-	compare64 := func(ov int64) {
-		if v.IsInt64() {
-			iv := v.Int64()
-			switch {
-			case iv > ov:
-				r = 1
-			case iv < ov:
-				r = -1
-			}
-		} else {
-			r = v.Sign()
-		}
-	}
 
 	switch ov := other.(type) {
 	case nil, nilValue:
@@ -85,27 +98,21 @@ func (v *bigIntVal) CompareTo(other interface{}) (int, bool) {
 	case *bigIntVal:
 		r = v.Cmp(ov.Int)
 	case intVal:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
+	case uintVal:
+		r = v.compareU64(uint64(ov))
 	case *big.Int:
 		r = v.Cmp(ov)
 	case int:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
 	case uint:
-		if ov > math.MaxInt64 {
-			r = v.Cmp(new(big.Int).SetUint64(uint64(ov)))
-		} else {
-			compare64(int64(ov))
-		}
+		r = v.compareU64(uint64(ov))
 	case uint64:
-		if ov > math.MaxInt64 {
-			r = v.Cmp(new(big.Int).SetUint64(ov))
-		} else {
-			compare64(int64(ov))
-		}
+		r = v.compareU64(ov)
 	case float64:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
 	case float32:
-		compare64(int64(ov))
+		r = v.compare64(int64(ov))
 	case *big.Float:
 		bi, a := ov.Int(nil)
 		r = v.Cmp(bi)
@@ -117,7 +124,7 @@ func (v *bigIntVal) CompareTo(other interface{}) (int, bool) {
 	default:
 		var iv int64
 		if iv, ok = ToInt(ov); ok {
-			compare64(iv)
+			r = v.compare64(iv)
 		}
 	}
 	return r, ok
@@ -220,6 +227,13 @@ func (v *bigIntVal) ToBigInt() *big.Int {
 func (v *bigIntVal) ToInt() (int64, bool) {
 	if v.IsInt64() {
 		return v.Int64(), true
+	}
+	return 0, false
+}
+
+func (v *bigIntVal) ToUint() (uint64, bool) {
+	if v.IsUint64() {
+		return v.Uint64(), true
 	}
 	return 0, false
 }

@@ -53,28 +53,32 @@ type (
 
 	// Number is implemented by Float and Integer implementations
 	Number interface {
-		// Integer returns this number as an Integer
-		Integer() Integer
+		Value
 
 		// Float returns this number as a Float
 		Float() Float
 
-		// ToInt returns this number as an int64
-		ToInt() (int64, bool)
+		// Integer returns this number as an Integer. The fraction of float values is truncated.
+		Integer() Integer
+
+		// ToBigFloat returns this number as an *big.Float
+		ToBigFloat() *big.Float
+
+		// ToBigInt returns this number as an *big.Int. The fraction of float values is truncated.
+		ToBigInt() *big.Int
 
 		// ToFloat returns this number as an float64
 		ToFloat() (float64, bool)
 
-		// ToBigInt returns this number as an *big.Int
-		ToBigInt() *big.Int
+		// ToInt returns this number as an int64. The fraction of float values is truncated.
+		ToInt() (int64, bool)
 
-		// ToBigFloat returns this number as an *big.Float
-		ToBigFloat() *big.Float
+		// ToUint returns this number as an uint64. The fraction of float values is truncated.
+		ToUint() (uint64, bool)
 	}
 
 	// Integer value is an int64 that implements the Value interface
 	Integer interface {
-		Value
 		Number
 		Comparable
 		ReflectedValue
@@ -95,9 +99,14 @@ type (
 		GoBigInt() *big.Int
 	}
 
+	// Uint64 value is a uint64 that implements the Value interface
+	Uint64 interface {
+		Integer
+		GoUint() uint64
+	}
+
 	// Float value is a float64 that implements the Value interface
 	Float interface {
-		Value
 		Number
 		Comparable
 		ReflectedValue
@@ -133,7 +142,7 @@ type (
 
 	// Time value is a *time.Time that implements the Value interface
 	Time interface {
-		Value
+		Number
 		ReflectedValue
 
 		// GoTime returns the Go native representation of this value

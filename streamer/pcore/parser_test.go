@@ -113,7 +113,7 @@ func ExampleParse_hash() {
 
 func TestParse_call(t *testing.T) {
 	v := pcore.Parse(`String(23)`)
-	require.Equal(t, vf.New(typ.String, vf.Integer(23)), v)
+	require.Equal(t, vf.New(typ.String, vf.Int64(23)), v)
 }
 
 func TestParse_emptyHash(t *testing.T) {
@@ -263,8 +263,8 @@ func TestParse_notUndef(t *testing.T) {
 
 func TestParse_number(t *testing.T) {
 	require.Equal(t, tf.AnyOf(typ.Integer, typ.Float), pcore.Parse(`Number`))
-	require.Equal(t, tf.AnyOf(tf.Integer(vf.Integer(3), nil, true), tf.Float(vf.Float(3), nil, true)), pcore.Parse(`Number[3]`))
-	require.Equal(t, tf.AnyOf(tf.Integer(vf.Integer(3), vf.Integer(3), true), tf.Float(vf.Float(3), vf.Float(3), true)), pcore.Parse(`Number[3,3]`))
+	require.Equal(t, tf.AnyOf(tf.Integer(vf.Int64(3), nil, true), tf.Float(vf.Float(3), nil, true)), pcore.Parse(`Number[3]`))
+	require.Equal(t, tf.AnyOf(tf.Integer(vf.Int64(3), vf.Int64(3), true), tf.Float(vf.Float(3), vf.Float(3), true)), pcore.Parse(`Number[3,3]`))
 }
 
 func TestParse_optional(t *testing.T) {
@@ -298,7 +298,7 @@ func TestParse_struct(t *testing.T) {
 
 	st := pcore.Parse(`Struct[a => Integer[1, 5], Optional[b] => Integer[2,2]]`)
 	require.Equal(t, tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.Integer(vf.Integer(1), vf.Integer(5), true), true),
+		tf.StructMapEntry(`a`, tf.Integer(vf.Int64(1), vf.Int64(5), true), true),
 		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 }
 
@@ -348,9 +348,9 @@ func TestParse_aliasInMap(t *testing.T) {
 }
 
 func TestParse_range(t *testing.T) {
-	require.Equal(t, tf.Integer(vf.Integer(1), vf.Integer(10), true), pcore.Parse(`Integer[1,10]`))
-	require.Equal(t, tf.Integer(vf.Integer(1), nil, true), pcore.Parse(`Integer[1]`))
-	require.Equal(t, tf.Integer(nil, vf.Integer(0), true), pcore.Parse(`Integer[default,0]`))
+	require.Equal(t, tf.Integer(vf.Int64(1), vf.Int64(10), true), pcore.Parse(`Integer[1,10]`))
+	require.Equal(t, tf.Integer(vf.Int64(1), nil, true), pcore.Parse(`Integer[1]`))
+	require.Equal(t, tf.Integer(nil, vf.Int64(0), true), pcore.Parse(`Integer[default,0]`))
 	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1.0,10]`))
 	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1,10.0]`))
 	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1.0,10.0]`))

@@ -544,7 +544,7 @@ func TestArray_Flatten_frozen(t *testing.T) {
 }
 
 func TestArray_FromReflected(t *testing.T) {
-	vs := []dgo.Value{vf.Integer(2), vf.String(`b`)}
+	vs := []dgo.Value{vf.Int64(2), vf.String(`b`)}
 	a := internal.ArrayFromReflected(reflect.ValueOf(vs), false).(dgo.Array)
 	assert.Equal(t, reflect.ValueOf(a.GoSlice()).Pointer(), reflect.ValueOf(vs).Pointer())
 
@@ -737,7 +737,7 @@ func TestArray_ReflectTo(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, a, ac)
 
-	os := []dgo.Value{vf.String(`a`), vf.Integer(23)}
+	os := []dgo.Value{vf.String(`a`), vf.Int64(23)}
 	a = vf.WrapSlice(os)
 	var as []dgo.Value
 	a.ReflectTo(reflect.ValueOf(&as).Elem())
@@ -775,21 +775,21 @@ func TestArray_Remove(t *testing.T) {
 func TestArray_RemoveValue(t *testing.T) {
 	s := vf.Integers(1, 2, 3, 4, 5)
 	a := s.Copy(false)
-	assert.True(t, a.RemoveValue(vf.Integer(1)))
+	assert.True(t, a.RemoveValue(vf.Int64(1)))
 	assert.Equal(t, vf.Integers(2, 3, 4, 5), a)
 
 	a = s.Copy(false)
-	assert.True(t, a.RemoveValue(vf.Integer(5)))
+	assert.True(t, a.RemoveValue(vf.Int64(5)))
 	assert.Equal(t, vf.Integers(1, 2, 3, 4), a)
 
 	a = s.Copy(false)
-	assert.True(t, a.RemoveValue(vf.Integer(3)))
+	assert.True(t, a.RemoveValue(vf.Int64(3)))
 	assert.Equal(t, vf.Integers(1, 2, 4, 5), a)
 
 	a = s.Copy(false)
-	assert.False(t, a.RemoveValue(vf.Integer(0)))
+	assert.False(t, a.RemoveValue(vf.Int64(0)))
 	assert.Equal(t, vf.Integers(1, 2, 3, 4, 5), a)
-	assert.Panic(t, func() { s.RemoveValue(vf.Integer(3)) }, `RemoveValue .* frozen`)
+	assert.Panic(t, func() { s.RemoveValue(vf.Int64(3)) }, `RemoveValue .* frozen`)
 }
 
 func TestArray_Reject(t *testing.T) {

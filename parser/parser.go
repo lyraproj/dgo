@@ -791,7 +791,7 @@ func tokenInt(t *Token, bg bool) dgo.Integer {
 	if !bg {
 		i, err := strconv.ParseInt(t.Value, 0, 64)
 		if err == nil {
-			return vf.Integer(i)
+			return vf.Int64(i)
 		}
 	}
 	bi, _ := new(big.Int).SetString(t.Value, 0)

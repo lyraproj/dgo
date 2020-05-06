@@ -241,7 +241,7 @@ func (sc *context) emitTime(value dgo.Time) {
 
 func (sc *context) emitBigInt(value dgo.BigInt) {
 	if i, ok := value.ToInt(); ok {
-		sc.addData(vf.Integer(i))
+		sc.addData(vf.Int64(i))
 		return
 	}
 	sc.process(value, func() {

@@ -37,9 +37,14 @@ func BigFloat(value *big.Float) dgo.BigFloat {
 	return internal.BigFloat(value)
 }
 
-// Integer returns the given value as a dgo.Integer
-func Integer(value int64) dgo.Integer {
-	return internal.Integer(value)
+// Int64 returns the given value as a dgo.Integer
+func Int64(value int64) dgo.Integer {
+	return internal.Int64(value)
+}
+
+// Uint64 returns the given value as a dgo.Integer
+func Uint64(value uint64) dgo.Uint64 {
+	return internal.Uint64(value)
 }
 
 // Float returns the given value as a dgo.Float

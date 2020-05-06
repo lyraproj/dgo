@@ -75,12 +75,7 @@ func (j *jsonDecoder) decodeElem(end json.Delim) bool {
 	case string:
 		j.consumer.Add(vf.String(t))
 	case json.Number:
-		if i, err := t.Int64(); err == nil {
-			j.consumer.Add(vf.Integer(i))
-		} else {
-			f, _ := t.Float64()
-			j.consumer.Add(vf.Float(f))
-		}
+		j.consumer.Add(vf.FromJSONNumber(t))
 	case bool:
 		j.consumer.Add(vf.Boolean(t))
 	default:
@@ -232,6 +227,8 @@ func (j *jsonEncoder) write(e dgo.Value) {
 		v, err = json.Marshal(e.GoString())
 	case dgo.Float:
 		v, err = json.Marshal(e.GoFloat())
+	case dgo.Uint64:
+		v, err = json.Marshal(e.GoUint())
 	case dgo.Integer:
 		v, err = json.Marshal(e.GoInt())
 	case dgo.Boolean:

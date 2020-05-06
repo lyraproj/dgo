@@ -109,6 +109,9 @@ const (
 	// TiTuple is the type identifier for the Tuple type
 	TiTuple
 
+	// TiUint64 is the type identifier for the Uint64 Integer type
+	TiUint64
+
 	// exactStart denotes the index of where the range of exact types start. All
 	// exact types must be added below this entry
 	exactStart
@@ -160,6 +163,9 @@ const (
 
 	// TiTimeExact is the type identifier for the exact Time type
 	TiTimeExact
+
+	// TiUint64Exact is the type identifier for the exact Uint64 type
+	TiUint64Exact
 )
 
 var tiLabels = map[TypeIdentifier]string{
@@ -213,6 +219,8 @@ var tiLabels = map[TypeIdentifier]string{
 	TiTime:          `time`,
 	TiTimeExact:     `time`,
 	TiTuple:         `tuple`,
+	TiUint64:        `int`,
+	TiUint64Exact:   `int`,
 }
 
 func (ti TypeIdentifier) String() string {

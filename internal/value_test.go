@@ -76,14 +76,14 @@ func TestValue(t *testing.T) {
 	assert.True(t, i.GoInt() == 42)
 
 	v = vf.Value(uint(math.MaxUint64))
-	i, ok = v.(dgo.BigInt)
+	i, ok = v.(dgo.Uint64)
 	require.True(t, ok)
-	assert.Equal(t, v, new(big.Int).SetUint64(math.MaxUint64))
+	assert.Equal(t, v, uint(math.MaxUint64))
 
 	v = vf.Value(uint64(math.MaxUint64))
-	i, ok = v.(dgo.BigInt)
+	i, ok = v.(dgo.Uint64)
 	require.True(t, ok)
-	assert.Equal(t, v, new(big.Int).SetUint64(math.MaxUint64))
+	assert.Equal(t, v, uint(math.MaxUint64))
 
 	v = vf.Value(big.NewInt(123))
 	bi, ok := v.(dgo.BigInt)
@@ -178,14 +178,14 @@ func TestValue_reflected(t *testing.T) {
 	assert.True(t, i.GoInt() == 42)
 
 	v = vf.Value(reflect.ValueOf(uint(math.MaxUint64)))
-	i, ok = v.(dgo.BigInt)
+	i, ok = v.(dgo.Uint64)
 	require.True(t, ok)
-	assert.Equal(t, v, new(big.Int).SetUint64(math.MaxUint64))
+	assert.Equal(t, v, uint(math.MaxUint64))
 
 	v = vf.Value(reflect.ValueOf(uint64(math.MaxUint64)))
-	i, ok = v.(dgo.BigInt)
+	i, ok = v.(dgo.Uint64)
 	require.True(t, ok)
-	assert.Equal(t, v, new(big.Int).SetUint64(math.MaxUint64))
+	assert.Equal(t, v, uint(math.MaxUint64))
 
 	v = vf.Value(reflect.ValueOf(float32(3.14)))
 	f, ok := v.(dgo.Float)
@@ -206,14 +206,14 @@ func TestValue_reflected(t *testing.T) {
 }
 
 func TestFromValue(t *testing.T) {
-	v := vf.Integer(32)
+	v := vf.Int64(32)
 	var vc int
 	vf.FromValue(v, &vc)
 	assert.Equal(t, v, vc)
 }
 
 func TestFromValue_notPointer(t *testing.T) {
-	v := vf.Integer(32)
+	v := vf.Int64(32)
 	var vc int
 	assert.Panic(t, func() { vf.FromValue(v, vc) }, `not a pointer`)
 }

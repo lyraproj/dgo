@@ -41,16 +41,16 @@ func BinaryType(args ...interface{}) dgo.BinaryType {
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			return SizedBinaryType(int(a0.GoInt()), dgo.UnboundedSize)
 		}
-		panic(illegalArgument(`BinaryType`, `Integer`, args, 0))
+		panic(illegalArgument(`BinaryType`, `Int64`, args, 0))
 	case 2:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			var a1 dgo.Integer
 			if a1, ok = Value(args[1]).(dgo.Integer); ok {
 				return SizedBinaryType(int(a0.GoInt()), int(a1.GoInt()))
 			}
-			panic(illegalArgument(`BinaryType`, `Integer`, args, 1))
+			panic(illegalArgument(`BinaryType`, `Int64`, args, 1))
 		}
-		panic(illegalArgument(`BinaryType`, `Integer`, args, 0))
+		panic(illegalArgument(`BinaryType`, `Int64`, args, 0))
 	}
 	panic(illegalArgumentCount(`BinaryType`, 0, 2, len(args)))
 }
@@ -153,7 +153,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 			if !bt.Instance(v) {
 				panic(catch.Error(IllegalAssignment(bt, v)))
 			}
-			bs[i] = byte(v.(intVal))
+			bs[i] = byte(v.(dgo.Integer).GoInt())
 		})
 		b = &binaryFrozen{binary{bytes: bs}}
 	case dgo.String:

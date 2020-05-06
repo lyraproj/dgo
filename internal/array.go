@@ -44,14 +44,14 @@ func arrayTypeOne(args []interface{}) dgo.ArrayType {
 	case dgo.Type:
 		return newArrayType(a0, 0, dgo.UnboundedSize)
 	default:
-		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Array`, `Type or Int64`, args, 0))
 	}
 }
 
 func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `Integer`, args, 1))
+		panic(illegalArgument(`Array`, `Int64`, args, 1))
 	}
 	switch a0 := Value(args[0]).(type) {
 	case dgo.Integer:
@@ -59,7 +59,7 @@ func arrayTypeTwo(args []interface{}) dgo.ArrayType {
 	case dgo.Type:
 		return newArrayType(a0, a1.GoInt(), dgo.UnboundedSize)
 	default:
-		panic(illegalArgument(`Array`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Array`, `Type or Int64`, args, 0))
 	}
 }
 
@@ -70,11 +70,11 @@ func arrayTypeThree(args []interface{}) dgo.ArrayType {
 	}
 	a1, ok := Value(args[1]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Array`, `Integer`, args, 1))
+		panic(illegalArgument(`Array`, `Int64`, args, 1))
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`ArrayType`, `Integer`, args, 2))
+		panic(illegalArgument(`ArrayType`, `Int64`, args, 2))
 	}
 	return newArrayType(a0, a1.GoInt(), a2.GoInt())
 }

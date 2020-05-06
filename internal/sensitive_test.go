@@ -13,7 +13,7 @@ import (
 
 func TestSensitiveType(t *testing.T) {
 	var tp dgo.Type = typ.Sensitive
-	s := vf.Sensitive(vf.Integer(0))
+	s := vf.Sensitive(vf.Int64(0))
 	assert.Assignable(t, tp, tp)
 	assert.NotAssignable(t, tp, typ.Any)
 	assert.Assignable(t, tp, s.Type())
@@ -23,14 +23,14 @@ func TestSensitiveType(t *testing.T) {
 
 	tp = s.Type()
 	assert.Equal(t, tp, tp)
-	assert.Equal(t, tp, vf.Sensitive(vf.Integer(0)).Type())
-	assert.Equal(t, tp, vf.Sensitive(vf.Integer(1)).Type()) // type uses generic of wrapped
+	assert.Equal(t, tp, vf.Sensitive(vf.Int64(0)).Type())
+	assert.Equal(t, tp, vf.Sensitive(vf.Int64(1)).Type()) // type uses generic of wrapped
 	assert.NotEqual(t, tp, typ.Any)
 	assert.NotEqual(t, tp, tf.Array(typ.String))
 	assert.NotEqual(t, 0, tp.HashCode())
 	assert.Equal(t, tp.HashCode(), tp.HashCode())
 	assert.Instance(t, tp, s)
-	assert.NotInstance(t, tp, vf.Integer(0))
+	assert.NotInstance(t, tp, vf.Int64(0))
 	assert.True(t, reflect.TypeOf(s).AssignableTo(tp.ReflectType()))
 	assert.Equal(t, dgo.TiSensitive, tp.TypeIdentifier())
 	assert.Equal(t, dgo.OpSensitive, tp.(dgo.UnaryType).Operator())

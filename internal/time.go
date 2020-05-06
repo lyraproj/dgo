@@ -177,6 +177,13 @@ func (v *timeVal) ToInt() (int64, bool) {
 	return v.Unix(), true
 }
 
+func (v *timeVal) ToUint() (uint64, bool) {
+	if iv := v.Unix(); iv >= 0 {
+		return uint64(iv), true
+	}
+	return 0, false
+}
+
 func (v *timeVal) Type() dgo.Type {
 	return v
 }

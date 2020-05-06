@@ -1,6 +1,7 @@
 package vf
 
 import (
+	"encoding/json"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -30,6 +31,11 @@ func ValueFromReflected(v reflect.Value) dgo.Value {
 // ReflectTo assigns the given dgo.Value to the given reflect.Value
 func ReflectTo(src dgo.Value, dest reflect.Value) {
 	internal.ReflectTo(src, dest)
+}
+
+// FromJSONNumber converts the given json.Number to a dgo.Number
+func FromJSONNumber(v json.Number) dgo.Number {
+	return internal.FromJSONNumber(v)
 }
 
 // FromValue converts a dgo.Value into a go native value. The given `dest` must be a pointer

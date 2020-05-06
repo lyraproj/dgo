@@ -11,9 +11,9 @@ import (
 )
 
 func TestIllegalAssignment(t *testing.T) {
-	v := tf.IllegalAssignment(typ.String, vf.Integer(3))
-	assert.Equal(t, v, tf.IllegalAssignment(typ.String, vf.Integer(3)))
-	assert.NotEqual(t, v, tf.IllegalAssignment(typ.String, vf.Integer(4)))
+	v := tf.IllegalAssignment(typ.String, vf.Int64(3))
+	assert.Equal(t, v, tf.IllegalAssignment(typ.String, vf.Int64(3)))
+	assert.NotEqual(t, v, tf.IllegalAssignment(typ.String, vf.Int64(4)))
 	assert.NotEqual(t, v, `oops`)
 	assert.Instance(t, v.Type(), v)
 	assert.NotEqual(t, 0, v.HashCode())

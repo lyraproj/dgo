@@ -27,7 +27,7 @@ type (
 	}
 )
 
-// DefaultBigFloatType is the unconstrained Integer type
+// DefaultBigFloatType is the unconstrained Int64 type
 var DefaultBigFloatType = &defaultBigFloatType{}
 
 var reflectBigFloatType = reflect.TypeOf(&big.Float{})
@@ -88,6 +88,10 @@ func (v *bigFloatVal) CompareTo(other interface{}) (int, bool) {
 		compare64(float64(ov))
 	case *big.Int:
 		r = v.Cmp(new(big.Float).SetInt(ov))
+	case uint:
+		r = v.Cmp(new(big.Float).SetUint64(uint64(ov)))
+	case uint64:
+		r = v.Cmp(new(big.Float).SetUint64(ov))
 	case dgo.Number:
 		r, ok = v.CompareTo(ov.Float())
 	default:
@@ -196,6 +200,10 @@ func (v *bigFloatVal) ToFloat() (float64, bool) {
 
 func (v *bigFloatVal) ToInt() (int64, bool) {
 	return demoteToInt64(v._bf)
+}
+
+func (v *bigFloatVal) ToUint() (uint64, bool) {
+	return demoteToUint64(v._bf)
 }
 
 func (v *bigFloatVal) Type() dgo.Type {

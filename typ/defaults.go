@@ -62,8 +62,11 @@ var BigFloat dgo.FloatType = internal.DefaultBigFloatType
 // Function is the type that represents all functions
 var Function dgo.FunctionType = internal.DefaultFunctionType
 
-// Integer is a type that represents all integers that fit into a signed 64 bit int
+// Integer is a type that represents all integers
 var Integer dgo.IntegerType = internal.DefaultIntegerType
+
+// Uint64 is a type that represents 64 bit unsigned integers
+var Uint64 dgo.IntegerType = internal.DefaultUint64Type
 
 // BigInt is a type that represents big integers
 var BigInt dgo.IntegerType = internal.DefaultBigIntType

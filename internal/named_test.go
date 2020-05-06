@@ -100,10 +100,10 @@ func TestNamedType_New(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
-	v := tp.New(vf.Integer(3))
+	v := tp.New(vf.Int64(3))
 	assert.Equal(t, v, testNamed(3))
 	assert.Equal(t, 3, tp.ExtractInitArg(v))
 }
@@ -111,7 +111,7 @@ func TestNamedType_New(t *testing.T) {
 func TestNamedType_New_notApplicable(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, nil, nil, reflect.TypeOf(testNamed(0)), nil, nil)
-	assert.Panic(t, func() { tp.New(vf.Integer(3)) }, `creating new instances of testNamed is not possible`)
+	assert.Panic(t, func() { tp.New(vf.Int64(3)) }, `creating new instances of testNamed is not possible`)
 	assert.Panic(t, func() { tp.ExtractInitArg(testNamed(0)) }, `creating new instances of testNamed is not possible`)
 }
 
@@ -120,10 +120,10 @@ func TestNamedType_ValueString(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
-	v := tp.New(vf.Integer(3))
+	v := tp.New(vf.Int64(3))
 	assert.Equal(t, `testNamed 3`, tp.ValueString(v))
 }
 
@@ -132,7 +132,7 @@ func TestNamedType_parse(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 	assert.Same(t, tf.ParseType(`testNamed`), tp)
 }
@@ -142,26 +142,26 @@ func TestNamedType_exact(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
-	v := tp.New(vf.Integer(3))
+	v := tp.New(vf.Int64(3))
 	et := v.Type()
 	assert.Same(t, tp, typ.Generic(et))
 	assert.Assignable(t, tp, et)
 	assert.NotAssignable(t, et, tp)
-	assert.NotAssignable(t, et, tp.New(vf.Integer(4)).Type())
+	assert.NotAssignable(t, et, tp.New(vf.Int64(4)).Type())
 	assert.Instance(t, et, v)
-	assert.NotInstance(t, et, tp.New(vf.Integer(4)))
+	assert.NotInstance(t, et, tp.New(vf.Int64(4)))
 	assert.Equal(t, `testNamed 3`, et.String())
 	assert.Equal(t, et, tf.ParseType(`testNamed 3`))
 	assert.Instance(t, et.Type(), et)
 	assert.Instance(t, tp.Type(), et)
 	assert.NotInstance(t, et.Type(), tp)
 	assert.NotEqual(t, tp, et)
-	assert.Equal(t, et, tp.New(vf.Integer(3)).Type())
-	assert.NotEqual(t, et, tp.New(vf.Integer(3)))
-	assert.NotEqual(t, et, tp.New(vf.Integer(4)).Type())
+	assert.Equal(t, et, tp.New(vf.Int64(3)).Type())
+	assert.NotEqual(t, et, tp.New(vf.Int64(3)))
+	assert.NotEqual(t, et, tp.New(vf.Int64(4)).Type())
 	assert.NotEqual(t, tp.HashCode(), et.HashCode())
 }
 
@@ -181,7 +181,7 @@ func TestNamedType_parameterized(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil,
 		func(self dgo.NamedType, typ dgo.Type) bool {
 			if ot, ok := typ.(dgo.NamedType); ok && self.Name() == ot.Name() {
@@ -213,7 +213,7 @@ func TestNamedType_parameterized(t *testing.T) {
 	assert.Same(t, tp, typ.Generic(tpp2))
 	assert.Instance(t, tpp, testNamed(3))
 	assert.NotInstance(t, tpp, testNamed(11))
-	assert.Panic(t, func() { vf.New(tpp, vf.Integer(11)) },
+	assert.Panic(t, func() { vf.New(tpp, vf.Int64(11)) },
 		`the value testNamed 11 cannot be assigned to a variable of type testNamed\[0,10\]`)
 }
 
@@ -222,7 +222,7 @@ func TestNamedType_parameterized_noAsgChecker(t *testing.T) {
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
 		return testNamed(arg.(dgo.Integer).GoInt())
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Integer(int64(value.(testNamed)))
+		return vf.Int64(int64(value.(testNamed)))
 	}, reflect.TypeOf(testNamed(0)), nil, nil)
 
 	tpp := tf.Parameterized(tp, vf.Values(0, 10))

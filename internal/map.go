@@ -914,7 +914,7 @@ func mapTypeOne(args []interface{}) dgo.MapType {
 	// min integer
 	a0, ok := Value(args[0]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 0))
+		panic(illegalArgument(`Map`, `Int64`, args, 0))
 	}
 	return newMapType(nil, nil, a0.GoInt(), dgo.UnboundedSize)
 }
@@ -925,7 +925,7 @@ func mapTypeTwo(args []interface{}) dgo.MapType {
 	case dgo.Integer:
 		a1, ok := Value(args[1]).(dgo.Integer)
 		if !ok {
-			panic(illegalArgument(`Map`, `Integer`, args, 1))
+			panic(illegalArgument(`Map`, `Int64`, args, 1))
 		}
 		return newMapType(nil, nil, a0.GoInt(), a1.GoInt())
 	case dgo.Type:
@@ -935,7 +935,7 @@ func mapTypeTwo(args []interface{}) dgo.MapType {
 		}
 		return newMapType(a0, a1, 0, dgo.UnboundedSize)
 	default:
-		panic(illegalArgument(`Map`, `Type or Integer`, args, 0))
+		panic(illegalArgument(`Map`, `Type or Int64`, args, 0))
 	}
 }
 
@@ -951,7 +951,7 @@ func mapTypeThree(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 2))
+		panic(illegalArgument(`Map`, `Int64`, args, 2))
 	}
 	return newMapType(a0, a1, a2.GoInt(), dgo.UnboundedSize)
 }
@@ -968,11 +968,11 @@ func mapTypeFour(args []interface{}) dgo.MapType {
 	}
 	a2, ok := Value(args[2]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 2))
+		panic(illegalArgument(`Map`, `Int64`, args, 2))
 	}
 	a3, ok := Value(args[3]).(dgo.Integer)
 	if !ok {
-		panic(illegalArgument(`Map`, `Integer`, args, 3))
+		panic(illegalArgument(`Map`, `Int64`, args, 3))
 	}
 	return newMapType(a0, a1, a2.GoInt(), a3.GoInt())
 }

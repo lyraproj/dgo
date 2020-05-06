@@ -78,8 +78,8 @@ func TestNew_bool(t *testing.T) {
 	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.Float(1)))
 	assert.Equal(t, vf.False, vf.New(typ.Boolean, vf.Float(0)))
 	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.Float(1)))
-	assert.Equal(t, vf.False, vf.New(typ.Boolean, vf.Integer(0)))
-	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.Integer(1)))
+	assert.Equal(t, vf.False, vf.New(typ.Boolean, vf.Int64(0)))
+	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.Int64(1)))
 	assert.Equal(t, vf.False, vf.New(typ.Boolean, vf.False))
 	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.True))
 	assert.Equal(t, vf.True, vf.New(typ.Boolean, vf.Arguments(vf.True)))
@@ -134,7 +134,7 @@ func TestBoolean_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
-	_, ok = vf.True.CompareTo(vf.Integer(1))
+	_, ok = vf.True.CompareTo(vf.Int64(1))
 	assert.False(t, ok)
 }
 

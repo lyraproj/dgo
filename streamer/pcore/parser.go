@@ -204,7 +204,7 @@ func (p *pcoreParser) element(t *parser.Token) {
 		p.array()
 	case integer:
 		i, _ := strconv.ParseInt(t.Value, 0, 64)
-		p.Append(vf.Integer(i))
+		p.Append(vf.Int64(i))
 	case float:
 		f, _ := strconv.ParseFloat(t.Value, 64)
 		p.Append(vf.Float(f))
@@ -259,7 +259,7 @@ func arrayType(p *pcoreParser) dgo.Value {
 		switch argc {
 		case 1, 2:
 			if i, ok := getIfInt(args, 0, 0); ok {
-				min = vf.Integer(i)
+				min = vf.Int64(i)
 				if argc > 1 {
 					max = getInt(`Array`, args, 1)
 					return tf.Array(min, max)

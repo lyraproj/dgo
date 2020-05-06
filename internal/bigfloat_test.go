@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"math"
 	"math/big"
 	"reflect"
 	"testing"
@@ -40,13 +41,20 @@ func TestBigFloatType_New(t *testing.T) {
 	assert.True(t, ex.Cmp(
 		vf.New(newBigFloat(t, `3.14`).Type(), vf.String(`3.14`)).(dgo.BigFloat).GoBigFloat()) == 0)
 
-	assert.Equal(t, new(big.Float).SetInt64(int64(123)), vf.New(typ.BigFloat, vf.Integer(123)))
+	assert.Equal(t, new(big.Float).SetInt64(int64(123)), vf.New(typ.BigFloat, vf.Int64(123)))
 	assert.Equal(t, big.NewFloat(123), vf.New(typ.BigFloat, vf.Float(123)))
 	assert.Equal(t, big.NewFloat(0), vf.New(typ.BigFloat, vf.Boolean(false)))
 	assert.Equal(t, big.NewFloat(1), vf.New(typ.BigFloat, vf.Boolean(true)))
 
 	_, ok := vf.New(typ.BigFloat, vf.Float(1.2)).(dgo.BigFloat)
 	assert.True(t, ok)
+
+	hp, ok := vf.New(typ.BigFloat, vf.Arguments("3.14", 128)).(dgo.BigFloat)
+	assert.True(t, ok)
+
+	lp, ok := vf.New(typ.BigFloat, vf.Arguments("3.14", 53)).(dgo.BigFloat)
+	assert.True(t, ok)
+	assert.NotEqual(t, hp, lp) // Parsing 3.14 with different precision yields slightly different values
 
 	bf := vf.BigFloat(ex)
 	assert.Same(t, bf, vf.New(typ.BigFloat, bf))
@@ -119,7 +127,7 @@ func TestBigFloat_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
-	c, ok = b.CompareTo(vf.Integer(140))
+	c, ok = b.CompareTo(vf.Int64(140))
 	assert.True(t, ok)
 	assert.Equal(t, -1, c)
 
@@ -289,6 +297,18 @@ func TestBigFloat_ToFloat_out_of_bounds(t *testing.T) {
 	_, ok = newBigFloat(t, `-1e10000`).ToFloat()
 	assert.False(t, ok)
 	_, ok = newBigFloat(t, `-1e-10000`).ToFloat()
+	assert.False(t, ok)
+}
+
+func TestBigFloat_ToUint(t *testing.T) {
+	// Number that requires more than 53 bits precision
+	b := vf.BigFloat(new(big.Float).SetUint64(math.MaxUint64))
+	uv, ok := b.ToUint()
+	assert.True(t, ok)
+	assert.Equal(t, uint64(math.MaxUint64), uv)
+
+	b = vf.BigFloat(big.NewFloat(-34))
+	_, ok = b.ToUint()
 	assert.False(t, ok)
 }
 

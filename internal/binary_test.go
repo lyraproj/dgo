@@ -67,7 +67,7 @@ func TestBinaryType_New_badCount(t *testing.T) {
 }
 
 func TestBinaryType_New_badArg(t *testing.T) {
-	assert.Panic(t, func() { vf.New(typ.Binary, vf.Integer(3)) }, `illegal argument for binary`)
+	assert.Panic(t, func() { vf.New(typ.Binary, vf.Int64(3)) }, `illegal argument for binary`)
 }
 
 func TestBinaryType_New_badType(t *testing.T) {
@@ -154,6 +154,11 @@ func TestBinaryFromEncoded(t *testing.T) {
 	v := vf.BinaryFromEncoded(notStrict, `%b`)
 	assert.True(t, bytes.Equal(bs, v.GoBytes()))
 	assert.Panic(t, func() { vf.BinaryFromEncoded(notStrict, `%B`) }, `illegal base64 data at input byte 7`)
+
+	bs = []byte{'r', 'o', 'c', 'k'}
+	v = vf.BinaryFromData(bytes.NewReader(bs))
+	assert.True(t, bytes.Equal(bs, v.GoBytes()))
+	assert.Equal(t, vf.BinaryFromEncoded(string(bs), `%s`), v)
 
 	bs = []byte{'r', 0x82, 0xff}
 	notUtf8 := string(bs)

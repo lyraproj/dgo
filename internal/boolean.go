@@ -177,10 +177,8 @@ func newBoolean(t dgo.Type, arg dgo.Value) dgo.Value {
 	switch arg := arg.(type) {
 	case boolean:
 		v = arg
-	case intVal:
-		v = boolean(arg != 0)
-	case floatVal:
-		v = boolean(arg != 0)
+	case dgo.Number:
+		v = boolean(arg.Integer().GoInt() != 0)
 	default:
 		if boolStringType.Instance(arg) {
 			v = boolean(trueStringType.Instance(arg))

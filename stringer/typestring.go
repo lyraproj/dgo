@@ -138,6 +138,10 @@ func intValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	pio.WriteString(sb, strconv.FormatInt(typ.(dgo.Integer).GoInt(), 10))
 }
 
+func uintValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	pio.WriteString(sb, strconv.FormatUint(typ.(dgo.Uint64).GoUint(), 10))
+}
+
 func nativeValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	rv := typ.(dgo.Native).ReflectValue()
 	if rv.CanInterface() {
@@ -345,6 +349,7 @@ func init() {
 		dgo.TiStruct:        _struct,
 		dgo.TiTimeExact:     timeValue,
 		dgo.TiTuple:         tuple,
+		dgo.TiUint64Exact:   uintValue,
 	}
 }
 

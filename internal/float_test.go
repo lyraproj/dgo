@@ -116,7 +116,7 @@ func TestFloatRange(t *testing.T) {
 func TestFloatType_New(t *testing.T) {
 	assert.Equal(t, 17.3, vf.New(typ.Float, vf.Float(17.3)))
 	assert.Equal(t, 17.3, vf.New(typ.Float, vf.String(`17.3`)))
-	assert.Equal(t, 17.0, vf.New(typ.Float, vf.Integer(17)))
+	assert.Equal(t, 17.0, vf.New(typ.Float, vf.Int64(17)))
 	assert.Equal(t, 0.0, vf.New(typ.Float, vf.False))
 	assert.Equal(t, 1.0, vf.New(typ.Float, vf.True))
 
@@ -130,16 +130,22 @@ func TestFloatType_New(t *testing.T) {
 
 func TestNumber(t *testing.T) {
 	ai, _ := vf.Float(3.14).ToInt()
-	bi, _ := vf.Integer(3).ToInt()
+	bi, _ := vf.Int64(3).ToInt()
 	assert.Equal(t, ai, bi)
 
-	af, _ := vf.Integer(3).ToFloat()
+	af, _ := vf.Int64(3).ToFloat()
 	bf, _ := vf.Float(3.0).ToFloat()
 	assert.Equal(t, af, bf)
 
 	af, _ = vf.Float(3.14).ToFloat()
-	bf, _ = vf.Integer(3).ToFloat()
+	bf, _ = vf.Int64(3).ToFloat()
 	assert.NotEqual(t, af, bf)
+
+	_, ok := vf.Float(-3.14).ToUint()
+	require.False(t, ok)
+	au, _ := vf.Float(3.14).ToUint()
+	bu, _ := vf.Int64(3).ToUint()
+	assert.Equal(t, au, bu)
 }
 
 func TestFloat_CompareTo(t *testing.T) {
@@ -195,15 +201,15 @@ func TestFloat_CompareTo(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
-	c, ok = vf.Float(3).CompareTo(vf.Integer(3))
+	c, ok = vf.Float(3).CompareTo(vf.Int64(3))
 	assert.True(t, ok)
 	assert.Equal(t, 0, c)
 
-	c, ok = vf.Float(2.9).CompareTo(vf.Integer(3))
+	c, ok = vf.Float(2.9).CompareTo(vf.Int64(3))
 	assert.True(t, ok)
 	assert.Equal(t, -1, c)
 
-	c, ok = vf.Float(3.1).CompareTo(vf.Integer(3))
+	c, ok = vf.Float(3.1).CompareTo(vf.Int64(3))
 	assert.True(t, ok)
 	assert.Equal(t, 1, c)
 
@@ -247,6 +253,22 @@ func TestFloat_ReflectTo(t *testing.T) {
 	assert.Equal(t, fx, *fp32)
 }
 
+func TestFloat_Integer(t *testing.T) {
+	i := vf.Float(1234).Integer()
+	_, ok := i.(dgo.BigInt)
+	assert.False(t, ok)
+	_, ok = i.(dgo.Uint64)
+	assert.False(t, ok)
+
+	i = vf.Float(1e19).Integer()
+	_, ok = i.(dgo.Uint64)
+	assert.True(t, ok)
+
+	i = vf.Float(1e20).Integer()
+	_, ok = i.(dgo.BigInt)
+	assert.True(t, ok)
+}
+
 func TestFloat_String(t *testing.T) {
 	assert.Equal(t, `1234.0`, vf.Float(1234).String())
 	assert.Equal(t, `-4321.0`, vf.Float(-4321).String())
@@ -260,4 +282,16 @@ func TestToFloat(t *testing.T) {
 	f, ok = internal.ToFloat(vf.BigFloat(bf))
 	require.True(t, ok)
 	assert.Equal(t, 3.14159265, f)
+}
+
+func TestFloat_ToInt(t *testing.T) {
+	i, ok := vf.Float(1234.5678).ToInt()
+	assert.True(t, ok)
+	assert.Equal(t, i, 1234)
+
+	_, ok = vf.Float(1e19).ToInt()
+	assert.False(t, ok)
+
+	_, ok = vf.Float(1e19).ToUint()
+	assert.True(t, ok)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func TestSliceCopy(t *testing.T) {
-	vs := []dgo.Value{vf.String(`a`), vf.Integer(32)}
+	vs := []dgo.Value{vf.String(`a`), vf.Int64(32)}
 	vc := util.SliceCopy(vs)
 	assert.Equal(t, vs[0], vc[0])
 	vs[0] = vf.String(`b`)

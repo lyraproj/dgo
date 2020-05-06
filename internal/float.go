@@ -348,7 +348,14 @@ func (v floatVal) HashCode() dgo.Hash {
 }
 
 func (v floatVal) Integer() dgo.Integer {
-	return intVal(v)
+	switch {
+	case v <= math.MaxInt64 && v >= math.MinInt64:
+		return intVal(v)
+	case v >= 0 && v <= math.MaxUint64:
+		return uintVal(v)
+	default:
+		return BigInt(v.ToBigInt())
+	}
 }
 
 func (v floatVal) ReflectTo(value reflect.Value) {
@@ -377,11 +384,22 @@ func (v floatVal) ToFloat() (float64, bool) {
 }
 
 func (v floatVal) ToInt() (int64, bool) {
-	return int64(v), true
+	if v >= math.MinInt64 && v <= math.MaxInt64 {
+		return int64(v), true
+	}
+	return 0, false
+}
+
+func (v floatVal) ToUint() (uint64, bool) {
+	if v >= 0 && v < math.MaxUint64 {
+		return uint64(v), true
+	}
+	return 0, false
 }
 
 func (v floatVal) ToBigInt() *big.Int {
-	return big.NewInt(int64(v))
+	bi, _ := big.NewFloat(float64(v)).Int(nil)
+	return bi
 }
 
 func (v floatVal) ToBigFloat() *big.Float {
@@ -457,6 +475,14 @@ func demoteToFloat64(bf *big.Float) (float64, bool) {
 func demoteToInt64(bf *big.Float) (int64, bool) {
 	i, a := bf.Int64()
 	if a == big.Below && i == math.MaxInt64 || a == big.Above && i == math.MinInt64 {
+		return 0, false
+	}
+	return i, true
+}
+
+func demoteToUint64(bf *big.Float) (uint64, bool) {
+	i, a := bf.Uint64()
+	if a == big.Below && i == math.MaxUint64 || a == big.Above && i == 0 {
 		return 0, false
 	}
 	return i, true

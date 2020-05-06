@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"reflect"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -51,12 +52,12 @@ func value(v interface{}) dgo.Value {
 	switch v := v.(type) {
 	case nil:
 		dv = Nil
-	case bool:
-		dv = boolean(v)
-	case int:
-		dv = Integer(int64(v))
 	case string:
 		dv = String(v)
+	case int:
+		dv = Int64(int64(v))
+	case bool:
+		dv = boolean(v)
 	case []byte:
 		dv = Binary(v, true)
 	case []string:
@@ -80,7 +81,7 @@ func value(v interface{}) dgo.Value {
 	case error:
 		dv = &errw{v}
 	case json.Number:
-		dv = valueFromJSONNumber(v)
+		dv = FromJSONNumber(v)
 	case reflect.Value:
 		dv = ValueFromReflected(v)
 	default:
@@ -96,15 +97,27 @@ func value(v interface{}) dgo.Value {
 	return dv
 }
 
-func valueFromJSONNumber(v json.Number) dgo.Value {
-	if i, err := v.Int64(); err == nil {
-		return Integer(i)
+// FromJSONNumber converts the given json.Number to a dgo.Number
+func FromJSONNumber(v json.Number) dgo.Number {
+	var nv dgo.Number
+	i, err := v.Int64()
+	if err == nil {
+		nv = Int64(i)
+	} else if numErr, ok := err.(*strconv.NumError); ok && numErr.Err == strconv.ErrRange {
+		var u uint64
+		if u, err = strconv.ParseUint(v.String(), 0, 64); err == nil {
+			nv = Uint64(u)
+		}
 	}
-	f, err := v.Float64()
 	if err != nil {
-		panic(catch.Error(err))
+		var f float64
+		if f, err = v.Float64(); err == nil {
+			nv = Float(f)
+		} else {
+			panic(catch.Error(err))
+		}
 	}
-	return Float(f)
+	return nv
 }
 
 // ValueFromReflected converts the given reflected value into an immutable dgo.Value

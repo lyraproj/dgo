@@ -322,16 +322,16 @@ func StringType(args []interface{}) dgo.StringType {
 		case dgo.Integer:
 			return SizedStringType(a0.GoInt(), dgo.UnboundedSize)
 		}
-		panic(illegalArgument(`StringType`, `Integer or String`, args, 0))
+		panic(illegalArgument(`StringType`, `Int64 or String`, args, 0))
 	case 2:
 		if a0, ok := Value(args[0]).(dgo.Integer); ok {
 			var a1 dgo.Integer
 			if a1, ok = Value(args[1]).(dgo.Integer); ok {
 				return SizedStringType(a0.GoInt(), a1.GoInt())
 			}
-			panic(illegalArgument(`StringType`, `Integer`, args, 1))
+			panic(illegalArgument(`StringType`, `Int64`, args, 1))
 		}
-		panic(illegalArgument(`StringType`, `Integer`, args, 0))
+		panic(illegalArgument(`StringType`, `Int64`, args, 0))
 	}
 	panic(illegalArgumentCount(`StringType`, 0, 2, len(args)))
 }
