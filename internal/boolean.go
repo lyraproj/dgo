@@ -187,7 +187,7 @@ func newBoolean(t dgo.Type, arg dgo.Value) dgo.Value {
 		}
 	}
 	if !t.Instance(v) {
-		panic(catch.Error(IllegalAssignment(t, v)))
+		panic(IllegalAssignment(t, v))
 	}
 	return v
 }

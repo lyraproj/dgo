@@ -287,5 +287,5 @@ func newNamed(rt dgo.NamedType, arg dgo.Value) dgo.Value {
 	if t.asgChecker == nil || t.asgChecker(rt, v.Type()) {
 		return v
 	}
-	panic(catch.Error(IllegalAssignment(rt, v)))
+	panic(IllegalAssignment(rt, v))
 }

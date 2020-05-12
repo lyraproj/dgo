@@ -495,7 +495,7 @@ func newFloat(t dgo.Type, arg dgo.Value) (f dgo.Float) {
 	}
 	f = floatFromConvertible(arg)
 	if !t.Instance(f) {
-		panic(catch.Error(IllegalAssignment(t, f)))
+		panic(IllegalAssignment(t, f))
 	}
 	return f
 }

@@ -570,7 +570,7 @@ func newInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
 		i = intFromConvertible(arg, 0)
 	}
 	if !t.Instance(i) {
-		panic(catch.Error(IllegalAssignment(t, i)))
+		panic(IllegalAssignment(t, i))
 	}
 	return i
 }

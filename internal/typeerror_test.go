@@ -15,10 +15,7 @@ func TestIllegalAssignment(t *testing.T) {
 	assert.Equal(t, v, tf.IllegalAssignment(typ.String, vf.Int64(3)))
 	assert.NotEqual(t, v, tf.IllegalAssignment(typ.String, vf.Int64(4)))
 	assert.NotEqual(t, v, `oops`)
-	assert.Instance(t, v.Type(), v)
-	assert.NotEqual(t, 0, v.HashCode())
-	assert.Equal(t, v.HashCode(), v.HashCode())
-	assert.Equal(t, `the value 3 cannot be assigned to a variable of type string`, v.String())
+	assert.Equal(t, `the value 3 cannot be assigned to a variable of type string`, v.Error())
 }
 
 func TestIllegalSize(t *testing.T) {
@@ -26,10 +23,7 @@ func TestIllegalSize(t *testing.T) {
 	assert.Equal(t, v, tf.IllegalSize(tf.String(1, 10), 12))
 	assert.NotEqual(t, v, tf.IllegalSize(tf.String(1, 10), 11))
 	assert.NotEqual(t, v, `oops`)
-	assert.Instance(t, v.Type(), v)
-	assert.NotEqual(t, 0, v.HashCode())
-	assert.Equal(t, v.HashCode(), v.HashCode())
-	assert.Equal(t, `size constraint violation on type string[1,10] when attempting resize to 12`, v.String())
+	assert.Equal(t, `size constraint violation on type string[1,10] when attempting resize to 12`, v.Error())
 }
 
 func TestIllegalMapKey(t *testing.T) {
@@ -38,8 +32,5 @@ func TestIllegalMapKey(t *testing.T) {
 	assert.Equal(t, v, tf.IllegalMapKey(tp, vf.String(`b`)))
 	assert.NotEqual(t, v, tf.IllegalMapKey(tp, vf.String(`c`)))
 	assert.NotEqual(t, v, `oops`)
-	assert.Instance(t, v.Type(), v)
-	assert.NotEqual(t, 0, v.HashCode())
-	assert.Equal(t, v.HashCode(), v.HashCode())
-	assert.Equal(t, `key "b" cannot be added to type {"a":string}`, v.String())
+	assert.Equal(t, `key "b" cannot be added to type {"a":string}`, v.Error())
 }

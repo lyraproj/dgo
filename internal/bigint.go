@@ -270,7 +270,7 @@ func newBigInt(t dgo.Type, arg dgo.Value) (i dgo.Integer) {
 		i = bigIntFromConvertible(arg, 0)
 	}
 	if !t.Instance(i) {
-		panic(catch.Error(IllegalAssignment(t, i)))
+		panic(IllegalAssignment(t, i))
 	}
 	return i
 }

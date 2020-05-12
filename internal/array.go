@@ -376,7 +376,7 @@ func newArray(t dgo.Type, arg dgo.Value) dgo.Array {
 	}
 	a := Array(arg)
 	if !t.Instance(a) {
-		panic(catch.Error(IllegalAssignment(t, a)))
+		panic(IllegalAssignment(t, a))
 	}
 	return a
 }

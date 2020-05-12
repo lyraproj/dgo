@@ -151,7 +151,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 		bt := primitivePTypes[reflect.Uint8]
 		arg.EachWithIndex(func(v dgo.Value, i int) {
 			if !bt.Instance(v) {
-				panic(catch.Error(IllegalAssignment(bt, v)))
+				panic(IllegalAssignment(bt, v))
 			}
 			bs[i] = byte(v.(dgo.Integer).GoInt())
 		})
@@ -162,7 +162,7 @@ func newBinary(t dgo.Type, arg dgo.Value) dgo.Value {
 		panic(illegalArgument(`binary`, `binary, string, or array`, []interface{}{arg}, 0))
 	}
 	if !t.Instance(b) {
-		panic(catch.Error(IllegalAssignment(t, b)))
+		panic(IllegalAssignment(t, b))
 	}
 	return b
 }

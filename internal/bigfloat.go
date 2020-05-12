@@ -253,7 +253,7 @@ func newBigFloat(t dgo.Type, arg dgo.Value) (f dgo.Float) {
 	}
 	f = bigFloatFromConvertible(arg, prec)
 	if !t.Instance(f) {
-		panic(catch.Error(IllegalAssignment(t, f)))
+		panic(IllegalAssignment(t, f))
 	}
 	return f
 }

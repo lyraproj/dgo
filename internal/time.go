@@ -87,7 +87,7 @@ func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
 		panic(illegalArgument(`time`, `time|string`, []interface{}{arg}, 0))
 	}
 	if !t.Instance(tv) {
-		panic(catch.Error(IllegalAssignment(t, tv)))
+		panic(IllegalAssignment(t, tv))
 	}
 	return tv
 }
