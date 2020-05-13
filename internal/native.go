@@ -200,7 +200,7 @@ func structHash(rv *reflect.Value) dgo.Hash {
 	n := rv.NumField()
 	h := dgo.Hash(1)
 	for i := 0; i < n; i++ {
-		h = h*31 + ValueFromReflected(rv.Field(i)).HashCode()
+		h = h*31 + ValueFromReflected(rv.Field(i), false).HashCode()
 	}
 	return h
 }

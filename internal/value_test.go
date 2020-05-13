@@ -21,7 +21,7 @@ func TestValue(t *testing.T) {
 	assert.Same(t, s, vf.Value(s))
 	assert.True(t, vf.True == vf.Value(true))
 	assert.True(t, vf.False == vf.Value(false))
-	assert.True(t, vf.Value([]dgo.Value{s}).(dgo.Array).Frozen())
+	assert.False(t, vf.Value([]dgo.Value{s}).(dgo.Array).Frozen()) // slice is wrapped, not copied
 	assert.True(t, vf.Value([]string{`a`}).(dgo.Array).Frozen())
 	assert.Equal(t, vf.Value([]dgo.Value{s}), vf.Value([]string{`a`}))
 	assert.True(t, vf.Value([]int{1}).(dgo.Array).Frozen())
@@ -123,10 +123,10 @@ func TestValue_reflected(t *testing.T) {
 	assert.True(t, vf.True == vf.Value(reflect.ValueOf(true)))
 	assert.True(t, vf.False == vf.Value(reflect.ValueOf(false)))
 	assert.Same(t, s, vf.Value(reflect.ValueOf(s)))
-	assert.True(t, vf.Value(reflect.ValueOf([]dgo.Value{s})).(dgo.Array).Frozen())
-	assert.True(t, vf.Value(reflect.ValueOf([]string{`a`})).(dgo.Array).Frozen())
+	assert.False(t, vf.Value(reflect.ValueOf([]dgo.Value{s})).(dgo.Array).Frozen())
+	assert.False(t, vf.Value(reflect.ValueOf([]string{`a`})).(dgo.Array).Frozen())
 	assert.Equal(t, vf.Value(reflect.ValueOf([]dgo.Value{s})), vf.Value([]string{`a`}))
-	assert.True(t, vf.Value(reflect.ValueOf([]int{1})).(dgo.Array).Frozen())
+	assert.False(t, vf.Value(reflect.ValueOf([]int{1})).(dgo.Array).Frozen())
 
 	v := vf.Value(reflect.ValueOf(regexp.MustCompile(`.*`)))
 	_, ok := v.(dgo.Regexp)

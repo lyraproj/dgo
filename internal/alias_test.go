@@ -6,22 +6,12 @@ import (
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
-	"github.com/lyraproj/dgo/parser"
 	"github.com/lyraproj/dgo/stringer"
 	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
-
-func TestAlias_Freeze(t *testing.T) {
-	alias := parser.NewAlias(vf.String(`hello`)).(dgo.Mutability)
-	assert.False(t, alias.Frozen())
-	assert.Same(t, alias, alias.ThawedCopy())
-	assert.Panic(t, func() {
-		alias.FrozenCopy()
-	}, `attempt to freeze unresolved alias`)
-}
 
 func TestAliasMap_Get(t *testing.T) {
 	am := tf.BuiltInAliases().Collect(func(a dgo.AliasAdder) {

@@ -16,16 +16,21 @@ func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 	return internal.New(typ, argument)
 }
 
-// Value returns the dgo.Value representation of its argument. If the argument type
+// ValueFromReflected converts the given reflected value into an mutable dgo.Value
+func ValueFromReflected(v reflect.Value) dgo.Value {
+	return internal.ValueFromReflected(v, false)
+}
+
+// Value returns the immutable dgo.Value representation of its argument. If the argument type
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
 func Value(v interface{}) dgo.Value {
 	return internal.Value(v)
 }
 
-// ValueFromReflected converts the given reflected value into an immutable dgo.Value
-func ValueFromReflected(v reflect.Value) dgo.Value {
-	return internal.ValueFromReflected(v)
+// FrozenFromReflected converts the given reflected value into an immutable dgo.Value
+func FrozenFromReflected(v reflect.Value) dgo.Value {
+	return internal.ValueFromReflected(v, true)
 }
 
 // ReflectTo assigns the given dgo.Value to the given reflect.Value

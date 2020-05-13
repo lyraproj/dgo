@@ -234,10 +234,10 @@ func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 		case reflect.Ptr:
 			re := rm.Elem()
 			if re.Kind() == reflect.Struct {
-				return FromReflectedStruct(re)
+				return FromReflectedStruct(re, frozen)
 			}
 		case reflect.Struct:
-			return FromReflectedStruct(rm)
+			return FromReflectedStruct(rm, frozen)
 		}
 		panic(catch.Error(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
@@ -271,7 +271,7 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 	se := make([][2]dgo.Value, len(keys))
 	for i := range keys {
 		key := keys[i]
-		se[i] = [2]dgo.Value{ValueFromReflected(key), ValueFromReflected(rm.MapIndex(key))}
+		se[i] = [2]dgo.Value{ValueFromReflected(key, true), ValueFromReflected(rm.MapIndex(key), frozen)}
 	}
 
 	// Sort by key to always get predictable order
@@ -305,8 +305,8 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 
 // FromReflectedStruct creates a frozen Map from the exported fields of a go struct. It panics if rm's kind is not
 // reflect.Struct.
-func FromReflectedStruct(rv reflect.Value) dgo.Struct {
-	return &structVal{rs: rv, frozen: false}
+func FromReflectedStruct(rv reflect.Value, frozen bool) dgo.Struct {
+	return &structVal{rs: rv, frozen: frozen}
 }
 
 // MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries.
@@ -370,6 +370,22 @@ func (g *hashMap) AnyValue(predicate dgo.Predicate) bool {
 		}
 	}
 	return false
+}
+
+func (g *hashMap) AppendAt(key, value interface{}) dgo.Array {
+	if g.frozen {
+		panic(frozenMap(`AppendAt`))
+	}
+	e := g.nodeAt(key)
+	var ok bool
+	var a dgo.Array
+	if a, ok = e.value.(dgo.Array); ok {
+		a.Add(value)
+	} else {
+		a = MutableValues([]interface{}{value})
+		e.value = a
+	}
+	return a
 }
 
 func (g *hashMap) AppendTo(w dgo.Indenter) {
@@ -597,12 +613,10 @@ func (g *hashMap) Merge(associations dgo.Map) dgo.Map {
 	return c
 }
 
-func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
-	if g.frozen {
-		panic(frozenMap(`Put`))
-	}
-	k := Value(ki)
-	v := Value(vi)
+// nodeAt returns the hashNode entry from the hash table that matches the given key. A new hashNod is created and
+// added in case no node was found for the given key..
+func (g *hashMap) nodeAt(key interface{}) *hashNode {
+	k := Value(key)
 	hs := hash(k.HashCode())
 	var hk int
 
@@ -614,9 +628,7 @@ func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
 	hk = (len(tbl) - 1) & hs
 	for e := tbl[hk]; e != nil; e = e.hashNext {
 		if k.Equals(e.key) {
-			old := e.value
-			e.value = v
-			return old
+			return e
 		}
 	}
 
@@ -626,7 +638,7 @@ func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
 		hk = (len(tbl) - 1) & hs
 	}
 
-	nd := &hashNode{mapEntry: mapEntry{key: frozenCopy(k), value: v}, hashNext: tbl[hk], prev: g.last}
+	nd := &hashNode{mapEntry: mapEntry{key: frozenCopy(k)}, hashNext: tbl[hk], prev: g.last}
 	if g.first == nil {
 		g.first = nd
 	} else {
@@ -635,7 +647,17 @@ func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
 	g.last = nd
 	tbl[hk] = nd
 	g.len++
-	return nil
+	return nd
+}
+
+func (g *hashMap) Put(ki, vi interface{}) dgo.Value {
+	if g.frozen {
+		panic(frozenMap(`Put`))
+	}
+	e := g.nodeAt(ki)
+	old := e.value
+	e.value = Value(vi)
+	return old
 }
 
 func (g *hashMap) PutAll(associations dgo.Map) {

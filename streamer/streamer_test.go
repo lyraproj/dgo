@@ -248,7 +248,7 @@ func (v *testNamed) HashCode() dgo.Hash {
 func TestEncode_namedUsingMap(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
-		sm := vf.Map(&testNamed{}).(dgo.Struct)
+		sm := vf.MutableMap(&testNamed{}).(dgo.Struct)
 		sm.PutAll(arg.(dgo.Map))
 		return sm.GoStruct().(dgo.Value)
 	}, func(value dgo.Value) dgo.Value {
@@ -298,7 +298,7 @@ func TestEncode_namedUsingValue(t *testing.T) {
 func TestEncode_named_notRich(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
-		sm := vf.Map(&testNamed{}).(dgo.Struct)
+		sm := vf.MutableMap(&testNamed{}).(dgo.Struct)
 		sm.PutAll(arg.(dgo.Map))
 		return sm.GoStruct().(dgo.Value)
 	}, func(value dgo.Value) dgo.Value {

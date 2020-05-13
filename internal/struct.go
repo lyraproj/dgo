@@ -23,7 +23,7 @@ func (v *structVal) All(predicate dgo.EntryPredicate) bool {
 	rv := v.rs
 	rt := rv.Type()
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		if !predicate(&mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}) {
+		if !predicate(&mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i), v.frozen)}) {
 			return false
 		}
 	}
@@ -44,7 +44,7 @@ func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
 func (v *structVal) AllValues(predicate dgo.Predicate) bool {
 	rv := v.rs
 	for i, n := 0, rv.NumField(); i < n; i++ {
-		if !predicate(ValueFromReflected(rv.Field(i))) {
+		if !predicate(ValueFromReflected(rv.Field(i), v.frozen)) {
 			return false
 		}
 	}
@@ -63,6 +63,16 @@ func (v *structVal) AnyValue(predicate dgo.Predicate) bool {
 	return !v.AllValues(func(entry dgo.Value) bool { return !predicate(entry) })
 }
 
+func (v *structVal) AppendAt(key, value interface{}) dgo.Array {
+	if a, ok := v.Get(key).(dgo.Array); ok {
+		a.Add(value)
+		return a
+	}
+	a := MutableValues([]interface{}{value})
+	v.Put(key, a)
+	return a
+}
+
 func (v *structVal) ContainsKey(key interface{}) bool {
 	if s, ok := stringKey(key); ok {
 		return v.rs.FieldByName(s).IsValid()
@@ -77,10 +87,7 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 	if frozen {
 		return v.FrozenCopy().(dgo.Map)
 	}
-	// Thaw: Perform a by-value copy of the frozen struct
-	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
-	rs.Set(v.rs)                          // copy v.rs to the zero value
-	return &structVal{rs: rs, frozen: false}
+	return v.ThawedCopy().(dgo.Map)
 }
 
 func (v *structVal) Each(actor dgo.Consumer) {
@@ -104,7 +111,11 @@ func (v *structVal) Equals(other interface{}) bool {
 }
 
 func (v *structVal) GoStruct() interface{} {
-	return v.rs.Addr().Interface()
+	vm := v
+	if vm.frozen {
+		vm = vm.ThawedCopy().(*structVal)
+	}
+	return vm.rs.Addr().Interface()
 }
 
 func (v *structVal) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -145,7 +156,7 @@ func (v *structVal) FrozenCopy() dgo.Value {
 
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
-		ev := ValueFromReflected(ef)
+		ev := ValueFromReflected(ef, false)
 		if f, ok := ev.(dgo.Mutability); ok && !f.Frozen() {
 			ReflectTo(f.FrozenCopy(), ef)
 		}
@@ -160,7 +171,7 @@ func (v *structVal) ThawedCopy() dgo.Value {
 
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
-		ev := ValueFromReflected(ef)
+		ev := ValueFromReflected(ef, false)
 		if f, ok := ev.(dgo.Mutability); ok {
 			ReflectTo(f.ThawedCopy(), ef)
 		}
@@ -172,7 +183,7 @@ func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 	rv := v.rs
 	rt := rv.Type()
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		e := &mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i))}
+		e := &mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i), v.frozen)}
 		if predicate(e) {
 			return e
 		}
@@ -195,7 +206,7 @@ func (v *structVal) Get(key interface{}) dgo.Value {
 		rv := v.rs
 		fv := rv.FieldByName(s)
 		if fv.IsValid() {
-			return ValueFromReflected(fv)
+			return ValueFromReflected(fv, v.frozen)
 		}
 	}
 	return nil
@@ -236,7 +247,7 @@ func (v *structVal) Put(key, value interface{}) dgo.Value {
 		rv := v.rs
 		fv := rv.FieldByName(s)
 		if fv.IsValid() {
-			old := ValueFromReflected(fv)
+			old := ValueFromReflected(fv, false)
 			ReflectTo(Value(value), fv)
 			return old
 		}

@@ -61,6 +61,12 @@ type (
 		// AnyValue returns true if the predicate returns true for any value of this Map.
 		AnyValue(actor Predicate) bool
 
+		// AppendAt ensures that an association exists between the given key and an Array and that
+		// the given value is appended to that Array. The Array is returned.
+		//
+		// An existing association for the given key that is not an Array is overwritten.
+		AppendAt(key, value interface{}) Array
+
 		// ContainsKey returns true if the map contains the give key
 		ContainsKey(key interface{}) bool
 

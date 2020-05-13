@@ -280,9 +280,9 @@ func Array(value interface{}) dgo.Array {
 		}
 		return makeFrozenArray(arr)
 	case reflect.Value:
-		return ValueFromReflected(value).(dgo.Array)
+		return ValueFromReflected(value, true).(dgo.Array)
 	default:
-		return ValueFromReflected(reflect.ValueOf(value)).(dgo.Array)
+		return ValueFromReflected(reflect.ValueOf(value), true).(dgo.Array)
 	}
 }
 
@@ -333,7 +333,7 @@ func ArrayFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 		top := vr.Len()
 		arr = make([]dgo.Value, top)
 		for i := 0; i < top; i++ {
-			arr[i] = ValueFromReflected(vr.Index(i))
+			arr[i] = ValueFromReflected(vr.Index(i), frozen)
 		}
 	}
 

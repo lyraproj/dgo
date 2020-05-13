@@ -31,7 +31,7 @@ func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 	panic(catch.Error(`unable to create a %v from %v`, typ, argument))
 }
 
-// Value returns the dgo.Value representation of its argument. If the argument type
+// Value returns the immutable dgo.Value representation of its argument. If the argument type
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
 func Value(v interface{}) dgo.Value {
@@ -41,13 +41,13 @@ func Value(v interface{}) dgo.Value {
 	if gv, ok := v.(dgo.Value); ok {
 		return gv
 	}
-	if dv := value(v); dv != nil {
+	if dv := value(v, false); dv != nil {
 		return dv
 	}
-	return ValueFromReflected(reflect.ValueOf(v))
+	return ValueFromReflected(reflect.ValueOf(v), false)
 }
 
-func value(v interface{}) dgo.Value {
+func value(v interface{}, frozen bool) dgo.Value {
 	var dv dgo.Value
 	switch v := v.(type) {
 	case nil:
@@ -59,7 +59,7 @@ func value(v interface{}) dgo.Value {
 	case bool:
 		dv = boolean(v)
 	case []byte:
-		dv = Binary(v, true)
+		dv = Binary(v, frozen)
 	case []string:
 		dv = Strings(v)
 	case []int:
@@ -83,7 +83,7 @@ func value(v interface{}) dgo.Value {
 	case json.Number:
 		dv = FromJSONNumber(v)
 	case reflect.Value:
-		dv = ValueFromReflected(v)
+		dv = ValueFromReflected(v, frozen)
 	default:
 		if i, ok := ToInt(v); ok {
 			dv = intVal(i)
@@ -121,7 +121,7 @@ func FromJSONNumber(v json.Number) dgo.Number {
 }
 
 // ValueFromReflected converts the given reflected value into an immutable dgo.Value
-func ValueFromReflected(vr reflect.Value) dgo.Value {
+func ValueFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	// Invalid shouldn't happen, but needs a check
 	if !vr.IsValid() {
 		return Nil
@@ -130,12 +130,12 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 	isPtr := false
 	switch vr.Kind() {
 	case reflect.Slice:
-		return ArrayFromReflected(vr, true)
+		return ArrayFromReflected(vr, frozen)
 	case reflect.Map:
-		return FromReflectedMap(vr, true)
+		return FromReflectedMap(vr, frozen)
 	case reflect.Interface:
 		if vr.Type().NumMethod() == 0 {
-			return ValueFromReflected(vr.Elem())
+			return ValueFromReflected(vr.Elem(), frozen)
 		}
 	case reflect.Ptr:
 		if vr.IsNil() {
@@ -151,7 +151,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		if v, ok := vi.(dgo.Value); ok {
 			return v
 		}
-		if v := value(vi); v != nil {
+		if v := value(vi, frozen); v != nil {
 			return v
 		}
 	}
@@ -161,7 +161,7 @@ func ValueFromReflected(vr reflect.Value) dgo.Value {
 		// Pointer to struct should have been handled at this point or it is a pointer to
 		// an unknown struct and should be a native
 		if er.Kind() != reflect.Struct {
-			return ValueFromReflected(er)
+			return ValueFromReflected(er, frozen)
 		}
 	}
 	// Value as unsafe. Immutability is not guaranteed

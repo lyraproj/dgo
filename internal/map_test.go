@@ -388,7 +388,7 @@ func TestMap_fromStruct(t *testing.T) {
 	// Pass pointer to struct
 	m := vf.Map(&s)
 	assert.Equal(t, 5, m.Len())
-	assert.False(t, m.Frozen())
+	assert.True(t, m.Frozen())
 	m = m.Copy(true)
 	assert.True(t, m.Frozen())
 	assert.Equal(t, `Alpha`, m.Get(`A`))
@@ -509,6 +509,20 @@ func TestMap_AnyValue(t *testing.T) {
 	assert.True(t, m.AnyValue(func(v dgo.Value) bool {
 		return v.Equals(`three`)
 	}))
+}
+
+func TestMap_AppendAt(t *testing.T) {
+	m := vf.MutableMap(
+		`first`, 1,
+		`second`, vf.MutableValues(2))
+
+	assert.Equal(t, vf.Values(10), m.AppendAt(`first`, 10))
+	assert.Equal(t, vf.Values(2, 3), m.AppendAt(`second`, 3))
+}
+
+func TestMap_AppendAt_immutable(t *testing.T) {
+	m := vf.Map(`first`, 1)
+	assert.Panic(t, func() { m.AppendAt(`first`, 10) }, `AppendAt called on a frozen Map`)
 }
 
 func TestMap_ContainsKey(t *testing.T) {

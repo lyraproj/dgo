@@ -312,7 +312,7 @@ func TestArray_recursiveReflectiveFreeze(t *testing.T) {
 	a := vf.Value(
 		reflect.ValueOf([]interface{}{
 			reflect.ValueOf(vf.MutableValues(`b`))})).(dgo.Array)
-	assert.True(t, a.Get(0).(dgo.Array).Frozen())
+	assert.False(t, a.Get(0).(dgo.Array).Frozen())
 }
 
 func TestArray_replaceNil(t *testing.T) {
@@ -322,7 +322,7 @@ func TestArray_replaceNil(t *testing.T) {
 
 func TestArray_fromReflected(t *testing.T) {
 	a := vf.Value([]interface{}{`a`, 1, nil}).(dgo.Array)
-	assert.True(t, a.Frozen())
+	assert.False(t, a.Frozen())
 	assert.True(t, vf.Nil == a.Get(2))
 }
 

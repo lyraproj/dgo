@@ -105,6 +105,21 @@ func TestStruct_AnyValue(t *testing.T) {
 	}))
 }
 
+func TestStruct_AppendAt(t *testing.T) {
+	type structA struct {
+		First  int
+		Second []int
+	}
+	m := vf.MutableMap(&structA{1, []int{2}})
+	assert.Panic(t, func() { m.AppendAt(`First`, 10) }, `Elem of invalid type int`)
+	assert.Equal(t, vf.Values(2, 3), m.AppendAt(`Second`, 3))
+}
+
+func TestStruct_AppendAt_immutable(t *testing.T) {
+	m := vf.Map(`first`, 1)
+	assert.Panic(t, func() { m.AppendAt(`first`, 10) }, `AppendAt called on a frozen Map`)
+}
+
 func TestStruct_ContainsKey(t *testing.T) {
 	type structA struct {
 		First  int
@@ -122,7 +137,7 @@ func TestStruct_Copy(t *testing.T) {
 		E dgo.Array
 	}
 	s := structA{A: `Alpha`}
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.Copy(true).(dgo.Map)
@@ -246,7 +261,7 @@ func TestStruct_FrozenCopy(t *testing.T) {
 		E dgo.Array
 	}
 	s := structA{A: `Alpha`}
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 
 	c := m.FrozenCopy().(dgo.Map)
@@ -272,7 +287,7 @@ func TestStruct_ThawedCopy(t *testing.T) {
 	}
 	b := vf.Binary([]byte{1, 2, 3}, false)
 	s := structA{A: `Alpha`, B: b}
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 	m.Put(`E`, vf.MutableValues(`Echo`, `Foxtrot`))
 	m = m.Copy(true)
 
@@ -370,7 +385,7 @@ func TestStruct_Put(t *testing.T) {
 		E []string
 	}
 	s := structA{}
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 	m.Put(`A`, `Alpha`)
 	m.Put(`B`, 32)
 	m.Put(`C`, `Charlie`)
@@ -392,7 +407,7 @@ func TestStruct_PutAll(t *testing.T) {
 		B int
 	}
 	s := structA{}
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 	m.PutAll(vf.Map(`A`, `Alpha`, `B`, 32))
 	assert.Equal(t, s.A, `Alpha`)
 	assert.Equal(t, s.B, 32)
@@ -418,7 +433,7 @@ func TestStruct_ReflectTo(t *testing.T) {
 	s := structA{A: `Alpha`, B: 32, C: &c, D: &d, E: []string{`Echo`, `Foxtrot`}}
 
 	// Pass pointer to struct
-	m := vf.Map(&s)
+	m := vf.MutableMap(&s)
 
 	x := structB{}
 	rv := reflect.ValueOf(&x).Elem()
@@ -428,6 +443,10 @@ func TestStruct_ReflectTo(t *testing.T) {
 	m.ReflectTo(xb)
 	assert.Equal(t, x.B, &s)
 	assert.Same(t, x.B, &s)
+
+	im := vf.Map(&s)
+	im.ReflectTo(xb)
+	assert.NotSame(t, x.B, &s) // Immutable presents a copy
 
 	// By value
 	m.ReflectTo(rv.FieldByName(`C`))

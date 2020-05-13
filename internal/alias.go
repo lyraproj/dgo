@@ -80,18 +80,6 @@ func NewAlias(s dgo.String) dgo.Alias {
 	return &alias{s.Type().(dgo.StringType)}
 }
 
-func (a *alias) Frozen() bool {
-	return false
-}
-
-func (a *alias) FrozenCopy() dgo.Value {
-	panic(catch.Error(`attempt to freeze unresolved alias '%s'`, a.Reference()))
-}
-
-func (a *alias) ThawedCopy() dgo.Value {
-	return a
-}
-
 func (a *alias) Reference() dgo.String {
 	return a.StringType.(dgo.String)
 }

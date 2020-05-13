@@ -302,7 +302,7 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 		vr := make([]dgo.Value, len(rr))
 		for i := range rr {
 			re := rr[i]
-			v := ValueFromReflected(re)
+			v := ValueFromReflected(re, false)
 			if v == Nil {
 				_, ok := re.Interface().(dgo.Value)
 				if !ok {
