@@ -550,6 +550,10 @@ func TestArray_FromReflected(t *testing.T) {
 
 	a = internal.ArrayFromReflected(reflect.ValueOf(vs), true).(dgo.Array)
 	assert.NotEqual(t, reflect.ValueOf(a.GoSlice()).Pointer(), reflect.ValueOf(vs).Pointer())
+
+	vs = append(vs, vf.MutableValues(3, 5))
+	a = internal.ArrayFromReflected(reflect.ValueOf(vs), true).(dgo.Array)
+	assert.True(t, a.Get(2).(dgo.Mutability).Frozen())
 }
 
 func TestArray_Equal(t *testing.T) {

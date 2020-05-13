@@ -16,6 +16,7 @@ import (
 func TestErrorType(t *testing.T) {
 	tp := typ.Error
 	assert.Same(t, typ.Error, typ.Generic(tp))
+	assert.Instance(t, tp, errors.New(`an error`))
 	assert.Instance(t, tp.Type(), tp)
 	assert.Equal(t, tp, tp)
 	assert.Equal(t, tp.HashCode(), tp.HashCode())

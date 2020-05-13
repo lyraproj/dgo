@@ -429,6 +429,9 @@ func TestMapFromReflected(t *testing.T) {
 	assert.Equal(t, tf.ParseType(`map[string]string`), typ.Generic(m.Type()))
 	m.Put(`hi`, `there`)
 	assert.Equal(t, 2, m.Len())
+
+	m = vf.FromReflectedMap(reflect.ValueOf(map[string]string{}), true)
+	assert.True(t, m.Frozen())
 }
 
 func TestMapType_KeyType(t *testing.T) {

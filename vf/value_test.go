@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -42,6 +43,17 @@ func ExampleFromValue_map_string_interface() {
 	vf.FromValue(v, &gim)
 	fmt.Println(gim)
 	// Output: map[first:1 second:2.1 third:three]
+}
+
+func ExampleFrozenFromReflected() {
+	gim := map[string]interface{}{
+		`first`:  1,
+		`second`: 2.1,
+		`third`:  `three`,
+	}
+	m := vf.FrozenFromReflected(reflect.ValueOf(&gim)).(dgo.Map)
+	fmt.Println(m.Frozen())
+	// Output: true
 }
 
 func ExampleFromValue_slice() {
