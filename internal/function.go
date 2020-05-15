@@ -346,8 +346,16 @@ func (f *goFunc) Call(args dgo.Array) []dgo.Value {
 
 	rr := make([]reflect.Value, mx)
 	for i := 0; i < mx; i++ {
-		rr[i] = reflect.New(t.In(i)).Elem()
-		ReflectTo(args.Get(i), rr[i])
+		tp := t.In(i)
+		var rv reflect.Value
+		if tp.Kind() == reflect.Ptr {
+			// need an element for this pointer to point to
+			rv = reflect.New(tp.Elem())
+		} else {
+			rv = reflect.New(tp).Elem()
+		}
+		rr[i] = rv
+		ReflectTo(args.Get(i), rv)
 	}
 	return convertReturn(m.Call(rr))
 }

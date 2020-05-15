@@ -746,6 +746,31 @@ func TestMap_ReflectTo(t *testing.T) {
 	assert.Equal(t, `three`, mc[`third`])
 }
 
+func TestMap_ReflectTo_struct(t *testing.T) {
+	m := vf.Map(
+		`First`, 1,
+		`Second`, 2.0,
+		`Third`, `three`)
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		structA
+		Third string
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	assert.Equal(t, 1, sb.First)
+	assert.Equal(t, 2.0, sb.Second)
+	assert.Equal(t, `three`, sb.Third)
+
+	sb = nil
+	assert.Panic(t, func() { m.ReflectTo(reflect.ValueOf(sb)) }, `reflectTo: nil pointer`)
+}
+
 func TestMap_Remove(t *testing.T) {
 	mi := vf.Map(
 		`first`, 1,

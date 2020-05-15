@@ -702,11 +702,21 @@ func (g *hashMap) ReflectTo(value reflect.Value) {
 	ht := value.Type()
 	ptr := ht.Kind() == reflect.Ptr
 	if ptr {
+		if value.IsNil() {
+			panic(catch.Error(`reflectTo: nil pointer`))
+		}
 		ht = ht.Elem()
+		if ht.Kind() == reflect.Struct {
+			v := value.Elem()
+			s := FromReflectedStruct(v, false)
+			s.PutAll(g)
+			return
+		}
 	}
 	if ht.Kind() == reflect.Interface && ht.Name() == `` {
 		ht = g.Type().ReflectType()
 	}
+
 	keyTp := ht.Key()
 	valueTp := ht.Elem()
 	m := reflect.MakeMapWithSize(ht, g.Len())

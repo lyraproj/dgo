@@ -41,6 +41,15 @@ func testD(vs ...int) string {
 	return fmt.Sprintf(`%v`, vs)
 }
 
+type structE struct {
+	A string
+	B int
+}
+
+func testE(s *structE) string {
+	return fmt.Sprintf(`%s:%d`, s.A, s.B)
+}
+
 func testNil() []string {
 	return nil
 }
@@ -55,6 +64,14 @@ func TestFunction_Call(t *testing.T) {
 	assert.Equal(t, 2, len(rs))
 	assert.Equal(t, s, rs[0])
 	assert.Equal(t, err, rs[1])
+}
+
+func TestFunction_Call_struct(t *testing.T) {
+	f, ok := vf.Value(testE).(dgo.Function)
+	require.True(t, ok)
+	rs := f.Call(vf.Values(vf.Map(`A`, `count`, `B`, 23)))
+	assert.Equal(t, 1, len(rs))
+	assert.Equal(t, `count:23`, rs[0])
 }
 
 func TestFunction_Call_nil(t *testing.T) {
