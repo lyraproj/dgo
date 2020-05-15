@@ -31,8 +31,8 @@ func (t regexpType) Assignable(ot dgo.Type) bool {
 	return CheckAssignableTo(nil, ot, t)
 }
 
-func (t regexpType) Equals(v interface{}) bool {
-	return t == v
+func (t regexpType) Equals(other interface{}) bool {
+	return t == Value(other)
 }
 
 func (t regexpType) HashCode() dgo.Hash {

@@ -84,6 +84,8 @@ func value(v interface{}, frozen bool) dgo.Value {
 		dv = FromJSONNumber(v)
 	case reflect.Value:
 		dv = ValueFromReflected(v, frozen)
+	case reflect.Type:
+		dv = TypeFromReflected(v)
 	default:
 		if i, ok := ToInt(v); ok {
 			dv = intVal(i)

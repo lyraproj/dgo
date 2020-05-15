@@ -51,7 +51,7 @@ func (t *nativeType) Assignable(other dgo.Type) bool {
 }
 
 func (t *nativeType) Equals(other interface{}) bool {
-	if ot, ok := other.(*nativeType); ok {
+	if ot, ok := Value(other).(*nativeType); ok {
 		return t._rt == ot._rt
 	}
 	return false

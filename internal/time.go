@@ -31,8 +31,8 @@ func (t timeType) Assignable(ot dgo.Type) bool {
 	return CheckAssignableTo(nil, ot, t)
 }
 
-func (t timeType) Equals(v interface{}) bool {
-	return t == v
+func (t timeType) Equals(other interface{}) bool {
+	return t == Value(other)
 }
 
 func (t timeType) HashCode() dgo.Hash {

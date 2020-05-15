@@ -29,8 +29,8 @@ func (t booleanType) Assignable(ot dgo.Type) bool {
 	return ok || CheckAssignableTo(nil, ot, t)
 }
 
-func (t booleanType) Equals(v interface{}) bool {
-	return t == v
+func (t booleanType) Equals(other interface{}) bool {
+	return t == Value(other)
 }
 
 func (t booleanType) HashCode() dgo.Hash {

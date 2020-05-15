@@ -19,7 +19,7 @@ func (t anyType) Assignable(other dgo.Type) bool {
 }
 
 func (t anyType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t anyType) HashCode() dgo.Hash {

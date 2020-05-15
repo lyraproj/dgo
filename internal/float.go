@@ -207,8 +207,7 @@ func (t defaultFloatType) Assignable(other dgo.Type) bool {
 }
 
 func (t defaultFloatType) Equals(other interface{}) bool {
-	_, ok := other.(defaultFloatType)
-	return ok
+	return t == Value(other)
 }
 
 func (t defaultFloatType) HashCode() dgo.Hash {

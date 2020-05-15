@@ -306,7 +306,7 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 // FromReflectedStruct creates a frozen Map from the exported fields of a go struct. It panics if rm's kind is not
 // reflect.Struct.
 func FromReflectedStruct(rv reflect.Value, frozen bool) dgo.Struct {
-	return &structVal{rs: rv, frozen: frozen}
+	return &structVal{native: native{_rv: rv}, frozen: frozen}
 }
 
 // MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries.
@@ -1170,7 +1170,7 @@ func (t defaultMapType) Assignable(other dgo.Type) bool {
 }
 
 func (t defaultMapType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t defaultMapType) HashCode() dgo.Hash {

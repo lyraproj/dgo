@@ -25,7 +25,7 @@ func (t errType) Type() dgo.Type {
 }
 
 func (t errType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t errType) HashCode() dgo.Hash {

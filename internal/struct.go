@@ -10,7 +10,7 @@ import (
 
 type (
 	structVal struct {
-		rs         reflect.Value
+		native
 		fieldCount uint32
 		frozen     bool
 	}
@@ -21,18 +21,18 @@ func (v *structVal) AppendTo(w dgo.Indenter) {
 }
 
 func (v *structVal) All(predicate dgo.EntryPredicate) bool {
-	rv := v.rs
+	rv := &v._rv
 	return findField(v.frozen, rv.Type(), rv, func(e dgo.MapEntry) bool { return !predicate(e) }) == nil
 }
 
-func findField(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.EntryPredicate) dgo.MapEntry {
+func findField(frozen bool, rt reflect.Type, rv *reflect.Value, predicate dgo.EntryPredicate) dgo.MapEntry {
 	for i, n := 0, rt.NumField(); i < n; i++ {
 		f := rt.Field(i)
 		v := rv.Field(i)
 		if f.Anonymous {
 			ft := f.Type
 			if ft.Kind() == reflect.Struct {
-				if me := findField(frozen, ft, v, predicate); me != nil {
+				if me := findField(frozen, ft, &v, predicate); me != nil {
 					return me
 				}
 				continue
@@ -47,7 +47,7 @@ func findField(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.Ent
 }
 
 func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
-	return allKeys(v.rs.Type(), predicate)
+	return allKeys(v.ReflectType(), predicate)
 }
 
 func allKeys(rt reflect.Type, predicate dgo.Predicate) bool {
@@ -70,18 +70,18 @@ func allKeys(rt reflect.Type, predicate dgo.Predicate) bool {
 }
 
 func (v *structVal) AllValues(predicate dgo.Predicate) bool {
-	rv := v.rs
+	rv := &v._rv
 	return allValues(v.frozen, rv.Type(), rv, predicate)
 }
 
-func allValues(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.Predicate) bool {
+func allValues(frozen bool, rt reflect.Type, rv *reflect.Value, predicate dgo.Predicate) bool {
 	for i, n := 0, rt.NumField(); i < n; i++ {
 		f := rt.Field(i)
 		v := rv.Field(i)
 		if f.Anonymous {
 			ft := f.Type
 			if ft.Kind() == reflect.Struct {
-				if !allValues(frozen, ft, v, predicate) {
+				if !allValues(frozen, ft, &v, predicate) {
 					return false
 				}
 				continue
@@ -95,7 +95,7 @@ func allValues(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.Pre
 }
 
 func (v *structVal) Any(predicate dgo.EntryPredicate) bool {
-	rv := v.rs
+	rv := &v._rv
 	return findField(v.frozen, rv.Type(), rv, predicate) != nil
 }
 
@@ -119,7 +119,7 @@ func (v *structVal) AppendAt(key, value interface{}) dgo.Array {
 
 func (v *structVal) ContainsKey(key interface{}) bool {
 	if s, ok := stringKey(key); ok {
-		return v.rs.FieldByName(s).IsValid()
+		return v.FieldByName(s).IsValid()
 	}
 	return false
 }
@@ -135,12 +135,12 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 }
 
 func (v *structVal) Each(actor dgo.Consumer) {
-	rv := v.rs
+	rv := &v._rv
 	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
 func (v *structVal) EachEntry(actor dgo.EntryActor) {
-	rv := v.rs
+	rv := &v._rv
 	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
@@ -161,7 +161,7 @@ func (v *structVal) GoStruct() interface{} {
 	if vm.frozen {
 		vm = vm.ThawedCopy().(*structVal)
 	}
-	return vm.rs.Addr().Interface()
+	return vm.Addr().Interface()
 }
 
 func (v *structVal) deepEqual(seen []dgo.Value, other deepEqual) bool {
@@ -175,7 +175,7 @@ func (v *structVal) HashCode() dgo.Hash {
 func (v *structVal) deepHashCode(seen []dgo.Value) dgo.Hash {
 	hs := make([]int, v.Len())
 	i := 0
-	rv := v.rs
+	rv := &v._rv
 	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool {
 		hs[i] = int(deepHashCode(seen, entry))
 		i++
@@ -199,8 +199,8 @@ func (v *structVal) FrozenCopy() dgo.Value {
 	}
 
 	// Perform a by-value copy of the struct
-	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
-	rs.Set(v.rs)                          // copy v.rs to the zero value
+	rs := reflect.New(v.ReflectType()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v._rv)                             // copy v.rs to the zero value
 
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
@@ -209,13 +209,13 @@ func (v *structVal) FrozenCopy() dgo.Value {
 			ReflectTo(f.FrozenCopy(), ef)
 		}
 	}
-	return &structVal{rs: rs, frozen: true}
+	return &structVal{native: native{_rv: rs}, frozen: true}
 }
 
 func (v *structVal) ThawedCopy() dgo.Value {
 	// Perform a by-value copy of the struct
-	rs := reflect.New(v.rs.Type()).Elem() // create and dereference pointer to a zero value
-	rs.Set(v.rs)                          // copy v.rs to the zero value
+	rs := reflect.New(v.ReflectType()).Elem() // create and dereference pointer to a zero value
+	rs.Set(v._rv)                             // copy v.rs to the zero value
 
 	for i, n := 0, rs.NumField(); i < n; i++ {
 		ef := rs.Field(i)
@@ -224,11 +224,11 @@ func (v *structVal) ThawedCopy() dgo.Value {
 			ReflectTo(f.ThawedCopy(), ef)
 		}
 	}
-	return &structVal{rs: rs, frozen: false}
+	return &structVal{native: native{_rv: rs}, frozen: false}
 }
 
 func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
-	rv := v.rs
+	rv := &v._rv
 	return findField(v.frozen, rv.Type(), rv, predicate)
 }
 
@@ -244,8 +244,7 @@ func stringKey(key interface{}) (string, bool) {
 
 func (v *structVal) Get(key interface{}) dgo.Value {
 	if s, ok := stringKey(key); ok {
-		rv := v.rs
-		fv := rv.FieldByName(s)
+		fv := v.FieldByName(s)
 		if fv.IsValid() {
 			return ValueFromReflected(fv, v.frozen)
 		}
@@ -259,7 +258,7 @@ func (v *structVal) Keys() dgo.Array {
 
 func (v *structVal) Len() int {
 	if v.fieldCount == 0 {
-		v.fieldCount = fieldCount(v.rs.Type())
+		v.fieldCount = fieldCount(v.ReflectType())
 	}
 	return int(v.fieldCount)
 }
@@ -304,15 +303,14 @@ func (v *structVal) Put(key, value interface{}) dgo.Value {
 		panic(frozenMap(`Put`))
 	}
 	if s, ok := stringKey(key); ok {
-		rv := v.rs
-		fv := rv.FieldByName(s)
+		fv := v.FieldByName(s)
 		if fv.IsValid() {
 			old := ValueFromReflected(fv, false)
 			ReflectTo(Value(value), fv)
 			return old
 		}
 	}
-	panic(catch.Error(`%s has no field named '%s'`, v.rs.Type(), key))
+	panic(catch.Error(`%s has no field named '%s'`, v.ReflectType(), key))
 }
 
 func (v *structVal) PutAll(associations dgo.Map) {
@@ -323,15 +321,15 @@ func (v *structVal) ReflectTo(value reflect.Value) {
 	if value.Kind() == reflect.Ptr {
 		if v.frozen {
 			// Don't expose pointer to frozen struct
-			rs := reflect.New(v.rs.Type()) // create pointer to a zero value
-			rs.Elem().Set(v.rs)            // copy v.rs to the zero value
+			rs := reflect.New(v.ReflectType()) // create pointer to a zero value
+			rs.Elem().Set(v._rv)               // copy v.rs to the zero value
 			value.Set(rs)
 		} else {
-			value.Set(v.rs.Addr())
+			value.Set(v.Addr())
 		}
 	} else {
 		// copy struct by value
-		value.Set(v.rs)
+		value.Set(v._rv)
 	}
 }
 
@@ -429,13 +427,9 @@ func (v *structVal) Min() int {
 
 func (v *structVal) New(arg dgo.Value) dgo.Value {
 	m := newMap(v, arg)
-	nv := &structVal{rs: reflect.New(v.rs.Type()).Elem()}
+	nv := &structVal{native: native{_rv: reflect.New(v.ReflectType()).Elem()}}
 	nv.PutAll(m)
 	return nv
-}
-
-func (v *structVal) ReflectType() reflect.Type {
-	return v.rs.Type()
 }
 
 func (v *structVal) TypeIdentifier() dgo.TypeIdentifier {

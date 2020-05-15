@@ -80,7 +80,7 @@ func (t defaultDgoStringType) Type() dgo.Type {
 }
 
 func (t defaultDgoStringType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t defaultDgoStringType) HashCode() dgo.Hash {
@@ -197,7 +197,7 @@ func (t defaultStringType) Assignable(other dgo.Type) bool {
 }
 
 func (t defaultStringType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t defaultStringType) HashCode() dgo.Hash {

@@ -134,7 +134,7 @@ func (t defaultArrayType) ElementType() dgo.Type {
 }
 
 func (t defaultArrayType) Equals(other interface{}) bool {
-	return t == other
+	return t == Value(other)
 }
 
 func (t defaultArrayType) HashCode() dgo.Hash {
