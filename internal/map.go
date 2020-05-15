@@ -227,17 +227,18 @@ func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 			m.frozen = false
 			return m
 		}
-		rm := reflect.ValueOf(a0)
-		switch rm.Kind() {
-		case reflect.Map:
-			return FromReflectedMap(rm, frozen).(dgo.Map)
-		case reflect.Ptr:
-			re := rm.Elem()
-			if re.Kind() == reflect.Struct {
-				return FromReflectedStruct(re, frozen)
+		if rm, ok := toReflected(a0); ok {
+			switch rm.Kind() {
+			case reflect.Map:
+				return FromReflectedMap(*rm, frozen).(dgo.Map)
+			case reflect.Ptr:
+				re := rm.Elem()
+				if re.Kind() == reflect.Struct {
+					return FromReflectedStruct(re, frozen)
+				}
+			case reflect.Struct:
+				return FromReflectedStruct(*rm, frozen)
 			}
-		case reflect.Struct:
-			return FromReflectedStruct(rm, frozen)
 		}
 		panic(catch.Error(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:

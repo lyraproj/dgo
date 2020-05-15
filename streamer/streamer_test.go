@@ -248,11 +248,11 @@ func (v *testNamed) HashCode() dgo.Hash {
 func TestEncode_namedUsingMap(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
-		sm := vf.MutableMap(&testNamed{}).(dgo.Struct)
-		sm.PutAll(arg.(dgo.Map))
-		return sm.GoStruct().(dgo.Value)
+		m := arg.(dgo.Map)
+		return &testNamed{A: m.Get(`A`).(dgo.String).GoString(), B: m.Get(`B`).(dgo.Integer).GoInt()}
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Map(value)
+		tn := value.(*testNamed)
+		return vf.Map(`A`, tn.A, `B`, tn.B)
 	}, reflect.TypeOf(&testNamed{}), nil, nil)
 
 	arg := vf.Map(`A`, `hello`, `B`, 32)
@@ -298,11 +298,11 @@ func TestEncode_namedUsingValue(t *testing.T) {
 func TestEncode_named_notRich(t *testing.T) {
 	defer tf.RemoveNamed(`testNamed`)
 	tp := tf.NewNamed(`testNamed`, func(arg dgo.Value) dgo.Value {
-		sm := vf.MutableMap(&testNamed{}).(dgo.Struct)
-		sm.PutAll(arg.(dgo.Map))
-		return sm.GoStruct().(dgo.Value)
+		a := arg.(dgo.Map)
+		return &testNamed{A: a.Get(`A`).(dgo.String).GoString(), B: a.Get(`B`).(dgo.Integer).GoInt()}
 	}, func(value dgo.Value) dgo.Value {
-		return vf.Map(value)
+		v := value.(*testNamed)
+		return vf.Values(v.A, v.B)
 	}, reflect.TypeOf(&testNamed{}), nil, nil)
 
 	arg := vf.Map(`A`, `hello`, `B`, 32)
