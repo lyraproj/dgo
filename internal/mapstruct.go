@@ -65,6 +65,40 @@ func createExactMap(keys, values []dgo.Value) dgo.StructMapType {
 	return m.Type().(dgo.StructMapType)
 }
 
+// StructMapTypeFromReflected creates a StructMapType from a given reflect.Type. The given type must be
+// of kind reflect.Struct or a reflect.Ptr with element kind relfect.Struct
+func StructMapTypeFromReflected(rt reflect.Type) dgo.StructMapType {
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+	if rt.Kind() != reflect.Struct {
+		panic(illegalArgument(`StructMapTypeFromReflected`, `*struct|struct`, []interface{}{rt}, 0))
+	}
+	return StructMapType(false, appendStructMapEntries(rt, make([]dgo.StructMapEntry, 0, rt.NumField())))
+}
+
+func appendStructMapEntries(rt reflect.Type, entries []dgo.StructMapEntry) []dgo.StructMapEntry {
+	cnt := rt.NumField()
+	for i := 0; i < cnt; i++ {
+		fld := rt.Field(i)
+		flt := fld.Type
+		if fld.Anonymous {
+			if flt.Kind() == reflect.Struct {
+				entries = appendStructMapEntries(flt, entries)
+				continue
+			}
+		}
+		ft := TypeFromReflected(fld.Type)
+		rq := true
+		switch fld.Type.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Chan, reflect.Func:
+			rq = false
+		}
+		entries = append(entries, StructMapEntry(String(fld.Name), ft, rq))
+	}
+	return entries
+}
+
 // StructMapType returns a new StructMapType type built from the given StructMapEntries.
 func StructMapType(additional bool, entries []dgo.StructMapEntry) dgo.StructMapType {
 	t := StructMapTypeUnresolved(additional, entries)

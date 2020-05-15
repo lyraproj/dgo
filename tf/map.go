@@ -1,6 +1,8 @@
 package tf
 
 import (
+	"reflect"
+
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
 )
@@ -24,4 +26,10 @@ func StructMap(additional bool, entries ...dgo.StructMapEntry) dgo.StructMapType
 // StructMapFromMap returns a new type built from a map[string](dgo|type|{type:dgo|type,required?:bool,...})
 func StructMapFromMap(additional bool, entries dgo.Map) dgo.StructMapType {
 	return internal.StructMapTypeFromMap(additional, entries)
+}
+
+// StructMapTypeFromReflected creates a StructMapType from a given reflect.Type. The given type must be
+// of kind reflect.Struct or a reflect.Ptr with element kind relfect.Struct
+func StructMapTypeFromReflected(rt reflect.Type) dgo.StructMapType {
+	return internal.StructMapTypeFromReflected(rt)
 }

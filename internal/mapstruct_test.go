@@ -254,6 +254,36 @@ func TestStructType(t *testing.T) {
 	assert.True(t, reflect.ValueOf(map[string]int64{}).Type().AssignableTo(tps.ReflectType()))
 }
 
+func TestStructMapTypeFromReflected(t *testing.T) {
+	type st struct {
+		Host string
+		Port int
+	}
+	tp := tf.StructMapTypeFromReflected(reflect.TypeOf(&st{}))
+	m := vf.Map(&st{Host: `example.com`, Port: 22})
+	assert.Instance(t, tp, m)
+}
+
+func TestStructMapTypeFromReflected_embedded(t *testing.T) {
+	type st struct {
+		Host string
+		Port int
+	}
+	type stv struct {
+		st
+		Creds *string
+	}
+
+	tp := tf.StructMapTypeFromReflected(reflect.TypeOf(&stv{}))
+	c := `a:b`
+	m := vf.Map(&stv{st: st{Host: `example.com`, Port: 22}, Creds: &c})
+	assert.Instance(t, tp, m)
+}
+
+func TestStructMapTypeFromReflected_badType(t *testing.T) {
+	assert.Panic(t, func() { tf.StructMapTypeFromReflected(reflect.TypeOf(32)) }, `illegal argument for StructMapTypeFromReflected`)
+}
+
 func TestStructEntry(t *testing.T) {
 	tp := tf.StructMapEntry(`a`, typ.String, true)
 	assert.Equal(t, tp, tf.StructMapEntry(`a`, typ.String, true))

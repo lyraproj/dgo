@@ -10,8 +10,9 @@ import (
 
 type (
 	structVal struct {
-		rs     reflect.Value
-		frozen bool
+		rs         reflect.Value
+		fieldCount uint32
+		frozen     bool
 	}
 )
 
@@ -21,20 +22,47 @@ func (v *structVal) AppendTo(w dgo.Indenter) {
 
 func (v *structVal) All(predicate dgo.EntryPredicate) bool {
 	rv := v.rs
-	rt := rv.Type()
+	return findField(v.frozen, rv.Type(), rv, func(e dgo.MapEntry) bool { return !predicate(e) }) == nil
+}
+
+func findField(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.EntryPredicate) dgo.MapEntry {
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		if !predicate(&mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i), v.frozen)}) {
-			return false
+		f := rt.Field(i)
+		v := rv.Field(i)
+		if f.Anonymous {
+			ft := f.Type
+			if ft.Kind() == reflect.Struct {
+				if me := findField(frozen, ft, v, predicate); me != nil {
+					return me
+				}
+				continue
+			}
+		}
+		me := &mapEntry{&hstring{string: f.Name}, ValueFromReflected(v, frozen)}
+		if predicate(me) {
+			return me
 		}
 	}
-	return true
+	return nil
 }
 
 func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
-	rv := v.rs
-	rt := rv.Type()
+	return allKeys(v.rs.Type(), predicate)
+}
+
+func allKeys(rt reflect.Type, predicate dgo.Predicate) bool {
 	for i, n := 0, rt.NumField(); i < n; i++ {
-		if !predicate(&hstring{string: rt.Field(i).Name}) {
+		f := rt.Field(i)
+		if f.Anonymous {
+			ft := f.Type
+			if ft.Kind() == reflect.Struct {
+				if !allKeys(ft, predicate) {
+					return false
+				}
+				continue
+			}
+		}
+		if !predicate(&hstring{string: f.Name}) {
 			return false
 		}
 	}
@@ -43,8 +71,23 @@ func (v *structVal) AllKeys(predicate dgo.Predicate) bool {
 
 func (v *structVal) AllValues(predicate dgo.Predicate) bool {
 	rv := v.rs
-	for i, n := 0, rv.NumField(); i < n; i++ {
-		if !predicate(ValueFromReflected(rv.Field(i), v.frozen)) {
+	return allValues(v.frozen, rv.Type(), rv, predicate)
+}
+
+func allValues(frozen bool, rt reflect.Type, rv reflect.Value, predicate dgo.Predicate) bool {
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		f := rt.Field(i)
+		v := rv.Field(i)
+		if f.Anonymous {
+			ft := f.Type
+			if ft.Kind() == reflect.Struct {
+				if !allValues(frozen, ft, v, predicate) {
+					return false
+				}
+				continue
+			}
+		}
+		if !predicate(ValueFromReflected(rv.Field(i), frozen)) {
 			return false
 		}
 	}
@@ -52,7 +95,8 @@ func (v *structVal) AllValues(predicate dgo.Predicate) bool {
 }
 
 func (v *structVal) Any(predicate dgo.EntryPredicate) bool {
-	return !v.All(func(entry dgo.MapEntry) bool { return !predicate(entry) })
+	rv := v.rs
+	return findField(v.frozen, rv.Type(), rv, predicate) != nil
 }
 
 func (v *structVal) AnyKey(predicate dgo.Predicate) bool {
@@ -91,11 +135,13 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 }
 
 func (v *structVal) Each(actor dgo.Consumer) {
-	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
+	rv := v.rs
+	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
 func (v *structVal) EachEntry(actor dgo.EntryActor) {
-	v.All(func(entry dgo.MapEntry) bool { actor(entry); return true })
+	rv := v.rs
+	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
 func (v *structVal) EachKey(actor dgo.Consumer) {
@@ -129,9 +175,11 @@ func (v *structVal) HashCode() dgo.Hash {
 func (v *structVal) deepHashCode(seen []dgo.Value) dgo.Hash {
 	hs := make([]int, v.Len())
 	i := 0
-	v.EachEntry(func(e dgo.MapEntry) {
-		hs[i] = int(deepHashCode(seen, e))
+	rv := v.rs
+	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool {
+		hs[i] = int(deepHashCode(seen, entry))
 		i++
+		return false
 	})
 	sort.Ints(hs)
 	h := dgo.Hash(1)
@@ -181,14 +229,7 @@ func (v *structVal) ThawedCopy() dgo.Value {
 
 func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 	rv := v.rs
-	rt := rv.Type()
-	for i, n := 0, rt.NumField(); i < n; i++ {
-		e := &mapEntry{&hstring{string: rt.Field(i).Name}, ValueFromReflected(rv.Field(i), v.frozen)}
-		if predicate(e) {
-			return e
-		}
-	}
-	return nil
+	return findField(v.frozen, rv.Type(), rv, predicate)
 }
 
 func stringKey(key interface{}) (string, bool) {
@@ -217,7 +258,26 @@ func (v *structVal) Keys() dgo.Array {
 }
 
 func (v *structVal) Len() int {
-	return v.rs.NumField()
+	if v.fieldCount == 0 {
+		v.fieldCount = fieldCount(v.rs.Type())
+	}
+	return int(v.fieldCount)
+}
+
+func fieldCount(rt reflect.Type) uint32 {
+	t := uint32(0)
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		f := rt.Field(i)
+		if f.Anonymous {
+			ft := f.Type
+			if ft.Kind() == reflect.Struct {
+				t += fieldCount(ft)
+				continue
+			}
+		}
+		t++
+	}
+	return t
 }
 
 func (v *structVal) Map(mapper dgo.EntryMapper) dgo.Map {

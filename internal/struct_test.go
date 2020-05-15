@@ -49,9 +49,12 @@ func TestStruct_Any(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
-		Third  string
 	}
-	m := vf.Map(&structA{1, 2.0, `three`})
+	type structB struct {
+		structA
+		Third string
+	}
+	m := vf.Map(&structB{structA{1, 2.0}, `three`})
 	assert.False(t, m.Any(func(e dgo.MapEntry) bool {
 		return e.Key().Equals(`Fourth`)
 	}))
@@ -64,9 +67,12 @@ func TestStruct_AllKeys(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
-		Third  string
 	}
-	m := vf.Map(&structA{1, 2.0, `three`})
+	type structB struct {
+		structA
+		Third string
+	}
+	m := vf.Map(&structB{structA{1, 2.0}, `three`})
 	assert.False(t, m.AllKeys(func(k dgo.Value) bool {
 		return len(k.String()) == 5
 	}))
@@ -79,14 +85,20 @@ func TestStruct_AnyKey(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
-		Third  string
 	}
-	m := vf.Map(&structA{1, 2.0, `three`})
+	type structB struct {
+		structA
+		Third string
+	}
+	m := vf.Map(&structB{structA{1, 2.0}, `three`})
 	assert.False(t, m.AnyKey(func(k dgo.Value) bool {
 		return k.Equals(`Fourth`)
 	}))
 	assert.True(t, m.AnyKey(func(k dgo.Value) bool {
 		return k.Equals(`Second`)
+	}))
+	assert.True(t, m.AnyKey(func(k dgo.Value) bool {
+		return k.Equals(`Third`)
 	}))
 }
 
@@ -94,14 +106,20 @@ func TestStruct_AnyValue(t *testing.T) {
 	type structA struct {
 		First  int
 		Second float64
-		Third  string
 	}
-	m := vf.Map(&structA{1, 2.0, `three`})
+	type structB struct {
+		structA
+		Third string
+	}
+	m := vf.Map(&structB{structA{1, 2.0}, `three`})
 	assert.False(t, m.AnyValue(func(v dgo.Value) bool {
 		return v.Equals(`four`)
 	}))
 	assert.True(t, m.AnyValue(func(v dgo.Value) bool {
 		return v.Equals(`three`)
+	}))
+	assert.True(t, m.AnyValue(func(v dgo.Value) bool {
+		return v.Equals(1)
 	}))
 }
 
@@ -125,9 +143,14 @@ func TestStruct_ContainsKey(t *testing.T) {
 		First  int
 		Second float64
 	}
-	m := vf.Map(&structA{})
+	type structB struct {
+		structA
+		Third string
+	}
+	m := vf.Map(&structB{})
 	assert.True(t, m.ContainsKey(`First`))
-	assert.False(t, m.ContainsKey(`Third`))
+	assert.True(t, m.ContainsKey(`Third`))
+	assert.False(t, m.ContainsKey(`Fourth`))
 	assert.False(t, m.ContainsKey(1))
 }
 
