@@ -10,14 +10,18 @@ import (
 // IllegalAssignment returns the error that represents an assignment type constraint mismatch
 func IllegalAssignment(t dgo.Type, v dgo.Value) error {
 	var what string
-	switch actual := v.Type().(type) {
-	case *hstring:
-		what = fmt.Sprintf(`the string %q`, actual.string)
-	default:
-		if dgo.IsExact(actual) {
-			what = fmt.Sprintf(`the value %v`, actual)
-		} else {
-			what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
+	if v == nil {
+		what = `nil`
+	} else {
+		switch actual := v.Type().(type) {
+		case *hstring:
+			what = fmt.Sprintf(`the string %q`, actual.string)
+		default:
+			if dgo.IsExact(actual) {
+				what = fmt.Sprintf(`the value %v`, actual)
+			} else {
+				what = fmt.Sprintf(`a value of type %s`, TypeString(actual))
+			}
 		}
 	}
 	return catch.Error("%v cannot be assigned to a variable of type %s", what, TypeString(t))

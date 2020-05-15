@@ -18,6 +18,11 @@ func TestIllegalAssignment(t *testing.T) {
 	assert.Equal(t, `the value 3 cannot be assigned to a variable of type string`, v.Error())
 }
 
+func TestIllegalAssignment_nil(t *testing.T) {
+	v := tf.IllegalAssignment(typ.String, nil)
+	assert.Equal(t, `nil cannot be assigned to a variable of type string`, v.Error())
+}
+
 func TestIllegalSize(t *testing.T) {
 	v := tf.IllegalSize(tf.String(1, 10), 12)
 	assert.Equal(t, v, tf.IllegalSize(tf.String(1, 10), 12))
