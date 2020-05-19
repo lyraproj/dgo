@@ -24,12 +24,12 @@ func WrapSlice(slice []dgo.Value) dgo.Array {
 // Values returns a frozen dgo.Array that represents the given values. All values
 // are guaranteed to be frozen.
 func Values(values ...interface{}) dgo.Array {
-	return internal.Values(values)
+	return internal.Values(values...)
 }
 
 // MutableValues returns a dgo.Array that represents the given values
 func MutableValues(values ...interface{}) dgo.Array {
-	return internal.MutableValues(values)
+	return internal.MutableValues(values...)
 }
 
 // Strings returns a frozen dgo.Array that represents the given strings
@@ -44,7 +44,7 @@ func Integers(values ...int) dgo.Array {
 
 // Arguments returns an immutable Arguments instance that represents the given values
 func Arguments(values ...interface{}) dgo.Arguments {
-	return internal.Arguments(values)
+	return internal.Arguments(values...)
 }
 
 // ArgumentsFromArray returns an Arguments instance backed by the given array

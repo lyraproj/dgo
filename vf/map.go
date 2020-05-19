@@ -16,13 +16,13 @@ import (
 //
 // An even number of arguments: will be considered a flat list of key, value [, key, value, ... ]
 func Map(m ...interface{}) dgo.Map {
-	return internal.Map(m)
+	return internal.Map(m...)
 }
 
 // MutableMap creates an empty dgo.Map. The map can be optionally constrained
 // by the given type which can be nil, the zero value of a go map, or a dgo.MapType
 func MutableMap(m ...interface{}) dgo.Map {
-	return internal.MutableMap(m)
+	return internal.MutableMap(m...)
 }
 
 // MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries.

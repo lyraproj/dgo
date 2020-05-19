@@ -176,7 +176,7 @@ var emptyMap = &hashMap{frozen: true}
 // One element: must be a go map, a go struct, or an Array with an even number of elements.
 //
 // An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
-func Map(args []interface{}) dgo.Map {
+func Map(args ...interface{}) dgo.Map {
 	return mapFromArgs(args, true)
 }
 
@@ -188,7 +188,7 @@ func Map(args []interface{}) dgo.Map {
 // One element: must be a go map, a go struct, or an Array with an even number of elements.
 //
 // An even number of elements: will be considered a flat list of key, value [, key, value, ... ]
-func MutableMap(args []interface{}) dgo.Map {
+func MutableMap(args ...interface{}) dgo.Map {
 	return mapFromArgs(args, false)
 }
 
@@ -234,18 +234,18 @@ func mapFromArgs(args []interface{}, frozen bool) dgo.Map {
 			case reflect.Ptr:
 				re := rm.Elem()
 				if re.Kind() == reflect.Struct {
-					return FromReflectedStruct(re, frozen)
+					return Struct(re, frozen)
 				}
 			case reflect.Struct:
-				return FromReflectedStruct(*rm, frozen)
+				return Struct(*rm, frozen)
 			}
 		}
 		panic(catch.Error(`illegal argument: %t is not a map, a struct, or an array with even number of elements`, a0))
 	case l%2 == 0:
 		if frozen {
-			return Values(args).ToMap()
+			return Values(args...).ToMap()
 		}
-		return MutableValues(args).ToMap()
+		return MutableValues(args...).ToMap()
 	default:
 		panic(catch.Error(`the number of arguments to Map must be 1 or an even number, got: %d`, l))
 	}
@@ -302,12 +302,6 @@ func FromReflectedMap(rm reflect.Value, frozen bool) dgo.Value {
 		tbl[hk] = hn
 	}
 	return m
-}
-
-// FromReflectedStruct creates a frozen Map from the exported fields of a go struct. It panics if rm's kind is not
-// reflect.Struct.
-func FromReflectedStruct(rv reflect.Value, frozen bool) dgo.Struct {
-	return &structVal{native: native{_rv: rv}, frozen: frozen}
 }
 
 // MapWithCapacity creates an empty dgo.Map suitable to hold a given number of entries.
@@ -383,7 +377,7 @@ func (g *hashMap) AppendAt(key, value interface{}) dgo.Array {
 	if a, ok = e.value.(dgo.Array); ok {
 		a.Add(value)
 	} else {
-		a = MutableValues([]interface{}{value})
+		a = MutableValues(value)
 		e.value = a
 	}
 	return a
@@ -709,7 +703,7 @@ func (g *hashMap) ReflectTo(value reflect.Value) {
 		ht = ht.Elem()
 		if ht.Kind() == reflect.Struct {
 			v := value.Elem()
-			s := FromReflectedStruct(v, false)
+			s := Struct(v, false)
 			s.PutAll(g)
 			return
 		}

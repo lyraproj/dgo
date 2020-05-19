@@ -11,10 +11,15 @@ import (
 type (
 	structVal struct {
 		native
-		fieldCount uint32
-		frozen     bool
+		frozen bool
 	}
 )
+
+// Struct creates a dgo.Struct which implements the dgo.Map interface backed by the given go struct. It panics if
+// rm's kind is not reflect.Struct.
+func Struct(rs reflect.Value, frozen bool) dgo.Struct {
+	return &structVal{native: native{_rv: rs}, frozen: frozen}
+}
 
 func (v *structVal) AppendTo(w dgo.Indenter) {
 	appendMapTo(v, w)
@@ -22,23 +27,23 @@ func (v *structVal) AppendTo(w dgo.Indenter) {
 
 func (v *structVal) All(predicate dgo.EntryPredicate) bool {
 	rv := &v._rv
-	return findField(v.frozen, rv.Type(), rv, func(e dgo.MapEntry) bool { return !predicate(e) }) == nil
+	return v.findField(rv.Type(), rv, func(e dgo.MapEntry) bool { return !predicate(e) }) == nil
 }
 
-func findField(frozen bool, rt reflect.Type, rv *reflect.Value, predicate dgo.EntryPredicate) dgo.MapEntry {
+func (v *structVal) findField(rt reflect.Type, rv *reflect.Value, predicate dgo.EntryPredicate) dgo.MapEntry {
 	for i, n := 0, rt.NumField(); i < n; i++ {
 		f := rt.Field(i)
-		v := rv.Field(i)
+		fv := rv.Field(i)
 		if f.Anonymous {
 			ft := f.Type
 			if ft.Kind() == reflect.Struct {
-				if me := findField(frozen, ft, &v, predicate); me != nil {
+				if me := v.findField(ft, &fv, predicate); me != nil {
 					return me
 				}
 				continue
 			}
 		}
-		me := &mapEntry{&hstring{string: f.Name}, ValueFromReflected(v, frozen)}
+		me := &mapEntry{String(f.Name), ValueFromReflected(fv, v.frozen)}
 		if predicate(me) {
 			return me
 		}
@@ -62,7 +67,7 @@ func allKeys(rt reflect.Type, predicate dgo.Predicate) bool {
 				continue
 			}
 		}
-		if !predicate(&hstring{string: f.Name}) {
+		if !predicate(String(f.Name)) {
 			return false
 		}
 	}
@@ -96,7 +101,7 @@ func allValues(frozen bool, rt reflect.Type, rv *reflect.Value, predicate dgo.Pr
 
 func (v *structVal) Any(predicate dgo.EntryPredicate) bool {
 	rv := &v._rv
-	return findField(v.frozen, rv.Type(), rv, predicate) != nil
+	return v.findField(rv.Type(), rv, predicate) != nil
 }
 
 func (v *structVal) AnyKey(predicate dgo.Predicate) bool {
@@ -112,13 +117,24 @@ func (v *structVal) AppendAt(key, value interface{}) dgo.Array {
 		a.Add(value)
 		return a
 	}
-	a := MutableValues([]interface{}{value})
+	a := MutableValues(value)
 	v.Put(key, a)
 	return a
 }
 
+func stringKey(key interface{}) string {
+	s := ``
+	switch key := key.(type) {
+	case string:
+		s = key
+	case dgo.String:
+		s = key.GoString()
+	}
+	return s
+}
+
 func (v *structVal) ContainsKey(key interface{}) bool {
-	if s, ok := stringKey(key); ok {
+	if s := stringKey(key); s != `` {
 		return v.FieldByName(s).IsValid()
 	}
 	return false
@@ -136,12 +152,12 @@ func (v *structVal) Copy(frozen bool) dgo.Map {
 
 func (v *structVal) Each(actor dgo.Consumer) {
 	rv := &v._rv
-	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
+	v.findField(rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
 func (v *structVal) EachEntry(actor dgo.EntryActor) {
 	rv := &v._rv
-	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
+	v.findField(rv.Type(), rv, func(entry dgo.MapEntry) bool { actor(entry); return false })
 }
 
 func (v *structVal) EachKey(actor dgo.Consumer) {
@@ -176,7 +192,7 @@ func (v *structVal) deepHashCode(seen []dgo.Value) dgo.Hash {
 	hs := make([]int, v.Len())
 	i := 0
 	rv := &v._rv
-	findField(v.frozen, rv.Type(), rv, func(entry dgo.MapEntry) bool {
+	v.findField(rv.Type(), rv, func(entry dgo.MapEntry) bool {
 		hs[i] = int(deepHashCode(seen, entry))
 		i++
 		return false
@@ -209,7 +225,7 @@ func (v *structVal) FrozenCopy() dgo.Value {
 			ReflectTo(f.FrozenCopy(), ef)
 		}
 	}
-	return &structVal{native: native{_rv: rs}, frozen: true}
+	return Struct(rs, true)
 }
 
 func (v *structVal) ThawedCopy() dgo.Value {
@@ -224,26 +240,16 @@ func (v *structVal) ThawedCopy() dgo.Value {
 			ReflectTo(f.ThawedCopy(), ef)
 		}
 	}
-	return &structVal{native: native{_rv: rs}, frozen: false}
+	return Struct(rs, false)
 }
 
 func (v *structVal) Find(predicate dgo.EntryPredicate) dgo.MapEntry {
 	rv := &v._rv
-	return findField(v.frozen, rv.Type(), rv, predicate)
-}
-
-func stringKey(key interface{}) (string, bool) {
-	if hs, ok := key.(*hstring); ok {
-		return hs.string, true
-	}
-	if s, ok := key.(string); ok {
-		return s, true
-	}
-	return ``, false
+	return v.findField(rv.Type(), rv, predicate)
 }
 
 func (v *structVal) Get(key interface{}) dgo.Value {
-	if s, ok := stringKey(key); ok {
+	if s := stringKey(key); s != `` {
 		fv := v.FieldByName(s)
 		if fv.IsValid() {
 			return ValueFromReflected(fv, v.frozen)
@@ -257,26 +263,7 @@ func (v *structVal) Keys() dgo.Array {
 }
 
 func (v *structVal) Len() int {
-	if v.fieldCount == 0 {
-		v.fieldCount = fieldCount(v.ReflectType())
-	}
-	return int(v.fieldCount)
-}
-
-func fieldCount(rt reflect.Type) uint32 {
-	t := uint32(0)
-	for i, n := 0, rt.NumField(); i < n; i++ {
-		f := rt.Field(i)
-		if f.Anonymous {
-			ft := f.Type
-			if ft.Kind() == reflect.Struct {
-				t += fieldCount(ft)
-				continue
-			}
-		}
-		t++
-	}
-	return t
+	return getTags(v.ReflectType()).fieldCount()
 }
 
 func (v *structVal) Map(mapper dgo.EntryMapper) dgo.Map {
@@ -302,15 +289,20 @@ func (v *structVal) Put(key, value interface{}) dgo.Value {
 	if v.frozen {
 		panic(frozenMap(`Put`))
 	}
-	if s, ok := stringKey(key); ok {
-		fv := v.FieldByName(s)
+	n, tp := getTags(v.ReflectType()).fieldType(key)
+	if n != `` {
+		fv := v.FieldByName(n)
 		if fv.IsValid() {
+			v := Value(value)
+			if !(tp == nil || tp.Instance(v)) {
+				panic(IllegalAssignment(tp, v))
+			}
 			old := ValueFromReflected(fv, false)
-			ReflectTo(Value(value), fv)
+			ReflectTo(v, fv)
 			return old
 		}
 	}
-	panic(catch.Error(`%s has no field named '%s'`, v.ReflectType(), key))
+	panic(catch.Error(`%s has no field named '%v'`, v.ReflectType(), key))
 }
 
 func (v *structVal) PutAll(associations dgo.Map) {
@@ -427,7 +419,7 @@ func (v *structVal) Min() int {
 
 func (v *structVal) New(arg dgo.Value) dgo.Value {
 	m := newMap(v, arg)
-	nv := &structVal{native: native{_rv: reflect.New(v.ReflectType()).Elem()}}
+	nv := Struct(reflect.New(v.ReflectType()).Elem(), false)
 	nv.PutAll(m)
 	return nv
 }

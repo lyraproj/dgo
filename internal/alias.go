@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	alias struct {
+	aliasType struct {
 		dgo.StringType
 	}
 
@@ -77,14 +77,14 @@ func NewCall(s dgo.Type, args dgo.Arguments) dgo.Type {
 
 // NewAlias creates a special interim type that represents a type alias used during parsing, and then nowhere else.
 func NewAlias(s dgo.String) dgo.Alias {
-	return &alias{s.Type().(dgo.StringType)}
+	return &aliasType{s.Type().(dgo.StringType)}
 }
 
-func (a *alias) Reference() dgo.String {
+func (a *aliasType) Reference() dgo.String {
 	return a.StringType.(dgo.String)
 }
 
-func (a *alias) TypeIdentifier() dgo.TypeIdentifier {
+func (a *aliasType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiAlias
 }
 

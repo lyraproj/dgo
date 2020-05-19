@@ -88,6 +88,19 @@ are not frozen as a consequence of the call.
 A frozen object can never be unfrozen. The only way to resume mutability is to do `Copy(false)` which returns a
 mutable copy.
 
+## Extend the type of struct fields using tags
+A Go struct can be accessed like a `dgo.Map` and the dgo type of the fields of a struct can be set using
+go field tags, e.g.
+
+```go
+type Example struct {
+  A map[string]string `dgo:"map[string]/^[a-z].*/"` // map of strings where the first character is a-z
+  B int `dgo:"0..999"` // map of integers in the inclusive range 0 to 999
+}
+```
+
+The type declared in the dgo tag must be assignable to the actual field type.
+
 ## Serialization
 Support for JSON is built in to the Dgo module. Support for [gob](https://golang.org/pkg/encoding/gob/) is in
 the pipeline.
@@ -144,13 +157,6 @@ We value your opinion very much. Please don't hesitate to reach out. Opinions, i
 than welcome. Create an [issue](../../issues), or file a [PR](../../pulls). 
 
 ## Pipeline
-- dgo annotations for go struct members, e.g.
-    ```go
-    type Input struct {
-      Variables map[string]interface{} `dgo:"map[string]dgo"`
-      Parameters map[string]interface{} `dgo:"map[string]{name: string[1], type: dgo, required?: bool}"`
-    }
-    ```
 - Go [gob](https://golang.org/pkg/encoding/gob/) support to enable full binary exchange of values and types.
 - Distributed type aliases (aliases using URI reference)
 - Type extension, i.e. how a type such as a map with explicit associations can be extended by another type.

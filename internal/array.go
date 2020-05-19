@@ -361,7 +361,7 @@ func WrapSlice(values []dgo.Value) dgo.Array {
 }
 
 // MutableValues returns a frozen dgo.Array that represents the given values
-func MutableValues(values []interface{}) dgo.Array {
+func MutableValues(values ...interface{}) dgo.Array {
 	cp := make([]dgo.Value, len(values))
 	for i := range values {
 		cp[i] = Value(values[i])
@@ -418,7 +418,7 @@ func Strings(values []string) dgo.Array {
 }
 
 // Values returns a frozen dgo.Array that represents the given values
-func Values(values []interface{}) dgo.Array {
+func Values(values ...interface{}) dgo.Array {
 	return &arrayFrozen{array{slice: valueSlice(values, true)}}
 }
 

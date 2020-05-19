@@ -9,8 +9,8 @@ type arguments struct {
 }
 
 // Arguments returns an immutable Arguments instance that represents the given slice
-func Arguments(values []interface{}) dgo.Arguments {
-	return ArgumentsFromArray(Values(values))
+func Arguments(values ...interface{}) dgo.Arguments {
+	return ArgumentsFromArray(Values(values...))
 }
 
 // ArgumentsFromArray returns an Arguments instance backed by the given array
