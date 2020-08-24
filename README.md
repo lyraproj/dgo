@@ -10,12 +10,6 @@ Dgo's main objectives are: Type Constraints, Immutability, Collections, Serializ
 and Performance. It is designed to make working with dynamic values an effortless and type safe task.
 
 ## Install
-Dgo is a go module and if the Go version is < 1.13, go modules must be enabled. This is done by setting the environment
-variable GO111MODULE=on before an attempt is made to install:
-```sh
-export GO111MODULE=on
-```
-### Using dgo as a library
 To use dgo, first install the latest version of the library:
 ```sh
 go get github.com/lyraproj/dgo
@@ -33,8 +27,8 @@ import (
 ## Type Constraints
 
 ### Dgo types versus Go's native types
-Go is a typed language but the types are not very descriptive. It is for instance not possible to declare a type
-that corresponds only to a specific range of integers, a string that must confirm to a specific pattern. All such
+Go is a typed language, but the types are not very descriptive. It is for instance not possible to declare a type
+that corresponds only to a specific range of integers, or a string that must confirm to a specific pattern. All such
 constraints must be expressed as code wherever a value of the type is assigned. In dgo a type describing a range
 of integers can be declared as `0..15` and a pattern constrained string can be declared as `/^[a-z]+$/`.
 
@@ -56,8 +50,8 @@ Dgo is influenced by restrictive type constraint languages such as:
 - [Puppet Types](/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md)
 
 ### Language syntax
-Dgo defines a [type language of its own](docs/types.md) which is designed to be close to Go itself. A parser
-and a stringifier are provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
+Dgo defines a [type language of its own](docs/types.md) which is close to Go itself. A parser and a stringifier are
+provided for this syntax. New parsers and stringifiers can be added to support other syntaxes. 
 
 ### Type Assignability
 As with go reflect, types can be compared for assignability. A type is assignable from another type if the other
@@ -76,13 +70,9 @@ to `string`, `string[5]`, `string[0,10]`, `"hello"|"goodbye"`, but it is not ass
 `"hi"|"bye"`. In other words, the value type is assignable to another type if the value that it represents is an
 instance of that other type.
 
-#### Collection types
-The type of a collection is just a cast of the collection itself and hence, will change dynamically when the collection
-is modified.
-
 ## Immutability
 
-Non primitives in Go (array, slice, map, struct) are mutable and it's the programmers responsibility to ensure that
+Non primitives in Go (array, slice, map, struct) are mutable, and it's the programmer's responsibility to ensure that
 access to such values are synchronized when they are accessed from multiple go routines.
 
 Dgo guarantees that all values can be 100% immutable by exposing all values through interfaces and hiding the
@@ -99,8 +89,7 @@ A frozen object can never be unfrozen. The only way to resume mutability is to d
 mutable copy.
 
 ## Serialization
-Support for JSON is built in to Dgo. YAML support is provided by the [dgoyaml](https://github.com/lyraproj/dgoyaml)
-module which also provides a CLI validate parameter types. Support for [gob](https://golang.org/pkg/encoding/gob/) is in
+Support for JSON is built in to the Dgo module. Support for [gob](https://golang.org/pkg/encoding/gob/) is in
 the pipeline.
 
 Transformations between dgo and [cty](https://github.com/zclconf/go-cty) is provided by the
@@ -152,8 +141,7 @@ type hstring struct {
 
 ## How to get involved
 We value your opinion very much. Please don't hesitate to reach out. Opinions, ideas, and contributions are more
-than welcome. Ping us on the [Puppet Cloudnative Slack](https://app.slack.com/client/T0AQJ2CTU/CHPSJ9L4F), create
-an [issue](../../issues), or file a [PR](../../pulls). 
+than welcome. Create an [issue](../../issues), or file a [PR](../../pulls). 
 
 ## Pipeline
 - dgo annotations for go struct members, e.g.

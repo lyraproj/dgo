@@ -40,7 +40,7 @@ func (t anyType) String() string {
 }
 
 func (t anyType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t anyType) TypeIdentifier() dgo.TypeIdentifier {

@@ -71,7 +71,7 @@ func TestTimeExact(t *testing.T) {
 
 	require.Same(t, typ.Time, typ.Generic(tp))
 
-	require.Equal(t, `time["`+now.Format(time.RFC3339Nano)+`"]`, tp.String())
+	require.Equal(t, `time "`+now.Format(time.RFC3339Nano)+`"`, tp.String())
 	require.Equal(t, typ.Time.ReflectType(), tp.ReflectType())
 }
 

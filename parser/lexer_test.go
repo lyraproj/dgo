@@ -120,3 +120,74 @@ func Example_nextToken() {
 	//'>'
 	//'}'
 }
+
+func TestIsLetterOrDigit(t *testing.T) {
+	tests := []struct {
+		name string
+		r    rune
+		want bool
+	}{
+		{name: "Underscore", r: '_', want: false},
+		{name: "Zero", r: '0', want: true},
+		{name: "Nine", r: '9', want: true},
+		{name: "A", r: 'A', want: true},
+		{name: "Z", r: 'Z', want: true},
+		{name: "a", r: 'a', want: true},
+		{name: "z", r: 'z', want: true},
+		{name: "Non ASCII Å", r: 'Å', want: false},
+	}
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsLetterOrDigit(tt.r); got != tt.want {
+				t.Errorf("IsLetterOrDigit() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsLowerCase(t *testing.T) {
+	tests := []struct {
+		name string
+		r    rune
+		want bool
+	}{
+		{name: "Underscore", r: '_', want: false},
+		{name: "A", r: 'A', want: false},
+		{name: "Z", r: 'Z', want: false},
+		{name: "a", r: 'a', want: true},
+		{name: "z", r: 'z', want: true},
+		{name: "Non ASCII Å", r: 'Å', want: false},
+	}
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsLowerCase(tt.r); got != tt.want {
+				t.Errorf("IsLowerCase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsUpperCase(t *testing.T) {
+	tests := []struct {
+		name string
+		r    rune
+		want bool
+	}{
+		{name: "Underscore", r: '_', want: false},
+		{name: "A", r: 'A', want: true},
+		{name: "Z", r: 'Z', want: true},
+		{name: "a", r: 'a', want: false},
+		{name: "z", r: 'z', want: false},
+		{name: "Non ASCII Å", r: 'Å', want: false},
+	}
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsUpperCase(tt.r); got != tt.want {
+				t.Errorf("IsUpperCase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

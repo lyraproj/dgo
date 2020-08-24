@@ -41,7 +41,7 @@ func (t *exactFunctionTuple) DeepAssignable(guard dgo.RecursionGuard, other dgo.
 	return tupleAssignable(guard, t, other)
 }
 
-func (t *exactFunctionTuple) Element(index int) dgo.Type {
+func (t *exactFunctionTuple) ElementTypeAt(index int) dgo.Type {
 	rt := t.element(index)
 	if t.variadic {
 		n := t.count() - 1
@@ -101,7 +101,7 @@ func (t *exactFunctionTuple) String() string {
 }
 
 func (t *exactFunctionTuple) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *exactFunctionTuple) TypeIdentifier() dgo.TypeIdentifier {
@@ -178,7 +178,7 @@ func (t exactFunctionType) String() string {
 }
 
 func (t exactFunctionType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t exactFunctionType) TypeIdentifier() dgo.TypeIdentifier {
@@ -269,7 +269,7 @@ func (t *functionType) String() string {
 }
 
 func (t *functionType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *functionType) Variadic() bool {

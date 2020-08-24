@@ -8,33 +8,31 @@ import (
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
-
-	"github.com/lyraproj/dgo/util"
-
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/util"
 	"github.com/lyraproj/dgo/vf"
 )
 
 func ExampleMap_structType() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
 	fmt.Println(m)
-	// Output: {"host":"example.com","port":22}
+	// Output: map[host:example.com port:22]
 }
 
 func ExampleMap_Put_structType() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
 	m.Put(`port`, 465)
 	fmt.Println(m)
-	// Output: {"host":"example.com","port":465}
+	// Output: map[host:example.com port:465]
 }
 
 func ExampleMap_Put_structTypeAdditionalKey() {
 	m := vf.Map(`host`, `example.com`, `port`, 22).Copy(false)
 	m.Put(`login`, `bob`)
 	fmt.Println(m)
-	// Output: {"host":"example.com","port":22,"login":"bob"}
+	// Output: map[host:example.com port:22 login:bob]
 }
 
 func ExampleMap_Put_structTypeIllegalKey() {
@@ -63,46 +61,46 @@ func ExampleMap_Put_structTypeIllegalValue() {
 
 func TestStructType_Get(t *testing.T) {
 	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
-	require.Equal(t, tp.Get(`a`).Value(), typ.Integer)
-	require.Nil(t, tp.Get(`c`))
+	require.Equal(t, tp.GetEntryType(`a`).Value(), typ.Integer)
+	require.Nil(t, tp.GetEntryType(`c`))
 }
 
 func TestStructType_Validate(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`a`, 1, `b`, `yes`))
 	require.Equal(t, 0, len(es))
 }
 
 func TestStructType_Validate_valueType(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`a`, `no`, `b`, `yes`))
 	require.Equal(t, 1, len(es))
 	require.Equal(t, `parameter 'a' is not an instance of type int`, es[0].Error())
 }
 
 func TestStructType_Validate_missingKey(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`a`, 1))
 	require.Equal(t, 1, len(es))
 	require.Equal(t, `missing required parameter 'b'`, es[0].Error())
 }
 
 func TestStructType_Validate_unknownKey(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`a`, 1, `b`, `yes`, `c`, `no`))
 	require.Equal(t, 1, len(es))
 	require.Equal(t, `unknown parameter 'c'`, es[0].Error())
 }
 
 func TestStructType_Validate_notMap(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Values(1, 2))
 	require.Equal(t, 1, len(es))
 	require.NotOk(t, `value is not a Map`, es[0])
 }
 
 func TestStructType_ValidateVerbose_valueType(t *testing.T) {
-	tp := tf.ParseType(`{a:int}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int}`).(dgo.MapValidation)
 	out := util.NewIndenter(`  `)
 	ok := tp.ValidateVerbose(vf.Map(`a`, `no`), out)
 	es := out.String()
@@ -114,7 +112,7 @@ func TestStructType_ValidateVerbose_valueType(t *testing.T) {
 }
 
 func TestStructType_ValidateVerbose_missingKey(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	out := util.NewIndenter(`  `)
 	ok := tp.ValidateVerbose(vf.Map(`a`, 1), out)
 	es := out.String()
@@ -128,7 +126,7 @@ Validating 'b' against definition string
 }
 
 func TestStructType_ValidateVerbose_unknownKey(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	out := util.NewIndenter(`  `)
 	ok := tp.ValidateVerbose(vf.Map(`a`, 1, `b`, `yes`, `c`, `no`), out)
 	es := out.String()
@@ -144,7 +142,7 @@ Validating 'c'
 }
 
 func TestStructType_ValidateVerbose(t *testing.T) {
-	tp := tf.ParseType(`{a:int,b:string}`).(dgo.StructMapType)
+	tp := tf.ParseType(`{a:int,b:string}`).(dgo.MapValidation)
 	out := util.NewIndenter(``)
 	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
 	require.Equal(t, `value is not a Map`, out.String())
@@ -152,7 +150,7 @@ func TestStructType_ValidateVerbose(t *testing.T) {
 
 func TestStructType_alias(t *testing.T) {
 	tp := tf.ParseType(`person={name:string,mom:person,dad:person}`).(dgo.StructMapType)
-	require.Same(t, tp, tp.Get(`mom`).Value())
+	require.Same(t, tp, tp.GetEntryType(`mom`).Value())
 }
 
 func TestStructType(t *testing.T) {
@@ -275,7 +273,7 @@ func TestStructEntry(t *testing.T) {
 
 func TestStructFromMap(t *testing.T) {
 	require.Panic(t, func() {
-		tf.StructMapFromMap(false, vf.Map(`nope`, `dope`))
+		tf.StructMapFromMap(false, vf.Map(3, `dope`))
 	}, `cannot be assigned to a variable of type map`)
 
 	tp := tf.StructMapFromMap(false, vf.Map(`first`, typ.String))

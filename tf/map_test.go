@@ -18,7 +18,7 @@ func ExampleMap_min() {
 }
 
 func ExampleMap_min_max() {
-	tp := tf.Map(1, 2)
+	tp := tf.Map(typ.String, typ.Integer, 1, 2)
 	fmt.Println(tp.Instance(vf.Map(`a`, 42, `b`, 84)))
 	fmt.Println(tp.Instance(vf.Map(`a`, 42, `b`, 84, `c`, 126)))
 	// Output:

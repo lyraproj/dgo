@@ -33,3 +33,8 @@ func (a *arguments) Arg(funcName string, n int, typ dgo.Type) dgo.Value {
 	}
 	panic(illegalArgument(funcName, typ, a.InterfaceSlice(), n))
 }
+
+func (a *arguments) Equals(other interface{}) bool {
+	oa, ok := other.(*arguments)
+	return ok && a.array.Equals(&oa.array)
+}

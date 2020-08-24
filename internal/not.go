@@ -98,7 +98,7 @@ func (t *notType) String() string {
 }
 
 func (t *notType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *notType) TypeIdentifier() dgo.TypeIdentifier {

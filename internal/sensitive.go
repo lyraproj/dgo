@@ -25,10 +25,7 @@ func SensitiveType(args []interface{}) dgo.Type {
 	case 0:
 		return DefaultSensitiveType
 	case 1:
-		if st, ok := Value(args[0]).(dgo.Type); ok {
-			return &sensitiveType{wrapped: st}
-		}
-		panic(illegalArgument(`SensitiveType`, `Type`, args, 0))
+		return &sensitiveType{wrapped: AsType(Value(args[0]))}
 	}
 	panic(illegalArgumentCount(`SensitiveType`, 0, 1, len(args)))
 }
@@ -100,7 +97,7 @@ func (t *sensitiveType) String() string {
 }
 
 func (t *sensitiveType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *sensitiveType) TypeIdentifier() dgo.TypeIdentifier {

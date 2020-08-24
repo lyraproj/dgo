@@ -211,7 +211,7 @@ func (j *jsonEncoder) delimit(doer dgo.Doer) {
 		assertOk(j.out.Write([]byte{','}))
 		doer()
 		j.state = afterKey
-	default: // Element
+	default: // ElementTypeAt
 		assertOk(j.out.Write([]byte{','}))
 		doer()
 	}

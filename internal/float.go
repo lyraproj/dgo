@@ -17,11 +17,6 @@ type (
 
 	defaultFloatType int
 
-	exactFloatType struct {
-		exactType
-		value floatVal
-	}
-
 	floatType struct {
 		min       float64
 		max       float64
@@ -56,8 +51,8 @@ func FloatType(min, max float64, inclusive bool) dgo.FloatType {
 
 func (t *floatType) Assignable(other dgo.Type) bool {
 	switch ot := other.(type) {
-	case *exactFloatType:
-		return t.IsInstance(float64(ot.value))
+	case floatVal:
+		return t.IsInstance(float64(ot))
 	case *floatType:
 		if t.min > ot.min {
 			return false
@@ -131,52 +126,16 @@ func (t *floatType) ReflectType() reflect.Type {
 }
 
 func (t *floatType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *floatType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiFloatRange
 }
 
-func (t *exactFloatType) Generic() dgo.Type {
-	return DefaultFloatType
-}
-
-func (t *exactFloatType) Inclusive() bool {
-	return true
-}
-
-func (t *exactFloatType) IsInstance(value float64) bool {
-	return float64(t.value) == value
-}
-
-func (t *exactFloatType) Max() float64 {
-	return float64(t.value)
-}
-
-func (t *exactFloatType) Min() float64 {
-	return float64(t.value)
-}
-
-func (t *exactFloatType) New(arg dgo.Value) dgo.Value {
-	return newFloat(t, arg)
-}
-
-func (t *exactFloatType) ReflectType() reflect.Type {
-	return reflectFloatType
-}
-
-func (t *exactFloatType) TypeIdentifier() dgo.TypeIdentifier {
-	return dgo.TiFloatExact
-}
-
-func (t *exactFloatType) ExactValue() dgo.Value {
-	return t.value
-}
-
 func (t defaultFloatType) Assignable(other dgo.Type) bool {
 	switch other.(type) {
-	case defaultFloatType, *exactFloatType, *floatType:
+	case floatVal, defaultFloatType, *floatType:
 		return true
 	}
 	return false
@@ -200,7 +159,7 @@ func (t defaultFloatType) Instance(value interface{}) bool {
 	return ok
 }
 
-func (t defaultFloatType) IsInstance(value float64) bool {
+func (t defaultFloatType) IsInstance(_ float64) bool {
 	return true
 }
 
@@ -225,7 +184,7 @@ func (t defaultFloatType) String() string {
 }
 
 func (t defaultFloatType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t defaultFloatType) TypeIdentifier() dgo.TypeIdentifier {
@@ -238,9 +197,7 @@ func Float(f float64) dgo.Float {
 }
 
 func (v floatVal) Type() dgo.Type {
-	et := &exactFloatType{value: v}
-	et.ExactType = et
-	return et
+	return v
 }
 
 func (v floatVal) CompareTo(other interface{}) (int, bool) {
@@ -279,6 +236,10 @@ func (v floatVal) Equals(other interface{}) bool {
 	return ok && float64(v) == f
 }
 
+func (v floatVal) Format(s fmt.State, format rune) {
+	doFormat(float64(v), s, format)
+}
+
 func (v floatVal) GoFloat() float64 {
 	return float64(v)
 }
@@ -314,6 +275,46 @@ func (v floatVal) ToFloat() float64 {
 
 func (v floatVal) ToInt() int64 {
 	return int64(v)
+}
+
+func (v floatVal) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
+}
+
+func (v floatVal) Generic() dgo.Type {
+	return DefaultFloatType
+}
+
+func (v floatVal) Inclusive() bool {
+	return true
+}
+
+func (v floatVal) Instance(value interface{}) bool {
+	return v.Equals(value)
+}
+
+func (v floatVal) IsInstance(value float64) bool {
+	return float64(v) == value
+}
+
+func (v floatVal) Max() float64 {
+	return float64(v)
+}
+
+func (v floatVal) Min() float64 {
+	return float64(v)
+}
+
+func (v floatVal) New(arg dgo.Value) dgo.Value {
+	return newFloat(v, arg)
+}
+
+func (v floatVal) ReflectType() reflect.Type {
+	return reflectFloatType
+}
+
+func (v floatVal) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiFloatExact
 }
 
 // ToFloat returns the given value as a float64 if, and only if, the value is a float32 or float64. An

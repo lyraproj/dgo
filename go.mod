@@ -1,3 +1,3 @@
 module github.com/lyraproj/dgo
 
-go 1.13
+go 1.14

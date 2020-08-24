@@ -137,7 +137,7 @@ func (t *allOfType) String() string {
 }
 
 func (t *allOfType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *allOfType) TypeIdentifier() dgo.TypeIdentifier {
@@ -234,7 +234,7 @@ func (t *allOfValueType) String() string {
 }
 
 func (t *allOfValueType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *allOfValueType) TypeIdentifier() dgo.TypeIdentifier {
@@ -349,7 +349,7 @@ func (t *anyOfType) String() string {
 }
 
 func (t *anyOfType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *anyOfType) TypeIdentifier() dgo.TypeIdentifier {
@@ -472,7 +472,7 @@ func (t *oneOfType) String() string {
 }
 
 func (t *oneOfType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t *oneOfType) TypeIdentifier() dgo.TypeIdentifier {

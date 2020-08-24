@@ -39,3 +39,10 @@ func TestToIndentedStringERP_nonStringer(t *testing.T) {
 	ei.AppendValue(struct{ A string }{`hello`})
 	require.Equal(t, `struct { A string }{A:"hello"}`, ei.String())
 }
+
+func ExampleToStringERP_recursion() {
+	v := vf.MutableMap(`a`, `x`)
+	v.Put(`b`, v)
+	fmt.Println(util.ToStringERP(v))
+	// Output: {"a":"x","b":<recursive self reference to map>}
+}

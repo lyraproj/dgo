@@ -1,18 +1,16 @@
 package internal_test
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/lyraproj/dgo/vf"
-
 	"github.com/lyraproj/dgo/dgo"
-
-	"github.com/lyraproj/dgo/typ"
-
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/tf"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 type testNamed int
@@ -46,7 +44,8 @@ type testNamedDummy interface {
 func (testNamed) Dummy() {
 }
 
-func (*testNamedB) Dummy() {
+func (t *testNamedB) Format(s fmt.State, _ rune) {
+	_, _ = s.Write([]byte(`hello from testNamedB Format`))
 }
 
 func TestNamedType(t *testing.T) {
@@ -89,6 +88,13 @@ func TestNamedType_Assignable(t *testing.T) {
 	require.Assignable(t, tp, tf.NewNamed(`testNamedB`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil))
 	require.NotAssignable(t, tp, tf.NewNamed(`testNamedC`, nil, nil, reflect.TypeOf(testNamedC(0)), nil, nil))
 	require.NotAssignable(t, tf.Named(`testNamedB`), tf.Named(`testNamedC`))
+}
+
+func TestNamedType_Format(t *testing.T) {
+	defer tf.RemoveNamed(`testNamedB`)
+	_ = tf.NewNamed(`testNamedB`, nil, nil, reflect.TypeOf(&testNamedB{0}), nil, nil)
+	v := vf.Value(&testNamedB{0})
+	require.Equal(t, `hello from testNamedB Format`, fmt.Sprintf("%v", v))
 }
 
 func TestNamedType_New(t *testing.T) {
@@ -205,6 +211,7 @@ func TestNamedType_parameterized(t *testing.T) {
 	require.Assignable(t, tpp, tpp2)
 	require.NotEqual(t, tpp, tp)
 	require.Equal(t, tpp, tpp2)
+	require.Equal(t, tpp.Type(), tpp2.Type())
 	require.Equal(t, tpp.HashCode(), tpp2.HashCode())
 	require.Same(t, tp, typ.Generic(tpp))
 	require.Same(t, tp, typ.Generic(tpp2))

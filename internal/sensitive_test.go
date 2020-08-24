@@ -46,7 +46,6 @@ func TestSensitiveType(t *testing.T) {
 	require.Equal(t, tf.Sensitive(typ.Integer), tf.ParseType(`sensitive[int]`))
 	require.Equal(t, vf.Sensitive(typ.Integer).Type(), tf.ParseType(`sensitive int`))
 	require.Equal(t, vf.Sensitive(34).Type(), tf.ParseType(`sensitive 34`))
-	require.Panic(t, func() { tf.ParseType(`sensitive[34]`) }, `illegal argument`)
 	require.Panic(t, func() { tf.ParseType(`sensitive[int, string]`) }, `illegal number of arguments`)
 }
 

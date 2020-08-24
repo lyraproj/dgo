@@ -12,14 +12,6 @@ func ExampleGeneric() {
 	fmt.Println(Generic(vt))
 
 	// Output:
-	// {"hello","world"}
+	// [hello world]
 	// []string
-}
-
-func ExampleAsType() {
-	v := vf.String(`hello`)
-	fmt.Println(AsType(v))
-
-	// Output:
-	// "hello"
 }

@@ -220,7 +220,7 @@ func TestParse_multiAliases(t *testing.T) {
 }`).(dgo.StructMapType)
 	})
 
-	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, stringer.TypeStringWithAliasMap(tp.Get(`x`).Value().(dgo.Type), am))
+	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, stringer.TypeStringWithAliasMap(tp.GetEntryType(`x`).Value().(dgo.Type), am))
 }
 
 func TestParse_mapKeyAliases(t *testing.T) {

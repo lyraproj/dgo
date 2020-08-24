@@ -20,7 +20,7 @@ func ExampleArray() {
 }
 
 func ExampleArray_min() {
-	tp := tf.Array(2)
+	tp := tf.Array(typ.Any, 2)
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
 	fmt.Println(tp.Instance(vf.Values(`hello`)))
 	// Output:
@@ -38,7 +38,7 @@ func ExampleArray_type() {
 }
 
 func ExampleArray_min_max() {
-	tp := tf.Array(1, 2)
+	tp := tf.Array(typ.Any, 1, 2)
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42)))
 	fmt.Println(tp.Instance(vf.Values(`hello`, 42, `word`)))
 	// Output:

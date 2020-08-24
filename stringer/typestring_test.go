@@ -65,7 +65,7 @@ func TestType_String_priorities(t *testing.T) {
 	require.Equal(t, `[2,2]string[1]`, tp.String())
 
 	tp = tf.Array(vf.Value(regexp.MustCompile(`a`)).Type(), 2, 2)
-	require.Equal(t, `[2,2]regexp["a"]`, tp.String())
+	require.Equal(t, `[2,2]regexp "a"`, tp.String())
 
 	tp = tf.Array(tf.Not(tf.String(1)), 2, 2)
 	require.Equal(t, `[2,2]!string[1]`, tp.String())

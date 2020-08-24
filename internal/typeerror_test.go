@@ -48,5 +48,5 @@ func TestIllegalMapKey(t *testing.T) {
 	require.Instance(t, v.Type(), v)
 	require.NotEqual(t, 0, v.HashCode())
 	require.Equal(t, v.HashCode(), v.HashCode())
-	require.Equal(t, `key "b" cannot added to type {"a":string}`, v.String())
+	require.Equal(t, `key "b" cannot be added to type {"a":string}`, v.String())
 }

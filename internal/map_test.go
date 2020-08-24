@@ -1,18 +1,18 @@
 package internal_test
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/lyraproj/dgo/util"
 
 	"github.com/lyraproj/dgo/dgo"
 	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/util"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -150,7 +150,7 @@ func TestMap_ExactType(t *testing.T) {
 func TestMap_ExactType_Each(t *testing.T) {
 	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
 	cnt := 0
-	tp.Each(func(e dgo.StructMapEntry) {
+	tp.EachEntryType(func(e dgo.StructMapEntry) {
 		require.True(t, e.Required())
 		require.Assignable(t, typ.String, e.Key().(dgo.Type))
 		require.Assignable(t, typ.Integer, e.Value().(dgo.Type))
@@ -161,17 +161,17 @@ func TestMap_ExactType_Each(t *testing.T) {
 
 func TestMap_ExactType_Get(t *testing.T) {
 	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
-	me := tp.Get(`a`)
+	me := tp.GetEntryType(`a`)
 	require.Equal(t, tf.StructMapEntry(`a`, 3, true), me)
 
-	me = tp.Get(vf.String(`a`).Type())
+	me = tp.GetEntryType(vf.String(`a`).Type())
 	require.Equal(t, tf.StructMapEntry(`a`, 3, true), me)
 
-	require.Nil(t, tp.Get(`c`))
+	require.Nil(t, tp.GetEntryType(`c`))
 }
 
 func TestMap_ExactType_Validate(t *testing.T) {
-	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.MapValidation)
 	es := tp.Validate(nil, vf.Map(`a`, 3, `b`, 4))
 	require.Equal(t, 0, len(es))
 
@@ -180,7 +180,7 @@ func TestMap_ExactType_Validate(t *testing.T) {
 }
 
 func TestMap_ExactType_ValidateVerbose(t *testing.T) {
-	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.StructMapType)
+	tp := vf.Map(`a`, 3, `b`, 4).Type().(dgo.MapValidation)
 	out := util.NewIndenter(``)
 	require.False(t, tp.ValidateVerbose(vf.Values(1, 2), out))
 	require.Equal(t, `value is not a Map`, out.String())
@@ -281,7 +281,7 @@ func TestMap_EntryType(t *testing.T) {
 		require.Assignable(t, vt, vt)
 		require.NotAssignable(t, vt, typ.String)
 		require.Instance(t, vt, v)
-		require.NotInstance(t, vt, vt)
+		require.Instance(t, vt, vt)
 		require.Equal(t, vt, vt)
 		require.NotEqual(t, vt, `a`)
 		require.True(t, vt.HashCode() > 0)
@@ -346,21 +346,26 @@ func TestNewMapType_badOneArg(t *testing.T) {
 }
 
 func TestNewMapType_badTwoArg(t *testing.T) {
-	require.Panic(t, func() { tf.Map(`bad`, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { tf.Map(2, `bad`) }, `illegal argument 2`)
-	require.Panic(t, func() { tf.Map(typ.String, 2) }, `illegal argument 2`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	require.Panic(t, func() { tf.Map(n, typ.String) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(1, typ.String) }, `illegal argument 2`)
+	require.Panic(t, func() { tf.Map(typ.String, n) }, `illegal argument 2`)
 }
 
 func TestNewMapType_badThreeArg(t *testing.T) {
-	require.Panic(t, func() { tf.Map(`bad`, typ.Integer, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { tf.Map(typ.String, `bad`, 2) }, `illegal argument 2`)
-	require.Panic(t, func() { tf.Map(typ.String, 1, 2) }, `illegal argument 2`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	require.Panic(t, func() { tf.Map(n, typ.Integer, 2) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(typ.String, n, `bad`) }, `illegal argument 2`)
 	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, `bad`) }, `illegal argument 3`)
 }
 
 func TestNewMapType_badFourArg(t *testing.T) {
-	require.Panic(t, func() { tf.Map(`bad`, typ.Integer, 2, 2) }, `illegal argument 1`)
-	require.Panic(t, func() { tf.Map(typ.String, `bad`, 2, 2) }, `illegal argument 2`)
+	defer tf.RemoveNamed(`testNamed`)
+	n := testNamed(0)
+	require.Panic(t, func() { tf.Map(n, typ.Integer, 2, 2) }, `illegal argument 1`)
+	require.Panic(t, func() { tf.Map(typ.String, n, 2, 2) }, `illegal argument 2`)
 	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, `bad`, 2) }, `illegal argument 3`)
 	require.Panic(t, func() { tf.Map(typ.String, typ.Integer, 2, `bad`) }, `illegal argument 4`)
 }
@@ -560,6 +565,21 @@ func TestMap_EachValue(t *testing.T) {
 	require.Equal(t, vf.Values(1, 2.0, `three`), vs)
 }
 
+func TestMap_Format(t *testing.T) {
+	m := vf.Map(
+		`first`, 1,
+		`second`, 2.0,
+		`third`, `three`)
+	require.Equal(t, `map[string]any{"first":1, "second":2, "third":"three"}`, fmt.Sprintf("%#v", m))
+}
+
+func TestMap_Format_nativeKey(t *testing.T) {
+	m := vf.Map(
+		&testStruct{A: `a`}, 1,
+		&testStruct{A: `b`}, 2)
+	require.Equal(t, `map[*internal_test.testStruct]int{&internal_test.testStruct{A:"a"}:1, &internal_test.testStruct{A:"b"}:2}`, fmt.Sprintf("%#v", m))
+}
+
 func TestMap_Find(t *testing.T) {
 	var entry dgo.MapEntry
 	m := vf.Map(
@@ -681,7 +701,7 @@ func TestMap_selfReference(t *testing.T) {
 	d.Put(`hello`, `world`)
 	d.Put(`deep`, d)
 	require.Instance(t, tp, d)
-	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map>}`, d.String())
+	require.Equal(t, `{"hello":"world","deep":<recursive self reference to map type>}`, d.String())
 
 	internal.ResetDefaultAliases()
 	t2 := tf.ParseType(`x=map[string](string|map[string](string|x))`)
@@ -693,7 +713,7 @@ func TestMap_Map(t *testing.T) {
 	require.Equal(t,
 		vf.Map(map[string]string{`a`: `the a`, `b`: `the b`, `c`: `the c`}),
 		a.Map(func(e dgo.MapEntry) interface{} {
-			return strings.Replace(e.Value().String(), `value`, `the`, 1)
+			return strings.Replace(e.Value().(dgo.String).GoString(), `value`, `the`, 1)
 		}))
 	require.Equal(t, vf.Map(`a`, nil, `b`, vf.Nil, `c`, nil), a.Map(func(e dgo.MapEntry) interface{} {
 		return nil

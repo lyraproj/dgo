@@ -4,21 +4,19 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lyraproj/dgo/parser"
-
 	"github.com/lyraproj/dgo/dgo"
-
-	"github.com/lyraproj/dgo/vf"
-
 	require "github.com/lyraproj/dgo/dgo_test"
-	"github.com/lyraproj/dgo/typ"
-
+	"github.com/lyraproj/dgo/internal"
+	"github.com/lyraproj/dgo/parser"
 	"github.com/lyraproj/dgo/tf"
+	"github.com/lyraproj/dgo/typ"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func TestAlias_Freeze(t *testing.T) {
 	alias := parser.NewAlias(vf.String(`hello`)).(dgo.Freezable)
 	require.False(t, alias.Frozen())
+	require.Same(t, alias, alias.ThawedCopy())
 	require.Panic(t, func() {
 		alias.Freeze()
 	}, `attempt to freeze unresolved alias`)
@@ -59,4 +57,11 @@ func TestAddAliases(t *testing.T) {
 	require.NotSame(t, bi, aliases)
 	require.Equal(t, aliases.GetType(vf.String(`pnr`)), tf.String(10, 12))
 	require.Nil(t, bi.GetType(vf.String(`pnr`)))
+}
+
+func TestNewCall(t *testing.T) {
+	nc := internal.NewCall(typ.Binary, vf.Arguments(vf.Values(0x01, 0x02, 0x03)))
+	tf.AddDefaultAliases(func(aa dgo.AliasAdder) {
+		require.Equal(t, vf.Binary([]byte{0x01, 0x02, 0x03}, true), aa.Replace(nc))
+	})
 }

@@ -11,11 +11,6 @@ type (
 	// booleanType represents an boolean without constraints (-1), constrained to false (0) or constrained to true(1)
 	booleanType int
 
-	exactBooleanType struct {
-		exactType
-		value boolean
-	}
-
 	boolean bool
 )
 
@@ -27,12 +22,6 @@ const True = boolean(true)
 
 // False is the dgo.Value for false
 const False = boolean(false)
-
-// FalseType is the Boolean type that represents false
-var FalseType dgo.BooleanType
-
-// TrueType is the Boolean type that represents false
-var TrueType dgo.BooleanType
 
 func (t booleanType) Assignable(ot dgo.Type) bool {
 	_, ok := ot.(dgo.BooleanType)
@@ -75,34 +64,38 @@ func (t booleanType) String() string {
 }
 
 func (t booleanType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t booleanType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBoolean
 }
 
-func (t *exactBooleanType) ExactValue() dgo.Value {
-	return t.value
+func (v boolean) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
 }
 
-func (t *exactBooleanType) Generic() dgo.Type {
+func (v boolean) Generic() dgo.Type {
 	return DefaultBooleanType
 }
 
-func (t *exactBooleanType) IsInstance(value bool) bool {
-	return bool(t.value) == value
+func (v boolean) Instance(value interface{}) bool {
+	return v.Equals(value)
 }
 
-func (t *exactBooleanType) New(arg dgo.Value) dgo.Value {
-	return newBoolean(t, arg)
+func (v boolean) IsInstance(value bool) bool {
+	return bool(v) == value
 }
 
-func (t *exactBooleanType) ReflectType() reflect.Type {
+func (v boolean) New(arg dgo.Value) dgo.Value {
+	return newBoolean(v, arg)
+}
+
+func (v boolean) ReflectType() reflect.Type {
 	return reflectBooleanType
 }
 
-func (t *exactBooleanType) TypeIdentifier() dgo.TypeIdentifier {
+func (v boolean) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiBooleanExact
 }
 
@@ -136,6 +129,10 @@ func (v boolean) Equals(other interface{}) bool {
 	return false
 }
 
+func (v boolean) Format(s fmt.State, format rune) {
+	doFormat(bool(v), s, format)
+}
+
 func (v boolean) GoBool() bool {
 	return bool(v)
 }
@@ -167,20 +164,7 @@ func (v boolean) String() string {
 }
 
 func (v boolean) Type() dgo.Type {
-	if v {
-		return TrueType
-	}
-	return FalseType
-}
-
-func init() {
-	et := &exactBooleanType{value: boolean(true)}
-	et.ExactType = et
-	TrueType = et
-
-	et = &exactBooleanType{value: boolean(false)}
-	et.ExactType = et
-	FalseType = et
+	return v
 }
 
 var boolStringType = CiEnumType([]string{`true`, `false`, `yes`, `no`, `y`, `n`})

@@ -3,7 +3,6 @@ package pcore
 import (
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/streamer"
-	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -58,5 +57,5 @@ func (d pcoreDialect) TimeTypeName() dgo.String {
 }
 
 func (d pcoreDialect) ParseType(aliasMap dgo.AliasAdder, typeString dgo.String) (dt dgo.Type) {
-	return typ.AsType(Parse(typeString.GoString()))
+	return Parse(typeString.GoString()).(dgo.Type)
 }

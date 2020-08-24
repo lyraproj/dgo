@@ -57,7 +57,7 @@ func TestRegexpExact(t *testing.T) {
 
 	require.Same(t, typ.Regexp, typ.Generic(tp))
 
-	require.Equal(t, `regexp["[a-z]+"]`, tp.String())
+	require.Equal(t, `regexp "[a-z]+"`, tp.String())
 	require.Equal(t, typ.Regexp.ReflectType(), tp.ReflectType())
 }
 

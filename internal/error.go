@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -13,11 +14,6 @@ type (
 	}
 
 	errType int
-
-	exactErrorType struct {
-		exactType
-		value *errw
-	}
 )
 
 // DefaultErrorType is the unconstrained Error type
@@ -26,7 +22,7 @@ const DefaultErrorType = errType(0)
 var reflectErrorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (t errType) Type() dgo.Type {
-	return &metaType{t}
+	return MetaType(t)
 }
 
 func (t errType) Equals(other interface{}) bool {
@@ -40,7 +36,7 @@ func (t errType) HashCode() int {
 func (t errType) Assignable(other dgo.Type) bool {
 	_, ok := other.(errType)
 	if !ok {
-		_, ok = other.(*exactErrorType)
+		_, ok = other.(*errw)
 	}
 	return ok || CheckAssignableTo(nil, other, t)
 }
@@ -66,24 +62,28 @@ func (t errType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiError
 }
 
-func (t *exactErrorType) Generic() dgo.Type {
+func (e *errw) Assignable(other dgo.Type) bool {
+	return e.Equals(other) || CheckAssignableTo(nil, other, e)
+}
+
+func (e *errw) Generic() dgo.Type {
 	return DefaultErrorType
 }
 
-func (t *exactErrorType) IsInstance(err error) bool {
-	return t.value.Equals(err)
+func (e *errw) Instance(value interface{}) bool {
+	return e.Equals(value)
 }
 
-func (t *exactErrorType) ReflectType() reflect.Type {
+func (e *errw) IsInstance(err error) bool {
+	return e.Equals(err)
+}
+
+func (e *errw) ReflectType() reflect.Type {
 	return reflectErrorType
 }
 
-func (t *exactErrorType) TypeIdentifier() dgo.TypeIdentifier {
+func (e *errw) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiErrorExact
-}
-
-func (t *exactErrorType) ExactValue() dgo.Value {
-	return t.value
 }
 
 func (e *errw) Equals(other interface{}) bool {
@@ -113,7 +113,7 @@ func (e *errw) ReflectTo(value reflect.Value) {
 }
 
 func (e *errw) String() string {
-	return e.error.Error()
+	return fmt.Sprintf("error %q", e.error.Error())
 }
 
 func (e *errw) Unwrap() error {
@@ -126,7 +126,5 @@ func (e *errw) Unwrap() error {
 }
 
 func (e *errw) Type() dgo.Type {
-	ea := &exactErrorType{value: e}
-	ea.ExactType = ea
-	return ea
+	return e
 }

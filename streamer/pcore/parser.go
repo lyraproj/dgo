@@ -69,11 +69,6 @@ func Parse(content string) (result dgo.Value) {
 	return
 }
 
-// ParseType parses the given content into a dgo.Type.
-func ParseType(content string) dgo.Type {
-	return typ.AsType(Parse(content))
-}
-
 // ParseFile parses the given content into a dgo.Type. The filename is used in error messages.
 func ParseFile(am dgo.AliasAdder, fileName, content string) dgo.Value {
 	p := &pcoreParser{parser.NewParserBase(am, nextToken, content)}

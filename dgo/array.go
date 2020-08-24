@@ -219,8 +219,8 @@ type (
 		// Len returns the number of types in this tuple.
 		Len() int
 
-		// Element returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
-		Element(int) Type
+		// ElementTypeAt returns the Type of the nth element of the Tuple where n must be in the range 0 to Len() - 1.
+		ElementTypeAt(int) Type
 
 		// ElementTypes returns the types of the elements for instances of this type.
 		ElementTypes() Array

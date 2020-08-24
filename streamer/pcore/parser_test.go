@@ -77,7 +77,7 @@ func ExampleParse_entry() {
       call => Boo::Bar("with args")
     }
   `
-	v := typ.ExactValue(pcore.Parse(src))
+	v := pcore.Parse(src)
 	sb := util.NewIndenter(`  `)
 	sb.AppendValue(v)
 	fmt.Println(sb.String())
@@ -109,7 +109,7 @@ func ExampleParse_entry() {
 
 func ExampleParse_hash() {
 	v := pcore.Parse(`{value=>-1}`)
-	fmt.Println(v)
+	fmt.Println(v.String())
 	// Output: {"value":-1}
 }
 
@@ -177,50 +177,50 @@ func testB(m string, vs ...int) string {
 
 func TestFunctionType(t *testing.T) {
 	ft := tf.Function(typ.Tuple, typ.Tuple)
-	require.Equal(t, pcore.ParseType(`Callable`), ft)
+	require.Equal(t, pcore.Parse(`Callable`), ft)
 	require.Equal(t, ft.String(), `func(...any) (...any)`)
 
 	ft = tf.Function(typ.EmptyTuple, tf.Tuple(typ.Any))
 	require.Equal(t, ft.String(), `func() any`)
-	require.Equal(t, pcore.ParseType(`Callable[[0,0],Any]`), ft)
+	require.Equal(t, pcore.Parse(`Callable[[0,0],Any]`), ft)
 
 	ft = pcore.Parse(`Callable[String,String,1]`).(dgo.FunctionType)
 	require.Assignable(t, typ.Any, ft)
 	require.NotAssignable(t, ft, typ.Any)
-	require.Assignable(t, ft, pcore.ParseType(`Callable[String,String,1]`))
+	require.Assignable(t, ft, pcore.Parse(`Callable[String,String,1]`).(dgo.Type))
 	require.Instance(t, ft.Type(), ft)
 
 	require.Panic(t, func() { ft.ReflectType() }, `unable to build`)
 	require.Equal(t, ft, ft)
-	require.Equal(t, ft, pcore.ParseType(`Callable[String,String,1]`))
+	require.Equal(t, ft, pcore.Parse(`Callable[String,String,1]`))
 	require.Equal(t, ft.String(), `func(string,...string)`)
-	require.NotEqual(t, ft, pcore.ParseType(`Callable[Integer,String,1]`))
-	require.NotEqual(t, ft, pcore.ParseType(`Callable[String,Array[String],1]`))
-	require.NotEqual(t, ft, pcore.ParseType(`Callable[[String,String,1], String]`))
-	require.NotEqual(t, ft, pcore.ParseType(`Tuple[String,String,1]`))
+	require.NotEqual(t, ft, pcore.Parse(`Callable[Integer,String,1]`))
+	require.NotEqual(t, ft, pcore.Parse(`Callable[String,Array[String],1]`))
+	require.NotEqual(t, ft, pcore.Parse(`Callable[[String,String,1], String]`))
+	require.NotEqual(t, ft, pcore.Parse(`Tuple[String,String,1]`))
 
 	in := ft.In()
-	require.Assignable(t, in, pcore.ParseType(`Tuple[String,String,1]`))
-	require.Assignable(t, in, pcore.ParseType(`Array[String,1]`))
-	require.NotAssignable(t, in, pcore.ParseType(`Array[String]`))
+	require.Assignable(t, in, pcore.Parse(`Tuple[String,String,1]`).(dgo.Type))
+	require.Assignable(t, in, pcore.Parse(`Array[String,1]`).(dgo.Type))
+	require.NotAssignable(t, in, pcore.Parse(`Array[String]`).(dgo.Type))
 	require.Same(t, typ.String, in.ElementType())
-	require.Same(t, typ.String, pcore.ParseType(`Tuple[String,0]`).(dgo.TupleType).ElementType())
+	require.Same(t, typ.String, pcore.Parse(`Tuple[String,0]`).(dgo.TupleType).ElementType())
 
 	require.NotEqual(t, 0, ft.HashCode())
-	require.Equal(t, ft.HashCode(), pcore.ParseType(`Callable[String,String,1]`).HashCode())
+	require.Equal(t, ft.HashCode(), pcore.Parse(`Callable[String,String,1]`).HashCode())
 
-	ft = pcore.ParseType(`Callable[[String,Integer,1], String]`).(dgo.FunctionType)
+	ft = pcore.Parse(`Callable[[String,Integer,1], String]`).(dgo.FunctionType)
 	require.Instance(t, ft, testB)
 	require.NotInstance(t, ft, testA)
 	require.NotInstance(t, ft, ft)
 
-	ft = pcore.ParseType(`Callable[[String,1,1,Callable], String]`).(dgo.FunctionType)
+	ft = pcore.Parse(`Callable[[String,1,1,Callable], String]`).(dgo.FunctionType)
 	require.Equal(t, `func(func(...any) (...any),string) string`, ft.String())
 
-	ft = pcore.ParseType(`Callable[[String,default,1,Callable], String]`).(dgo.FunctionType)
+	ft = pcore.Parse(`Callable[[String,default,1,Callable], String]`).(dgo.FunctionType)
 	require.Equal(t, `func(func(...any) (...any),...string) string`, ft.String())
 
-	ft = pcore.ParseType(`Callable[[String,1,Callable], String]`).(dgo.FunctionType)
+	ft = pcore.Parse(`Callable[[String,1,Callable], String]`).(dgo.FunctionType)
 	require.Equal(t, `func(func(...any) (...any),...string) string`, ft.String())
 }
 
@@ -313,14 +313,11 @@ func TestParse_tuple(t *testing.T) {
 	require.Equal(t, tf.VariadicTuple(typ.String), pcore.Parse(`Tuple[String,default]`))
 	require.Equal(t, tf.VariadicTuple(typ.String), pcore.Parse(`Tuple[String,1]`))
 	require.Equal(t, tf.VariadicTuple(typ.String, tf.String(10)), pcore.Parse(`Tuple[String,String[10],1]`))
-	require.Panic(t,
-		func() { pcore.Parse(`Tuple[1,1,1]`) }, `the value 1 cannot be assigned to a variable of type type`)
 }
 
 func TestParse_variant(t *testing.T) {
 	require.Equal(t, typ.AnyOf, pcore.Parse(`Variant`))
-	require.Panic(t,
-		func() { pcore.Parse(`Variant[2, 3]`) }, `the value 2 cannot be assigned to a variable of type type`)
+	require.Equal(t, tf.AnyOf(2, 3), pcore.Parse(`Variant[2, 3]`))
 }
 
 func TestParse_aliasBad(t *testing.T) {
@@ -408,7 +405,7 @@ Struct[
   ],
   x => Hash[Slug,Struct["Token" => Ascii, value => String]]
 ]`).(dgo.StructMapType)
-	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, tp.Get(`x`).Value().(dgo.Type).String())
+	require.Equal(t, `map[slug]{"Token":ascii,"value":string}`, tp.GetEntryType(`x`).Value().(dgo.Type).String())
 }
 
 func TestParse_errors(t *testing.T) {

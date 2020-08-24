@@ -176,7 +176,8 @@ type (
 		Generic() Type
 	}
 
-	// ExactType is implemented by types that match exactly one value
+	// ExactType is implemented by types that match exactly one value but
+	// isn't the same instance as the value.
 	ExactType interface {
 		Type
 

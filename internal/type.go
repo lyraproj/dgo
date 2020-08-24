@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"reflect"
 	"strconv"
@@ -35,7 +36,7 @@ func TypeFromReflected(vt reflect.Type) dgo.Type {
 	case reflect.Map:
 		return MapType([]interface{}{TypeFromReflected(vt.Key()), TypeFromReflected(vt.Elem()), 0, math.MaxInt64})
 	case reflect.Ptr:
-		return OneOfType([]interface{}{TypeFromReflected(vt.Elem()), DefaultNilType})
+		return OneOfType([]interface{}{TypeFromReflected(vt.Elem()), Nil})
 	case reflect.Func:
 		return exactFunctionType{vt}
 	case reflect.Interface:
@@ -84,10 +85,10 @@ func Generic(t dgo.Type) dgo.Type {
 
 func illegalArgument(name, expected interface{}, args []interface{}, argno int) error {
 	if len(args) == 1 {
-		return fmt.Errorf(`illegal argument for %s. Expected %s, got %s`, name, expected, Value(args[argno]))
+		return fmt.Errorf(`illegal argument for %s. Expected %s, got %v`, name, expected, Value(args[argno]))
 	}
 	return fmt.Errorf(
-		`illegal argument %d for %s with %d arguments. Expected %s, got %s`,
+		`illegal argument %d for %s with %d arguments. Expected %s, got %v`,
 		argno+1, name, len(args), expected, Value(args[argno]))
 }
 
@@ -137,3 +138,6 @@ var ParseFile func(am dgo.AliasAdder, fileName, content string) dgo.Value
 
 // TypeString produces the string that represents the given type
 var TypeString func(dgo.Type) string
+
+// TypeStringOn produces a string with the go-like syntax for the given type onto the given io.Writer.
+var TypeStringOn func(dgo.Type, io.Writer)

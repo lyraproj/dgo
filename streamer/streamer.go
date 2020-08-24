@@ -3,6 +3,7 @@ package streamer
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/vf"
@@ -226,7 +227,7 @@ func (sc *context) emitTime(value dgo.Time) {
 				sc.addData(d.TypeKey())
 				sc.addData(d.TimeTypeName())
 				sc.addData(d.ValueKey())
-				sc.emitData(vf.String(value.String()))
+				sc.emitData(vf.String(value.GoTime().Format(time.RFC3339Nano)))
 			})
 		}
 	})
@@ -245,7 +246,7 @@ func (sc *context) emitBinary(value dgo.Binary) {
 				sc.addData(d.TypeKey())
 				sc.addData(d.BinaryTypeName())
 				sc.addData(d.ValueKey())
-				sc.emitData(vf.String(value.String()))
+				sc.emitData(vf.String(value.Encode()))
 			})
 		}
 	})

@@ -118,7 +118,7 @@ func TestExactBinaryType(t *testing.T) {
 	require.NotAssignable(t, tf.Binary(4), tp)
 	require.NotAssignable(t, tf.Binary(0, 2), tp)
 
-	require.NotEqual(t, v.HashCode(), tp.HashCode())
+	require.Equal(t, v.HashCode(), tp.HashCode())
 
 	require.Instance(t, tp.Type(), tp)
 	require.Equal(t, `binary "AQID"`, tp.String())
