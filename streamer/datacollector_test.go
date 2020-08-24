@@ -3,8 +3,8 @@ package streamer_test
 import (
 	"testing"
 
-	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/streamer"
+	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"
 )
@@ -19,7 +19,7 @@ func TestDataCollector(t *testing.T) {
 	c := streamer.DataCollector()
 	streamer.New(nil, nil).Stream(a, c)
 
-	require.Equal(t, vf.Values(
+	assert.Equal(t, vf.Values(
 		vf.Map(`__type`, `string`),
 		vf.Map(`__type`, `binary`, `__value`, `AQID`),
 		vf.Map(`__type`, `sensitive`, `__value`, `secret`),

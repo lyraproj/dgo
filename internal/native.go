@@ -9,10 +9,16 @@ import (
 )
 
 type (
-	native reflect.Value
+	_rv = reflect.Value
+
+	native struct {
+		_rv
+	}
+
+	_rt = reflect.Type
 
 	nativeType struct {
-		rt reflect.Type
+		_rt
 	}
 )
 
@@ -21,36 +27,63 @@ var DefaultNativeType = &nativeType{}
 
 // Native creates the dgo representation of a reflect.Value.
 func Native(rv reflect.Value) dgo.Native {
-	nv := native(rv)
-	return &nv
+	return &native{rv}
 }
 
 func (t *nativeType) Assignable(other dgo.Type) bool {
-	if ot, ok := other.(*nativeType); ok {
-		if t.rt == nil {
-			return true
-		}
-		if ot.rt == nil {
-			return false
-		}
-		return ot.rt.AssignableTo(t.rt)
+	var ort reflect.Type
+	switch ot := other.(type) {
+	case *nativeType:
+		ort = ot._rt
+	case *native:
+		ort = ot.ReflectType()
+	default:
+		return CheckAssignableTo(nil, other, t)
 	}
-	return CheckAssignableTo(nil, other, t)
+	if t._rt == nil {
+		return true
+	}
+	if ort == nil {
+		return false
+	}
+	return ort.AssignableTo(t._rt)
 }
 
 func (t *nativeType) Equals(other interface{}) bool {
 	if ot, ok := other.(*nativeType); ok {
-		return t.rt == ot.rt
+		return t._rt == ot._rt
 	}
 	return false
 }
 
+func (t *nativeType) GoType() reflect.Type {
+	return t._rt
+}
+
 func (t *nativeType) HashCode() int {
-	return util.StringHash(t.rt.Name())*31 + int(dgo.TiNative)
+	h := int(dgo.TiNative)
+	if t._rt != nil {
+		h += util.StringHash(t.Name()) * 31
+	}
+	return h
+}
+
+func (t *nativeType) Instance(value interface{}) bool {
+	if ov, ok := toReflected(value); ok {
+		if t._rt == nil {
+			return true
+		}
+		return ov.Type().AssignableTo(t._rt)
+	}
+	return false
 }
 
 func (t *nativeType) ReflectType() reflect.Type {
-	return t.rt
+	return t._rt
+}
+
+func (t *nativeType) String() string {
+	return TypeString(t)
 }
 
 func (t *nativeType) Type() dgo.Type {
@@ -61,57 +94,105 @@ func (t *nativeType) TypeIdentifier() dgo.TypeIdentifier {
 	return dgo.TiNative
 }
 
-func (t *nativeType) Instance(value interface{}) bool {
-	if ov, ok := toReflected(value); ok {
-		if t.rt == nil {
-			return true
-		}
-		return ov.Type().AssignableTo(t.rt)
-	}
-	return false
-}
-
-func (t *nativeType) String() string {
-	return TypeString(t)
-}
-
-func (t *nativeType) GoType() reflect.Type {
-	return t.rt
+func (v *native) Assignable(other dgo.Type) bool {
+	return v.Equals(other) || CheckAssignableTo(nil, other, v)
 }
 
 func (v *native) Equals(other interface{}) bool {
 	if b, ok := toReflected(other); ok {
-		a := (*reflect.Value)(v)
-		k := a.Kind()
+		k := v.Kind()
 		if k != b.Kind() {
 			return false
 		}
-		return reflect.DeepEqual(a.Interface(), b.Interface())
+		return reflect.DeepEqual(v.Interface(), b.Interface())
 	}
 	return false
 }
 
+func (v *native) Format(s fmt.State, format rune) {
+	if v.CanInterface() {
+		doFormat(v.Interface(), s, format)
+	} else {
+		util.WriteString(s, v.String())
+	}
+}
+
+func (v *native) Generic() dgo.Type {
+	return &nativeType{_rt: v.ReflectValue().Type()}
+}
+
+func (v *native) GoType() reflect.Type {
+	return v.ReflectValue().Type()
+}
+
+func (v *native) GoValue() interface{} {
+	return v.Interface()
+}
+
 func (v *native) HashCode() int {
-	rv := (*reflect.Value)(v)
-	switch rv.Kind() {
+	if v.CanAddr() {
+		return int(v.UnsafeAddr())
+	}
+	switch v.Kind() {
 	case reflect.Ptr:
-		ev := rv.Elem()
+		ev := v.Elem()
 		if ev.Kind() == reflect.Struct {
 			return structHash(&ev)
 		}
-		p := rv.Pointer()
-		return int(p ^ (p >> 32))
-	case reflect.Chan, reflect.Uintptr:
-		p := rv.Pointer()
+		p := v.Pointer()
 		return int(p ^ (p >> 32))
 	case reflect.Struct:
-		return structHash(rv) * 3
+		return structHash(v.ReflectValue()) * 3
+	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+		return int(v.Int())
+	case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
+		return int(v.Uint())
+	case reflect.Float64, reflect.Float32:
+		return int(v.Float())
+	case reflect.Bool:
+		if v.Bool() {
+			return 1231
+		}
+		return 1237
+	default:
+		p := v.Pointer()
+		return int(p ^ (p >> 32))
 	}
-	return 1234
 }
 
-func (v *native) Format(s fmt.State, format rune) {
-	doFormat(v.GoValue(), s, format)
+func (v *native) Instance(value interface{}) bool {
+	return v.Equals(value)
+}
+
+func (v *native) ReflectTo(value reflect.Value) {
+	vr := v.ReflectValue()
+	if value.Kind() == reflect.Ptr {
+		p := reflect.New(vr.Type())
+		p.Elem().Set(*vr)
+		value.Set(p)
+	} else {
+		value.Set(*vr)
+	}
+}
+
+func (v *native) ReflectType() reflect.Type {
+	return v.ReflectValue().Type()
+}
+
+func (v *native) ReflectValue() *reflect.Value {
+	return &v._rv
+}
+
+func (v *native) String() string {
+	return TypeString(v)
+}
+
+func (v *native) Type() dgo.Type {
+	return v
+}
+
+func (v *native) TypeIdentifier() dgo.TypeIdentifier {
+	return dgo.TiNativeExact
 }
 
 func structHash(rv *reflect.Value) int {
@@ -123,45 +204,13 @@ func structHash(rv *reflect.Value) int {
 	return h
 }
 
-func (v *native) ReflectTo(value reflect.Value) {
-	vr := (*reflect.Value)(v)
-	if value.Kind() == reflect.Ptr {
-		p := reflect.New(vr.Type())
-		p.Elem().Set(*vr)
-		value.Set(p)
-	} else {
-		value.Set(*vr)
-	}
-}
-
-func (v *native) String() string {
-	rv := (*reflect.Value)(v)
-	if rv.CanInterface() {
-		iv := rv.Interface()
-		if _, ok := iv.(fmt.Formatter); ok {
-			return fmt.Sprintf("%#v", iv)
-		}
-		if s, ok := iv.(fmt.Stringer); ok {
-			return s.String()
-		}
-	}
-	return rv.String()
-}
-
-func (v *native) Type() dgo.Type {
-	return &nativeType{(*reflect.Value)(v).Type()}
-}
-
-func (v *native) GoValue() interface{} {
-	return (*reflect.Value)(v).Interface()
-}
-
-func toReflected(value interface{}) (reflect.Value, bool) {
+func toReflected(value interface{}) (*reflect.Value, bool) {
 	switch value := value.(type) {
 	case *native:
-		return reflect.Value(*value), true
+		return value.ReflectValue(), true
 	case dgo.Value:
-		return reflect.Value{}, false
+		return nil, false
 	}
-	return reflect.ValueOf(value), true
+	rv := reflect.ValueOf(value)
+	return &rv, true
 }

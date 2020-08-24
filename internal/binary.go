@@ -357,7 +357,7 @@ func (v *binary) ReflectTo(value reflect.Value) {
 }
 
 func (v *binary) String() string {
-	return fmt.Sprintf(`binary %q`, v.Encode())
+	return TypeString(v)
 }
 
 func (v *binary) Type() dgo.Type {

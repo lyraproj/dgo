@@ -2,6 +2,7 @@
 package vf
 
 import (
+	"math/big"
 	"regexp"
 	"time"
 
@@ -24,6 +25,16 @@ func Boolean(v bool) dgo.Boolean {
 		return True
 	}
 	return False
+}
+
+// BigInt returns the given value as a dgo.BigInt
+func BigInt(value *big.Int) dgo.BigInt {
+	return internal.BigInt(value)
+}
+
+// BigFloat returns the given value as a dgo.BigFloat
+func BigFloat(value *big.Float) dgo.BigFloat {
+	return internal.BigFloat(value)
 }
 
 // Integer returns the given value as a dgo.Integer

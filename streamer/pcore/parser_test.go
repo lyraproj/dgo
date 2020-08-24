@@ -2,15 +2,13 @@ package pcore_test
 
 import (
 	"fmt"
-	"math"
 	"regexp"
 	"testing"
 
-	"github.com/lyraproj/dgo/internal"
-
 	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/internal"
 	"github.com/lyraproj/dgo/streamer/pcore"
+	"github.com/lyraproj/dgo/test/require"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/util"
@@ -265,8 +263,8 @@ func TestParse_notUndef(t *testing.T) {
 
 func TestParse_number(t *testing.T) {
 	require.Equal(t, tf.AnyOf(typ.Integer, typ.Float), pcore.Parse(`Number`))
-	require.Equal(t, tf.AnyOf(tf.Integer(3, math.MaxInt64, true), tf.Float(3, math.MaxFloat64, true)), pcore.Parse(`Number[3]`))
-	require.Equal(t, tf.AnyOf(tf.Integer(3, 3, true), tf.Float(3, 3, true)), pcore.Parse(`Number[3,3]`))
+	require.Equal(t, tf.AnyOf(tf.Integer(vf.Integer(3), nil, true), tf.Float(vf.Float(3), nil, true)), pcore.Parse(`Number[3]`))
+	require.Equal(t, tf.AnyOf(tf.Integer(vf.Integer(3), vf.Integer(3), true), tf.Float(vf.Float(3), vf.Float(3), true)), pcore.Parse(`Number[3,3]`))
 }
 
 func TestParse_optional(t *testing.T) {
@@ -300,7 +298,7 @@ func TestParse_struct(t *testing.T) {
 
 	st := pcore.Parse(`Struct[a => Integer[1, 5], Optional[b] => Integer[2,2]]`)
 	require.Equal(t, tf.StructMap(false,
-		tf.StructMapEntry(`a`, tf.Integer(1, 5, true), true),
+		tf.StructMapEntry(`a`, tf.Integer(vf.Integer(1), vf.Integer(5), true), true),
 		tf.StructMapEntry(`b`, vf.Value(2).Type(), false)), st)
 }
 
@@ -350,14 +348,14 @@ func TestParse_aliasInMap(t *testing.T) {
 }
 
 func TestParse_range(t *testing.T) {
-	require.Equal(t, tf.Integer(1, 10, true), pcore.Parse(`Integer[1,10]`))
-	require.Equal(t, tf.Integer(1, math.MaxInt64, true), pcore.Parse(`Integer[1]`))
-	require.Equal(t, tf.Integer(math.MinInt64, 0, true), pcore.Parse(`Integer[default,0]`))
-	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1.0,10]`))
-	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1,10.0]`))
-	require.Equal(t, tf.Float(1, 10, true), pcore.Parse(`Float[1.0,10.0]`))
-	require.Equal(t, tf.Float(1, math.MaxFloat64, true), pcore.Parse(`Float[1.0]`))
-	require.Equal(t, tf.Float(-math.MaxFloat64, 0, true), pcore.Parse(`Float[default,0.0]`))
+	require.Equal(t, tf.Integer(vf.Integer(1), vf.Integer(10), true), pcore.Parse(`Integer[1,10]`))
+	require.Equal(t, tf.Integer(vf.Integer(1), nil, true), pcore.Parse(`Integer[1]`))
+	require.Equal(t, tf.Integer(nil, vf.Integer(0), true), pcore.Parse(`Integer[default,0]`))
+	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1.0,10]`))
+	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1,10.0]`))
+	require.Equal(t, tf.Float(vf.Float(1), vf.Float(10), true), pcore.Parse(`Float[1.0,10.0]`))
+	require.Equal(t, tf.Float(vf.Float(1), nil, true), pcore.Parse(`Float[1.0]`))
+	require.Equal(t, tf.Float(nil, vf.Float(0), true), pcore.Parse(`Float[default,0.0]`))
 
 	require.Panic(t, func() { pcore.Parse(`Float[b]`) }, `illegal argument for Float. Expected int|float, got b`)
 }

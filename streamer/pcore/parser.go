@@ -252,29 +252,32 @@ func arrayType(p *pcoreParser) dgo.Value {
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Array`, 1, 3)
 
-		var min int64 = 0
-		var max int64 = math.MaxInt64
+		var min dgo.Integer
+		var max dgo.Integer
 		et := typ.Any
 		argc := args.Len()
 		switch argc {
 		case 1, 2:
 			if i, ok := getIfInt(args, 0, 0); ok {
-				min = i
+				min = vf.Integer(i)
 				if argc > 1 {
-					max = getInt(`Array`, args, 1, math.MaxInt64)
+					max = getInt(`Array`, args, 1)
+					return tf.Array(min, max)
 				}
-			} else {
-				et = args.Arg(`Array`, 0, typ.Type).(dgo.Type)
-				if argc > 1 {
-					min = getInt(`Array`, args, 1, 0)
-				}
+				return tf.Array(min)
 			}
+			et = args.Arg(`Array`, 0, typ.Type).(dgo.Type)
+			if argc > 1 {
+				min = getInt(`Array`, args, 1)
+				return tf.Array(et, min)
+			}
+			return tf.Array(et)
 		case 3:
 			et = args.Arg(`Array`, 0, typ.Type).(dgo.Type)
-			min = getInt(`Array`, args, 1, 0)
-			max = getInt(`Array`, args, 2, math.MaxInt64)
+			min = getInt(`Array`, args, 1)
+			max = getInt(`Array`, args, 2)
+			return tf.Array(et, min, max)
 		}
-		return tf.Array(et, min, max)
 	}
 	return typ.Array
 }
@@ -286,12 +289,11 @@ func binaryType(p *pcoreParser) dgo.Value {
 		p.array()
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Binary`, 1, 2)
-		min := getInt(`Binary`, args, 0, 0)
-		max := int64(math.MaxInt64)
+		min := getInt(`Binary`, args, 0)
 		if args.Len() > 1 {
-			max = getInt(`Binary`, args, 1, max)
+			return tf.Binary(min, getInt(`Binary`, args, 1))
 		}
-		return tf.Binary(min, max)
+		return tf.Binary(min)
 	}
 	return typ.Binary
 }
@@ -375,12 +377,11 @@ func floatType(p *pcoreParser) dgo.Value {
 		p.array()
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Float`, 1, 2)
-		from := getFloat(`Float`, args, 0, -math.MaxFloat64)
-		to := math.MaxFloat64
+		from := getFloat(`Float`, args, 0)
 		if args.Len() == 2 {
-			to = getFloat(`Float`, args, 1, math.MaxFloat64)
+			return tf.Float(from, getFloat(`Float`, args, 1), true)
 		}
-		return tf.Float(from, to, true)
+		return tf.Float(from, nil, true)
 	}
 	return typ.Float
 }
@@ -394,20 +395,20 @@ func hashType(p *pcoreParser) dgo.Value {
 		args.AssertSize(`Hash`, 1, 4)
 		switch args.Len() {
 		case 1:
-			return tf.Map(getInt(`Hash`, args, 0, 0))
+			return tf.Map(getInt(`Hash`, args, 0))
 		case 2:
 			if i, ok := getIfInt(args, 0, 0); ok {
-				return tf.Map(i, getInt(`Hash`, args, 1, math.MaxInt64))
+				return tf.Map(i, getInt(`Hash`, args, 1))
 			}
 			return tf.Map(args.Arg(`Hash`, 0, typ.Type), args.Arg(`Hash`, 1, typ.Type))
 		case 3:
-			return tf.Map(args.Arg(`Hash`, 0, typ.Type), args.Arg(`Hash`, 1, typ.Type), getInt(`Hash`, args, 2, 0))
+			return tf.Map(args.Arg(`Hash`, 0, typ.Type), args.Arg(`Hash`, 1, typ.Type), getInt(`Hash`, args, 2))
 		default:
 			return tf.Map(
 				args.Arg(`Hash`, 0, typ.Type),
 				args.Arg(`Hash`, 1, typ.Type),
-				getInt(`Hash`, args, 2, 0),
-				getInt(`Hash`, args, 3, math.MaxInt64))
+				getInt(`Hash`, args, 2),
+				getInt(`Hash`, args, 3))
 		}
 	}
 	return typ.Map
@@ -420,23 +421,26 @@ func integerType(p *pcoreParser) dgo.Value {
 		p.array()
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Integer`, 1, 2)
-		from := getInt(`Integer`, args, 0, math.MinInt64)
-		to := int64(math.MaxInt64)
+		from := getInt(`Integer`, args, 0)
 		if args.Len() == 2 {
-			to = getInt(`Integer`, args, 1, math.MaxInt64)
+			return tf.Integer(from, getInt(`Integer`, args, 1), true)
 		}
-		return tf.Integer(from, to, true)
+		return tf.Integer(from, nil, true)
 	}
 	return typ.Integer
 }
 
 func numberType(p *pcoreParser) dgo.Value {
 	tp := floatType(p).(dgo.FloatType)
-	max := int64(math.MaxInt64)
-	if tp.Max() != math.MaxFloat64 {
-		max = int64(tp.Max())
+	var min dgo.Integer
+	var max dgo.Integer
+	if tp.Min() != nil {
+		min = tp.Min().Integer()
 	}
-	return tf.AnyOf(tf.Integer(int64(tp.Min()), max, true), tp)
+	if tp.Max() != nil {
+		max = tp.Max().Integer()
+	}
+	return tf.AnyOf(tf.Integer(min, max, true), tp)
 }
 
 func notUndefType(p *pcoreParser) dgo.Value {
@@ -752,34 +756,34 @@ func getIfInt(args dgo.Array, arg int, dflt int64) (int64, bool) {
 	return 0, false
 }
 
-func getInt(fn string, args dgo.Arguments, arg int, dflt int64) int64 {
+func getInt(fn string, args dgo.Arguments, arg int) dgo.Integer {
 	switch v := args.Get(arg).(type) {
 	case dgo.Integer:
-		return v.GoInt()
+		return v
 	case dgo.String:
 		if defaultLiteral == v.GoString() {
-			return dflt
+			return nil
 		}
 	}
 	// Trigger panic since argument isn't an integer
 	args.Arg(fn, arg, typ.Integer)
-	return 0
+	return nil
 }
 
-func getFloat(fn string, args dgo.Arguments, arg int, dflt float64) float64 {
+func getFloat(fn string, args dgo.Arguments, arg int) dgo.Float {
 	switch v := args.Get(arg).(type) {
 	case dgo.Integer:
-		return float64(v.GoInt())
+		return v.Float()
 	case dgo.Float:
-		return v.GoFloat()
+		return v
 	case dgo.String:
 		if defaultLiteral == v.GoString() {
-			return dflt
+			return nil
 		}
 	}
 	// Trigger panic since argument isn't an integer
 	args.Arg(fn, arg, typ.Number)
-	return 0
+	return nil
 }
 
 func optionalValue(v dgo.Value) (dgo.Value, bool) {

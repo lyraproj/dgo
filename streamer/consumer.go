@@ -8,11 +8,15 @@ import (
 // which is increased by one for each value that it streams. The reference index
 // originates from zero.
 type Consumer interface {
-	// CanDoBinary returns true if the value can handle binary efficiently. This tells
+	// CanDoBinary returns true if the binary values are handled efficiently. This tells
 	// the Serializer to pass dgo.Binary verbatim to Add
 	CanDoBinary() bool
 
-	// CanDoTime returns true if the value can handle timestamp efficiently. This tells
+	// CanDoBigNumbers returns true if BigInt and BigFloat numbers are handled efficiently. This tells
+	// the Serializer to pass them verbatim to Add
+	CanDoBigNumbers() bool
+
+	// CanDoTime returns true if timestamp are handled efficiently. This tells
 	// the Serializer to pass dgo.Time verbatim to Add
 	CanDoTime() bool
 

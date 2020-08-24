@@ -140,7 +140,7 @@ type (
 
 	// MapType is implemented by types representing implementations of the Map value
 	MapType interface {
-		SizedType
+		sizedType
 
 		// KeyType returns the type of the keys for instances of this type
 		KeyType() Type

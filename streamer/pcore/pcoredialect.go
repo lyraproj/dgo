@@ -23,6 +23,8 @@ var binaryTyp = vf.String(`Binary`)
 var sensitiveTyp = vf.String(`Sensitive`)
 var mapType = vf.String(`Hash`)
 var timeType = vf.String(`Timestamp`)
+var bigFloatType = vf.String("Float")
+var bigIntegerType = vf.String("Float")
 
 func (d pcoreDialect) TypeKey() dgo.String {
 	return typeKey
@@ -38,6 +40,14 @@ func (d pcoreDialect) RefKey() dgo.String {
 
 func (d pcoreDialect) AliasTypeName() dgo.String {
 	return aliasType
+}
+
+func (d pcoreDialect) BigFloatTypeName() dgo.String {
+	return bigFloatType
+}
+
+func (d pcoreDialect) BigIntTypeName() dgo.String {
+	return bigIntegerType
 }
 
 func (d pcoreDialect) BinaryTypeName() dgo.String {

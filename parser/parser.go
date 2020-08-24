@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"regexp"
 	"strconv"
+
+	"github.com/lyraproj/dgo/vf"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
@@ -593,6 +596,8 @@ func (p *parser) identifier(t *Token, returnUnknown bool) dgo.Value {
 		tp = p.meta()
 	case `string`:
 		tp = p.string()
+	case `big`:
+		tp = p.big()
 	case `sensitive`:
 		tp = p.sensitive()
 	case `func`:
@@ -618,9 +623,9 @@ func (p *parser) namedType(t *Token) dgo.Value {
 	return tp
 }
 
-func (p *parser) float(t *Token) dgo.Value {
+func (p *parser) float(t *Token, bg bool) dgo.Value {
 	var tp dgo.Value
-	f := tokenFloat(t)
+	mi := tokenFloat(t, bg)
 	n := p.PeekToken()
 	if n.Type == dotdot || n.Type == dotdotdot {
 		inclusive := n.Type == dotdot
@@ -628,20 +633,20 @@ func (p *parser) float(t *Token) dgo.Value {
 		n = p.PeekToken()
 		if n.Type == integer || n.Type == float {
 			p.NextToken()
-			tp = internal.FloatType(f, tokenFloat(n), inclusive)
+			tp = internal.FloatType(mi, tokenFloat(n, bg), inclusive)
 		} else {
 			p.NextToken()
-			tp = internal.FloatType(f, math.MaxFloat64, inclusive) // Unbounded at upper end
+			tp = internal.FloatType(mi, nil, inclusive) // Unbounded at upper end
 		}
 	} else {
-		tp = internal.Float(f)
+		tp = mi
 	}
 	return tp
 }
 
-func (p *parser) integer(t *Token) dgo.Value {
+func (p *parser) integer(t *Token, bg bool) dgo.Value {
 	var tp dgo.Value
-	i := tokenInt(t)
+	mi := tokenInt(t, bg)
 	n := p.PeekToken()
 	if n.Type == dotdot || n.Type == dotdotdot {
 		inclusive := n.Type == dotdot
@@ -650,30 +655,50 @@ func (p *parser) integer(t *Token) dgo.Value {
 		switch x.Type {
 		case integer:
 			p.NextToken()
-			tp = internal.IntegerType(i, tokenInt(x), inclusive)
+			tp = internal.IntegerType(mi, tokenInt(x, bg), inclusive)
 		case float:
 			p.NextToken()
-			tp = internal.FloatType(float64(i), tokenFloat(x), inclusive)
+			var mf dgo.Float
+			if _, ok := mi.(dgo.BigInt); ok {
+				mf = vf.BigFloat(mi.ToBigFloat())
+			} else {
+				mf = vf.Float(float64(mi.GoInt()))
+			}
+			tp = internal.FloatType(mf, tokenFloat(x, bg), inclusive)
 		default:
-			tp = internal.IntegerType(i, math.MaxInt64, inclusive) // Unbounded at upper end
+			tp = internal.IntegerType(mi, nil, inclusive) // Unbounded at upper end
 		}
 	} else {
-		tp = internal.Integer(i)
+		tp = mi
 	}
 	return tp
 }
 
-func (p *parser) dotRange(t *Token) dgo.Value {
+func (p *parser) big() dgo.Value {
+	var tp dgo.Value
+	n := p.PeekToken()
+	switch n.Type {
+	case integer:
+		tp = p.integer(p.NextToken(), true)
+	case float:
+		tp = p.float(p.NextToken(), true)
+	default:
+		panic(badSyntax(n, exIntOrFloat))
+	}
+	return tp
+}
+
+func (p *parser) dotRange(t *Token, bg bool) dgo.Value {
 	var tp dgo.Value
 	n := p.PeekToken()
 	inclusive := t.Type == dotdot
 	switch n.Type {
 	case integer:
 		p.NextToken()
-		tp = internal.IntegerType(math.MinInt64, tokenInt(n), inclusive)
+		tp = internal.IntegerType(nil, tokenInt(n, bg), inclusive)
 	case float:
 		p.NextToken()
-		tp = internal.FloatType(-math.MaxFloat64, tokenFloat(n), inclusive)
+		tp = internal.FloatType(nil, tokenFloat(n, bg), inclusive)
 	default:
 		panic(badSyntax(n, exIntOrFloat))
 	}
@@ -742,11 +767,11 @@ func (p *parser) typeExpression(t *Token) {
 			panic(badSyntax(n, exRightAngle))
 		}
 	case integer:
-		tp = p.integer(t)
+		tp = p.integer(t, false)
 	case float:
-		tp = p.float(t)
+		tp = p.float(t, false)
 	case dotdot, dotdotdot: // Unbounded at lower end
-		tp = p.dotRange(t)
+		tp = p.dotRange(t, false)
 	case identifier:
 		if p.PeekToken().Type == '=' {
 			tp = p.aliasDeclaration(t)
@@ -763,14 +788,24 @@ func (p *parser) typeExpression(t *Token) {
 	p.Append(tp)
 }
 
-func tokenInt(t *Token) int64 {
-	i, _ := strconv.ParseInt(t.Value, 0, 64)
-	return i
+func tokenInt(t *Token, bg bool) dgo.Integer {
+	if !bg {
+		i, err := strconv.ParseInt(t.Value, 0, 64)
+		if err == nil {
+			return vf.Integer(i)
+		}
+	}
+	bi, _ := new(big.Int).SetString(t.Value, 0)
+	return vf.BigInt(bi)
 }
 
-func tokenFloat(t *Token) float64 {
+func tokenFloat(t *Token, bg bool) dgo.Float {
+	if bg {
+		f, _, _ := new(big.Float).Parse(t.Value, 0)
+		return internal.BigFloat(f)
+	}
 	f, _ := strconv.ParseFloat(t.Value, 64)
-	return f
+	return internal.Float(f)
 }
 
 func allTypes(a []dgo.Value) []interface{} {

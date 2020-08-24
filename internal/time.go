@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	"math"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -12,7 +12,9 @@ import (
 type (
 	timeType int
 
-	timeVal time.Time
+	timeVal struct {
+		time.Time
+	}
 )
 
 // DefaultTimeType is the unconstrainted Time type
@@ -91,7 +93,7 @@ func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
 
 // Time returns the given timestamp as a dgo.Time
 func Time(ts time.Time) dgo.Time {
-	return (*timeVal)(&ts)
+	return &timeVal{ts}
 }
 
 // TimeFromString returns the given time string as a dgo.Time. The string must conform to
@@ -102,44 +104,51 @@ func TimeFromString(s string) dgo.Time {
 	if err != nil {
 		panic(err)
 	}
-	return (*timeVal)(&ts)
+	return &timeVal{ts}
 }
 
 func (v *timeVal) Equals(other interface{}) bool {
 	switch ov := other.(type) {
 	case *timeVal:
-		return (*time.Time)(v).Equal(*(*time.Time)(ov))
+		return v.Equal(ov.Time)
 	case time.Time:
-		return (*time.Time)(v).Equal(ov)
+		return v.Equal(ov)
 	case *time.Time:
-		return (*time.Time)(v).Equal(*ov)
+		return v.Equal(*ov)
 	}
 	return false
 }
 
 func (v *timeVal) SecondsWithFraction() float64 {
-	t := (*time.Time)(v)
-	y := t.Year()
+	y := v.Year()
 	// Timestamps that represent a date before the year 1678 or after 2262 can
 	// be represented as nanoseconds in an int64.
 	if 1678 < y && y < 2262 {
-		return float64(t.UnixNano()) / 1000000000.0
+		return float64(v.UnixNano()) / 1000000000.0
 	}
 	// Fall back to microsecond precision
-	us := t.Unix()*1000000 + int64(t.Nanosecond())/1000
+	us := v.Unix()*1000000 + int64(v.Nanosecond())/1000
 	return float64(us) / 1000000.0
 }
 
+func (v *timeVal) Float() dgo.Float {
+	return floatVal(v.SecondsWithFraction())
+}
+
 func (v *timeVal) GoTime() *time.Time {
-	return (*time.Time)(v)
+	return &v.Time
 }
 
 func (v *timeVal) HashCode() int {
-	return int((*time.Time)(v).UnixNano())
+	return int(v.UnixNano())
+}
+
+func (v *timeVal) Integer() dgo.Integer {
+	return intVal(v.Unix())
 }
 
 func (v *timeVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf((*time.Time)(v))
+	rv := reflect.ValueOf(&v.Time)
 	k := value.Kind()
 	if !(k == reflect.Ptr || k == reflect.Interface) {
 		rv = rv.Elem()
@@ -148,7 +157,23 @@ func (v *timeVal) ReflectTo(value reflect.Value) {
 }
 
 func (v *timeVal) String() string {
-	return fmt.Sprintf(`time %q`, (*time.Time)(v).Format(time.RFC3339Nano))
+	return TypeString(v)
+}
+
+func (v *timeVal) ToBigFloat() *big.Float {
+	return big.NewFloat(v.SecondsWithFraction())
+}
+
+func (v *timeVal) ToBigInt() *big.Int {
+	return big.NewInt(v.Unix())
+}
+
+func (v *timeVal) ToFloat() (float64, bool) {
+	return v.SecondsWithFraction(), true
+}
+
+func (v *timeVal) ToInt() (int64, bool) {
+	return v.Unix(), true
 }
 
 func (v *timeVal) Type() dgo.Type {
@@ -170,7 +195,7 @@ func (v *timeVal) Generic() dgo.Type {
 }
 
 func (v *timeVal) IsInstance(tv time.Time) bool {
-	return (*time.Time)(v).Equal(tv)
+	return v.Equal(tv)
 }
 
 func (v *timeVal) New(arg dgo.Value) dgo.Value {

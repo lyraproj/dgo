@@ -185,6 +185,8 @@ func (t *sizedArrayType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type
 	switch ot := other.(type) {
 	case defaultArrayType:
 		return false // lacks size
+	case dgo.Array:
+		return t.DeepInstance(guard, ot)
 	case dgo.ArrayType:
 		return t.min <= ot.Min() && ot.Max() <= t.max && t.elementType.Assignable(ot.ElementType())
 	}
@@ -457,7 +459,7 @@ func (t *tupleType) Generic() dgo.Type {
 }
 
 func (t *tupleType) HashCode() int {
-	return tupleHashCode(t, nil)
+	return deepHashCode(nil, t)
 }
 
 func (t *tupleType) deepHashCode(seen []dgo.Value) int {

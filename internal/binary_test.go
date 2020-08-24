@@ -8,13 +8,10 @@ import (
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
-
+	"github.com/lyraproj/dgo/test/assert"
+	"github.com/lyraproj/dgo/test/require"
 	"github.com/lyraproj/dgo/tf"
-
 	"github.com/lyraproj/dgo/typ"
-
-	require "github.com/lyraproj/dgo/dgo_test"
-
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -22,111 +19,99 @@ func TestBinaryType(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
 	tp := tf.Binary(3, 3)
-	require.Assignable(t, typ.Binary, tp)
-	require.NotAssignable(t, tp, typ.Binary)
-	require.NotAssignable(t, tp, typ.String)
-	require.Instance(t, typ.Binary, bs)
-	require.Instance(t, typ.Binary, v)
-	require.Instance(t, tp, v)
-	require.Instance(t, tp, []byte{1, 2, 3})
-	require.NotInstance(t, tp, []byte{1, 2})
-	require.NotInstance(t, tf.Binary(1, 5), `abc`)
-
-	require.Assignable(t, tf.Binary(3, 3), tp)
-	require.Assignable(t, tp, tf.Binary(3, 3))
-
-	require.Same(t, typ.Binary, tf.Binary())
-	require.Same(t, typ.Binary, tf.Binary(0, math.MaxInt64))
-
-	require.NotAssignable(t, tf.Binary(4), tp)
-	require.NotAssignable(t, tf.Binary(0, 2), tp)
-
-	require.Equal(t, tf.Binary(1, 2), tf.Binary(2, 1))
-	require.Equal(t, tf.Binary(-1, 2), tf.Binary(0, 2))
-	require.NotEqual(t, tf.Binary(0, 2), tf.String(0, 2))
-
-	require.Equal(t, tf.Binary(0, 2).HashCode(), tf.Binary(0, 2).HashCode())
-	require.NotEqual(t, tf.Binary(1, 2).HashCode(), tf.Binary(0, 2).HashCode())
-	require.NotEqual(t, tf.Binary(0, 1).HashCode(), tf.Binary(0, 2).HashCode())
-
-	require.Instance(t, tp.Type(), tp)
-
-	require.Panic(t, func() { tf.Binary(`blue`) }, `illegal argument`)
-	require.Panic(t, func() { tf.Binary(`blue`, 1) }, `illegal argument 1`)
-	require.Panic(t, func() { tf.Binary(1, `blue`) }, `illegal argument 2`)
-	require.Panic(t, func() { tf.Binary(1, 2, 3) }, `illegal number of arguments`)
-	require.Equal(t, `binary[3,3]`, tp.String())
-
-	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
+	assert.Assignable(t, typ.Binary, tp)
+	assert.NotAssignable(t, tp, typ.Binary)
+	assert.NotAssignable(t, tp, typ.String)
+	assert.Instance(t, typ.Binary, bs)
+	assert.Instance(t, typ.Binary, v)
+	assert.Instance(t, tp, v)
+	assert.Instance(t, tp, []byte{1, 2, 3})
+	assert.NotInstance(t, tp, []byte{1, 2})
+	assert.NotInstance(t, tf.Binary(1, 5), `abc`)
+	assert.Assignable(t, tf.Binary(3, 3), tp)
+	assert.Assignable(t, tp, tf.Binary(3, 3))
+	assert.Same(t, typ.Binary, tf.Binary())
+	assert.Same(t, typ.Binary, tf.Binary(0, math.MaxInt64))
+	assert.NotAssignable(t, tf.Binary(4), tp)
+	assert.NotAssignable(t, tf.Binary(0, 2), tp)
+	assert.Equal(t, tf.Binary(1, 2), tf.Binary(2, 1))
+	assert.Equal(t, tf.Binary(-1, 2), tf.Binary(0, 2))
+	assert.NotEqual(t, tf.Binary(0, 2), tf.String(0, 2))
+	assert.Equal(t, tf.Binary(0, 2).HashCode(), tf.Binary(0, 2).HashCode())
+	assert.NotEqual(t, tf.Binary(1, 2).HashCode(), tf.Binary(0, 2).HashCode())
+	assert.NotEqual(t, tf.Binary(0, 1).HashCode(), tf.Binary(0, 2).HashCode())
+	assert.Instance(t, tp.Type(), tp)
+	assert.Panic(t, func() { tf.Binary(`blue`) }, `illegal argument`)
+	assert.Panic(t, func() { tf.Binary(`blue`, 1) }, `illegal argument 1`)
+	assert.Panic(t, func() { tf.Binary(1, `blue`) }, `illegal argument 2`)
+	assert.Panic(t, func() { tf.Binary(1, 2, 3) }, `illegal number of arguments`)
+	assert.Equal(t, `binary[3,3]`, tp.String())
+	assert.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
 }
 
 func TestBinaryType_New(t *testing.T) {
 	b := vf.New(typ.Binary, vf.Arguments(vf.Values(1, 2, 3)))
-	require.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
+	assert.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
 }
 
 func TestBinaryType_New_passThrough(t *testing.T) {
 	b := vf.Binary([]byte{1, 2, 3}, true)
-	require.Same(t, b, vf.New(typ.Binary, b))
+	assert.Same(t, b, vf.New(typ.Binary, b))
 }
 
 func TestBinaryType_New_stringRaw(t *testing.T) {
-	require.Equal(t, vf.Binary([]byte(`hello`), true), vf.New(typ.Binary, vf.Arguments(vf.String(`hello`), `%r`)))
+	assert.Equal(t, vf.Binary([]byte(`hello`), true), vf.New(typ.Binary, vf.Arguments(vf.String(`hello`), `%r`)))
 }
 
 func TestBinaryType_New_badCount(t *testing.T) {
-	require.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(1, 2, 3)) }, `illegal number of arguments`)
+	assert.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(1, 2, 3)) }, `illegal number of arguments`)
 }
 
 func TestBinaryType_New_badArg(t *testing.T) {
-	require.Panic(t, func() { vf.New(typ.Binary, vf.Integer(3)) }, `illegal argument for binary`)
+	assert.Panic(t, func() { vf.New(typ.Binary, vf.Integer(3)) }, `illegal argument for binary`)
 }
 
 func TestBinaryType_New_badType(t *testing.T) {
-	require.Panic(t,
+	assert.Panic(t,
 		func() { vf.New(tf.Binary(2, 2), vf.New(typ.Binary, vf.Value([]byte{1, 2, 3}))) },
 		`cannot be assigned`)
 }
 
 func TestBinaryType_New_badBytes(t *testing.T) {
-	require.Panic(t,
+	assert.Panic(t,
 		func() { vf.New(typ.Binary, vf.Values(1, 311, 3)) },
 		`the value 311 cannot be assigned to a variable of type 0..255`)
 }
 
 func TestBinaryType_New_badFormat(t *testing.T) {
-	require.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(`hello`, `%x`)) }, `illegal argument`)
+	assert.Panic(t, func() { vf.New(typ.Binary, vf.Arguments(`hello`, `%x`)) }, `illegal argument`)
 }
 
 func TestExactBinaryType(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
 	tp := v.Type().(dgo.BinaryType)
-	require.Assignable(t, typ.Binary, tp)
-	require.NotAssignable(t, tp, typ.Binary)
-	require.NotAssignable(t, tp, typ.String)
-	require.Instance(t, tp, v)
-	require.Instance(t, tp, bs)
-	require.True(t, tp.IsInstance(bs))
-	require.NotInstance(t, tp, []byte{1, 2})
-	require.NotInstance(t, tp, "AQID")
-	require.False(t, tp.Unbounded())
-
-	require.Assignable(t, tf.Binary(3, 3), tp)
-	require.NotAssignable(t, tp, tf.Binary(3, 3))
-
-	require.NotAssignable(t, tf.Binary(4), tp)
-	require.NotAssignable(t, tf.Binary(0, 2), tp)
-
-	require.Equal(t, v.HashCode(), tp.HashCode())
-
-	require.Instance(t, tp.Type(), tp)
-	require.Equal(t, `binary "AQID"`, tp.String())
-	require.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
+	assert.Assignable(t, typ.Binary, tp)
+	assert.NotAssignable(t, tp, typ.Binary)
+	assert.NotAssignable(t, tp, typ.String)
+	assert.Instance(t, tp, v)
+	assert.Instance(t, tp, bs)
+	assert.True(t, tp.IsInstance(bs))
+	assert.NotInstance(t, tp, []byte{1, 2})
+	assert.NotInstance(t, tp, "AQID")
+	assert.False(t, tp.Unbounded())
+	assert.Assignable(t, tf.Binary(3, 3), tp)
+	assert.NotAssignable(t, tp, tf.Binary(3, 3))
+	assert.NotAssignable(t, tf.Binary(4), tp)
+	assert.NotAssignable(t, tf.Binary(0, 2), tp)
+	assert.Equal(t, v.HashCode(), tp.HashCode())
+	assert.Instance(t, tp.Type(), tp)
+	assert.Equal(t, `binary "AQID"`, tp.String())
+	assert.Equal(t, reflect.TypeOf([]byte{}), tp.ReflectType())
 
 	b := vf.New(tp, vf.Arguments(vf.Values(1, 2, 3)))
-	require.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
-	require.Panic(t,
+	assert.Equal(t, vf.Binary([]byte{1, 2, 3}, true), b)
+	assert.Panic(t,
 		func() { vf.New(tp, vf.New(typ.Binary, vf.Value([]byte{1, 2}))) },
 		`cannot be assigned`)
 }
@@ -140,184 +125,181 @@ func (badReader) Read(p []byte) (n int, err error) {
 func TestBinary(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.Binary(bs, false)
-	require.Equal(t, `AQID`, v.Encode())
+	assert.Equal(t, `AQID`, v.Encode())
 
 	// Test mutability
 	bs[1] = 4
-	require.Equal(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
-	require.Equal(t, `AQQD`, v.Encode())
+	assert.Equal(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
+	assert.Equal(t, `AQQD`, v.Encode())
 
 	// Test immutability
 	v = vf.Binary(bs, true)
 	bs[1] = 2
-	require.Equal(t, `AQQD`, v.Encode())
-	require.NotEqual(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
+	assert.Equal(t, `AQQD`, v.Encode())
+	assert.NotEqual(t, reflect.ValueOf(bs).Pointer(), reflect.ValueOf(v.GoBytes()).Pointer())
 
 	// Test panic on bad read
-	require.Panic(t, func() { vf.BinaryFromData(badReader(0)) }, `oops`)
+	assert.Panic(t, func() { vf.BinaryFromData(badReader(0)) }, `oops`)
 }
 
 func TestBinaryString(t *testing.T) {
 	bs := []byte{1, 2, 3}
 	v := vf.BinaryFromString(`AQID`)
-	require.True(t, bytes.Equal(bs, v.GoBytes()))
-
-	require.Panic(t, func() { vf.BinaryFromString(`----`) }, `illegal base64`)
+	assert.True(t, bytes.Equal(bs, v.GoBytes()))
+	assert.Panic(t, func() { vf.BinaryFromString(`----`) }, `illegal base64`)
 }
 
 func TestBinaryFromEncoded(t *testing.T) {
 	bs := []byte(`hello`)
 	notStrict := `aGVsbG9=`
 	v := vf.BinaryFromEncoded(notStrict, `%b`)
-	require.True(t, bytes.Equal(bs, v.GoBytes()))
-	require.Panic(t, func() { vf.BinaryFromEncoded(notStrict, `%B`) }, `illegal base64 data at input byte 7`)
+	assert.True(t, bytes.Equal(bs, v.GoBytes()))
+	assert.Panic(t, func() { vf.BinaryFromEncoded(notStrict, `%B`) }, `illegal base64 data at input byte 7`)
 
 	bs = []byte{'r', 0x82, 0xff}
 	notUtf8 := string(bs)
 	v = vf.BinaryFromEncoded(notUtf8, `%r`)
-	require.True(t, bytes.Equal(bs, v.GoBytes()))
-	require.Panic(t, func() { vf.BinaryFromEncoded(notUtf8, `%s`) }, `Expected valid utf8 string`)
+	assert.True(t, bytes.Equal(bs, v.GoBytes()))
+	assert.Panic(t, func() { vf.BinaryFromEncoded(notUtf8, `%s`) }, `Expected valid utf8 string`)
 
 	bs = []byte{3, 240, 126}
-	require.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A/B+`, `%B`).GoBytes()))
-	require.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A_B-`, `%u`).GoBytes()))
-	require.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%u`) }, `illegal base64 data at input byte 1`)
-
-	require.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%x`) }, `Expected one of the supported format specifiers`)
+	assert.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A/B+`, `%B`).GoBytes()))
+	assert.True(t, bytes.Equal(bs, vf.BinaryFromEncoded(`A_B-`, `%u`).GoBytes()))
+	assert.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%u`) }, `illegal base64 data at input byte 1`)
+	assert.Panic(t, func() { vf.BinaryFromEncoded(`A/B+`, `%x`) }, `Expected one of the supported format specifiers`)
 }
 
 func TestBinary_CompareTo(t *testing.T) {
 	a := vf.Binary([]byte{'a', 'b', 'c'}, false)
 
 	c, ok := a.CompareTo(a)
-	require.True(t, ok)
-	require.Equal(t, 0, c)
+	assert.True(t, ok)
+	assert.Equal(t, 0, c)
 
 	c, ok = a.CompareTo(vf.Nil)
-	require.True(t, ok)
-	require.Equal(t, 1, c)
+	assert.True(t, ok)
+	assert.Equal(t, 1, c)
 
 	_, ok = a.CompareTo(vf.Value('a'))
-	require.False(t, ok)
+	assert.False(t, ok)
 
 	b := vf.Binary([]byte{'a', 'b', 'c'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, 0, c)
+	assert.True(t, ok)
+	assert.Equal(t, 0, c)
 
 	bs := []byte{'a', 'b', 'c'}
 	c, ok = a.CompareTo(bs)
-	require.True(t, ok)
-	require.Equal(t, 0, c)
+	assert.True(t, ok)
+	assert.Equal(t, 0, c)
 
 	b = vf.Binary([]byte{'a', 'b', 'c', 'd'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, -1, c)
+	assert.True(t, ok)
+	assert.Equal(t, -1, c)
 
 	b = vf.Binary([]byte{'a', 'b', 'd', 'd'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, -1, c)
+	assert.True(t, ok)
+	assert.Equal(t, -1, c)
 
 	b = vf.Binary([]byte{'a', 'b'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, 1, c)
+	assert.True(t, ok)
+	assert.Equal(t, 1, c)
 
 	b = vf.Binary([]byte{'a', 'b', 'd'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, -1, c)
+	assert.True(t, ok)
+	assert.Equal(t, -1, c)
 
 	b = vf.Binary([]byte{'a', 'b', 'b'}, false)
 	c, ok = a.CompareTo(b)
-	require.True(t, ok)
-	require.Equal(t, 1, c)
+	assert.True(t, ok)
+	assert.Equal(t, 1, c)
 }
 
 func TestBinary_Copy(t *testing.T) {
 	a := vf.Binary([]byte{'a', 'b'}, true)
-	require.Same(t, a, a.Copy(true))
+	assert.Same(t, a, a.Copy(true))
 
 	c := a.Copy(false)
-	require.False(t, c.Frozen())
-	require.NotSame(t, c, c.Copy(false))
+	assert.False(t, c.Frozen())
+	assert.NotSame(t, c, c.Copy(false))
 
 	c = c.Copy(true)
-	require.True(t, c.Frozen())
-	require.Same(t, c, c.Copy(true))
+	assert.True(t, c.Frozen())
+	assert.Same(t, c, c.Copy(true))
 
 	c = a.ThawedCopy().(dgo.Binary)
-	require.False(t, c.Frozen())
-	require.NotSame(t, c, c.ThawedCopy())
+	assert.False(t, c.Frozen())
+	assert.NotSame(t, c, c.ThawedCopy())
 }
 
 func TestBinary_Equal(t *testing.T) {
 	a := vf.Binary([]byte{1, 2}, true)
-	require.True(t, a.Equals(a))
+	assert.True(t, a.Equals(a))
 
 	b := vf.Binary([]byte{1}, true)
-	require.False(t, a.Equals(b))
+	assert.False(t, a.Equals(b))
 	b = vf.Binary([]byte{1, 2}, true)
-	require.True(t, a.Equals(b))
-	require.True(t, a.Equals([]byte{1, 2}))
-	require.False(t, a.Equals(`12`))
-	require.Equal(t, a.HashCode(), b.HashCode())
-	require.True(t, a.Equals(vf.Value([]uint8{1, 2})))
-	require.True(t, a.Equals(vf.Value(reflect.ValueOf([]uint8{1, 2}))))
+	assert.True(t, a.Equals(b))
+	assert.True(t, a.Equals([]byte{1, 2}))
+	assert.False(t, a.Equals(`12`))
+	assert.Equal(t, a.HashCode(), b.HashCode())
+	assert.True(t, a.Equals(vf.Value([]uint8{1, 2})))
+	assert.True(t, a.Equals(vf.Value(reflect.ValueOf([]uint8{1, 2}))))
 }
 
 func TestBinary_Freeze(t *testing.T) {
 	a := vf.Binary([]byte{1, 2}, false)
-	require.False(t, a.Frozen())
+	assert.False(t, a.Frozen())
 	a.Freeze()
-	require.True(t, a.Frozen())
+	assert.True(t, a.Frozen())
 }
 
 func TestBinary_FrozenCopy(t *testing.T) {
 	a := vf.Binary([]byte{1, 2}, false)
 	b := a.FrozenCopy().(dgo.Binary)
-	require.False(t, a.Frozen())
-	require.True(t, b.Frozen())
+	assert.False(t, a.Frozen())
+	assert.True(t, b.Frozen())
 	a.Freeze()
 
 	b = a.FrozenCopy().(dgo.Binary)
-	require.Same(t, a, b)
-	require.True(t, a.Frozen())
+	assert.Same(t, a, b)
+	assert.True(t, a.Frozen())
 }
 
 func TestBinary_FrozenEqual(t *testing.T) {
 	f := vf.Binary([]byte{1, 2}, true)
-	require.True(t, f.Frozen(), `not frozen`)
+	assert.True(t, f.Frozen(), `not frozen`)
 
 	a := f.Copy(false)
-	require.False(t, a.Frozen(), `frozen`)
-
-	require.Equal(t, f, a)
-	require.Equal(t, a, f)
+	assert.False(t, a.Frozen(), `frozen`)
+	assert.Equal(t, f, a)
+	assert.Equal(t, a, f)
 
 	a.Freeze()
-	require.True(t, a.Frozen(), `not frozen`)
-	require.Same(t, a, a.Copy(true))
+	assert.True(t, a.Frozen(), `not frozen`)
+	assert.Same(t, a, a.Copy(true))
 
 	b := a.Copy(false)
-	require.NotSame(t, a, b)
-	require.NotSame(t, b, b.Copy(true))
-	require.NotSame(t, b, b.Copy(false))
+	assert.NotSame(t, a, b)
+	assert.NotSame(t, b, b.Copy(true))
+	assert.NotSame(t, b, b.Copy(false))
 }
 
 func TestBinary_ReflectTo(t *testing.T) {
 	var s []byte
 	b := vf.Binary([]byte{1, 2}, true)
 	b.ReflectTo(reflect.ValueOf(&s).Elem())
-	require.Equal(t, b, s)
+	assert.Equal(t, b, s)
 
 	s = nil
 	sp := &s
 	b.ReflectTo(reflect.ValueOf(&sp).Elem())
 	s = *sp
-	require.Equal(t, b, s)
+	assert.Equal(t, b, s)
 
 	var mi interface{}
 	mip := &mi
@@ -325,5 +307,5 @@ func TestBinary_ReflectTo(t *testing.T) {
 
 	bc, ok := mi.([]byte)
 	require.True(t, ok)
-	require.Equal(t, b, bc)
+	assert.Equal(t, b, bc)
 }

@@ -40,9 +40,15 @@ func CiEnum(strings ...string) dgo.Type {
 	return internal.CiEnumType(strings)
 }
 
+// Integer64 returns a dgo.IntegerType that is limited to the inclusive range given by min and max
+// If inclusive is true, then the range has an inclusive end.
+func Integer64(min, max int64, inclusive bool) dgo.IntegerType {
+	return internal.Integer64Type(min, max, inclusive)
+}
+
 // Integer returns a dgo.IntegerType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func Integer(min, max int64, inclusive bool) dgo.IntegerType {
+func Integer(min, max dgo.Integer, inclusive bool) dgo.IntegerType {
 	return internal.IntegerType(min, max, inclusive)
 }
 
@@ -51,8 +57,14 @@ func IntEnum(ints ...int) dgo.Type {
 	return internal.IntEnumType(ints)
 }
 
+// Float64 returns a dgo.FloatType that is limited to the inclusive range given by min and max
+// If inclusive is true, then the range has an inclusive end.
+func Float64(min, max float64, inclusive bool) dgo.FloatType {
+	return internal.Float64Type(min, max, inclusive)
+}
+
 // Float returns a dgo.FloatType that is limited to the inclusive range given by min and max
 // If inclusive is true, then the range has an inclusive end.
-func Float(min, max float64, inclusive bool) dgo.FloatType {
+func Float(min, max dgo.Float, inclusive bool) dgo.FloatType {
 	return internal.FloatType(min, max, inclusive)
 }

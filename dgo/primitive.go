@@ -2,6 +2,7 @@ package dgo
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 	"regexp"
 	"time"
@@ -49,11 +50,23 @@ type (
 
 	// Number is implemented by Float and Integer implementations
 	Number interface {
+		// Integer returns this number as an Integer
+		Integer() Integer
+
+		// Float returns this number as a Float
+		Float() Float
+
 		// ToInt returns this number as an int64
-		ToInt() int64
+		ToInt() (int64, bool)
 
 		// ToFloat returns this number as an float64
-		ToFloat() float64
+		ToFloat() (float64, bool)
+
+		// ToBigInt returns this number as an *big.Int
+		ToBigInt() *big.Int
+
+		// ToBigFloat returns this number as an *big.Float
+		ToBigFloat() *big.Float
 	}
 
 	// Integer value is an int64 that implements the Value interface
@@ -63,8 +76,20 @@ type (
 		Comparable
 		ReflectedValue
 
+		// Dec returns the integer -1
+		Dec() Integer
+
+		// Inc returns the integer +1
+		Inc() Integer
+
 		// GoInt returns the Go native representation of this value
 		GoInt() int64
+	}
+
+	// BigInt value is a *big.Int that implements the Value interface
+	BigInt interface {
+		Integer
+		GoBigInt() *big.Int
 	}
 
 	// Float value is a float64 that implements the Value interface
@@ -76,6 +101,12 @@ type (
 
 		// GoFloat returns the Go native representation of this value
 		GoFloat() float64
+	}
+
+	// BigFloat value is a float64 that implements the Value interface
+	BigFloat interface {
+		Float
+		GoBigFloat() *big.Float
 	}
 
 	// String value is a string that implements the Value interface
@@ -128,6 +159,9 @@ type (
 
 		// GoValue returns the Go native representation of this value
 		GoValue() interface{}
+
+		// ReflectValue returns a pointer to the reflect.Value representation of this value
+		ReflectValue() *reflect.Value
 	}
 
 	// Comparable imposes natural ordering on its implementations. A Comparable is only comparable to other

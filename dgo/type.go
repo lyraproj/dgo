@@ -40,14 +40,11 @@ type (
 		// Inclusive returns true if this range has an inclusive end
 		Inclusive() bool
 
-		// IsInstance returns true if the given int64 is an instance of this type
-		IsInstance(int64) bool
-
 		// Max returns the maximum constraint
-		Max() int64
+		Max() Integer
 
 		// Min returns the minimum constraint
-		Min() int64
+		Min() Integer
 	}
 
 	// FloatType describes floating point numbers that are within an inclusive or exclusive range
@@ -57,14 +54,11 @@ type (
 		// Inclusive returns true if this range has an inclusive end
 		Inclusive() bool
 
-		// IsInstance returns true if the given float64 is an instance of this type
-		IsInstance(float64) bool
-
 		// Max returns the maximum constraint
-		Max() float64
+		Max() Float
 
 		// Min returns the minimum constraint
-		Min() float64
+		Min() Float
 	}
 
 	// BooleanType matches the true and false literals
@@ -91,9 +85,9 @@ type (
 		IsInstance(tm time.Time) bool
 	}
 
-	// SizedType is implemented by types that may have a size constraint
+	// sizedType is implemented by types that may have a size constraint
 	// such as String, Array, or Map
-	SizedType interface {
+	sizedType interface {
 		Type
 
 		// Max returns the maximum size for instances of this type
@@ -106,9 +100,16 @@ type (
 		Unbounded() bool
 	}
 
-	// StringType is a SizedType.
+	// StringType is a sizedType.
 	StringType interface {
-		SizedType
+		sizedType
+	}
+
+	// PatternType is represents all strings that matches a regular expression pattern.
+	PatternType interface {
+		StringType
+
+		GoRegexp() *regexp.Regexp
 	}
 
 	// NativeType is the type for all Native values
@@ -187,7 +188,10 @@ type (
 
 	// Factory provides the New method that types use to create new instances
 	Factory interface {
-		// New creates instances of this type.
+		// New creates instances of this type based on arguments.
+		//
+		// The arguments can either be passed as one single value or as an instance
+		// of Arguments (an special purpose Array).
 		New(Value) Value
 	}
 

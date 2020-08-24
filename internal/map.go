@@ -483,17 +483,9 @@ func (g *hashMap) Format(s fmt.State, ch rune) {
 	_, _ = s.Write([]byte("map["))
 	if ch == 'v' && s.Flag('#') {
 		gt := Generic(g.Type()).(dgo.MapType)
-		if nk, ok := gt.KeyType().(*nativeType); ok {
-			_, _ = s.Write([]byte(nk.GoType().String()))
-		} else {
-			TypeStringOn(gt.KeyType(), s)
-		}
+		TypeStringOn(gt.KeyType(), s)
 		_, _ = s.Write(rb)
-		if nv, ok := gt.ValueType().(*nativeType); ok {
-			_, _ = s.Write([]byte(nv.GoType().String()))
-		} else {
-			TypeStringOn(gt.ValueType(), s)
-		}
+		TypeStringOn(gt.ValueType(), s)
 		g.formatNV(s, ch)
 	} else {
 		for e := g.first; e != nil; e = e.next {
@@ -1056,7 +1048,10 @@ func (t *sizedMapType) Assignable(other dgo.Type) bool {
 }
 
 func (t *sizedMapType) DeepAssignable(guard dgo.RecursionGuard, other dgo.Type) bool {
-	if ot, ok := other.(dgo.MapType); ok {
+	switch ot := other.(type) {
+	case dgo.Map:
+		return t.Instance(ot)
+	case dgo.MapType:
 		return t.min <= ot.Min() && ot.Max() <= t.max &&
 			Assignable(guard, t.keyType, ot.KeyType()) && Assignable(guard, t.valueType, ot.ValueType())
 	}

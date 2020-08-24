@@ -93,6 +93,10 @@ func (sc *context) emitData(value dgo.Value) {
 	}
 
 	switch value := value.(type) {
+	case dgo.BigFloat:
+		sc.emitBigFloat(value)
+	case dgo.BigInt:
+		sc.emitBigInt(value)
 	case dgo.Integer, dgo.Float, dgo.Boolean:
 		// Never dedup
 		sc.addData(value)
@@ -108,6 +112,8 @@ func (sc *context) emitData(value dgo.Value) {
 		sc.emitBinary(value)
 	case dgo.Time:
 		sc.emitTime(value)
+	case dgo.NativeType:
+		panic(sc.unknownSerialization(value))
 	case dgo.Type:
 		sc.emitType(value)
 	default:
@@ -228,6 +234,53 @@ func (sc *context) emitTime(value dgo.Time) {
 				sc.addData(d.TimeTypeName())
 				sc.addData(d.ValueKey())
 				sc.emitData(vf.String(value.GoTime().Format(time.RFC3339Nano)))
+			})
+		}
+	})
+}
+
+func (sc *context) emitBigInt(value dgo.BigInt) {
+	if i, ok := value.ToInt(); ok {
+		sc.addData(vf.Integer(i))
+		return
+	}
+	sc.process(value, func() {
+		if sc.consumer.CanDoBigNumbers() {
+			sc.addData(value)
+		} else {
+			if !sc.config.RichData {
+				panic(sc.unknownSerialization(value))
+			}
+			sc.addMap(2, func() {
+				d := sc.config.Dialect
+				sc.addData(d.TypeKey())
+				sc.addData(d.BigIntTypeName())
+				sc.addData(d.ValueKey())
+				sc.emitData(vf.String(value.GoBigInt().Text(16)))
+			})
+		}
+	})
+}
+
+func (sc *context) emitBigFloat(value dgo.BigFloat) {
+	if value.GoBigFloat().Prec() <= 53 {
+		f, _ := value.ToFloat()
+		sc.addData(vf.Float(f))
+		return
+	}
+	sc.process(value, func() {
+		if sc.consumer.CanDoBigNumbers() {
+			sc.addData(value)
+		} else {
+			if !sc.config.RichData {
+				panic(sc.unknownSerialization(value))
+			}
+			sc.addMap(2, func() {
+				d := sc.config.Dialect
+				sc.addData(d.TypeKey())
+				sc.addData(d.BigFloatTypeName())
+				sc.addData(d.ValueKey())
+				sc.emitData(vf.String(value.GoBigFloat().Text('p', 0)))
 			})
 		}
 	})

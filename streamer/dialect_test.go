@@ -3,16 +3,12 @@ package streamer_test
 import (
 	"testing"
 
-	"github.com/lyraproj/dgo/vf"
-
+	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/streamer"
+	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
-
-	"github.com/lyraproj/dgo/streamer"
-
-	require "github.com/lyraproj/dgo/dgo_test"
-
-	"github.com/lyraproj/dgo/dgo"
+	"github.com/lyraproj/dgo/vf"
 )
 
 func TestDgoDialect_names(t *testing.T) {
@@ -26,10 +22,10 @@ func TestDgoDialect_names(t *testing.T) {
 		`__type`:    streamer.Dialect.TypeKey,
 		`__value`:   streamer.Dialect.ValueKey,
 	} {
-		require.Equal(t, k, v(streamer.DgoDialect()))
+		assert.Equal(t, k, v(streamer.DgoDialect()))
 	}
 }
 
 func TestDgoDialect_ParseType(t *testing.T) {
-	require.Equal(t, tf.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
+	assert.Equal(t, tf.Array(typ.String, 3, 8), streamer.DgoDialect().ParseType(nil, vf.String(`[3,8]string`)))
 }

@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
-	require "github.com/lyraproj/dgo/dgo_test"
 	"github.com/lyraproj/dgo/streamer"
 	"github.com/lyraproj/dgo/streamer/pcore"
+	"github.com/lyraproj/dgo/test/require"
 	"github.com/lyraproj/dgo/tf"
 	"github.com/lyraproj/dgo/typ"
 	"github.com/lyraproj/dgo/vf"

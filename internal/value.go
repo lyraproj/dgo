@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 	"regexp"
 	"time"
@@ -19,14 +20,14 @@ func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 	}
 	if args, ok := argument.(dgo.Arguments); ok {
 		if args.Len() != 1 {
-			panic(fmt.Errorf(`unable to create a %s from arguments %s`, typ, args))
+			panic(fmt.Errorf(`unable to create a %v from arguments %v`, typ, args))
 		}
 		argument = args.Get(0)
 	}
 	if typ.Instance(argument) {
 		return argument
 	}
-	panic(fmt.Errorf(`unable to create a %s from %s`, typ, argument))
+	panic(fmt.Errorf(`unable to create a %v from %v`, typ, argument))
 }
 
 // Value returns the dgo.Value representation of its argument. If the argument type
@@ -52,6 +53,8 @@ func value(v interface{}) dgo.Value {
 		dv = Nil
 	case bool:
 		dv = boolean(v)
+	case int:
+		dv = Integer(int64(v))
 	case string:
 		dv = String(v)
 	case []byte:
@@ -63,7 +66,17 @@ func value(v interface{}) dgo.Value {
 	case *regexp.Regexp:
 		dv = Regexp(v)
 	case time.Time:
-		dv = (*timeVal)(&v)
+		dv = &timeVal{v}
+	case *time.Time:
+		dv = &timeVal{*v}
+	case *big.Int:
+		dv = BigInt(v)
+	case *big.Float:
+		dv = BigFloat(v)
+	case uint:
+		dv = unsignedToInteger(uint64(v))
+	case uint64:
+		dv = unsignedToInteger(v)
 	case error:
 		dv = &errw{v}
 	case json.Number:

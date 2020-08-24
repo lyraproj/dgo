@@ -127,7 +127,7 @@ func (v *regexpVal) ReflectTo(value reflect.Value) {
 }
 
 func (v *regexpVal) String() string {
-	return fmt.Sprintf(`regexp %q`, (*regexp.Regexp)(v).String())
+	return TypeString(v)
 }
 
 func (v *regexpVal) Type() dgo.Type {

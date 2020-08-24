@@ -206,7 +206,7 @@ type (
 
 	// ArrayType is implemented by types representing implementations of the Array value
 	ArrayType interface {
-		SizedType
+		sizedType
 
 		// ElementType returns the type of the elements for instances of this type
 		ElementType() Type

@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"testing"
 	"time"
 
-	require "github.com/lyraproj/dgo/dgo_test"
+	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/streamer"
+	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/vf"
 )
 
@@ -31,39 +33,61 @@ func TestJSON_AddRef(t *testing.T) {
 	s := streamer.New(nil, nil)
 	b := bytes.Buffer{}
 	s.Stream(a, streamer.JSON(&b))
-	require.Equal(t, `[["a","b"],{"__ref":1}]`, b.String())
+	assert.Equal(t, `[["a","b"],{"__ref":1}]`, b.String())
 }
 
 func TestJSON_primitives(t *testing.T) {
 	v := vf.Values(true, nil, 1, 2.1, `string`)
 	b := bytes.Buffer{}
 	streamer.New(nil, nil).Stream(v, streamer.JSON(&b))
-	require.Equal(t, `[true,null,1,2.1,"string"]`, b.String())
+	assert.Equal(t, `[true,null,1,2.1,"string"]`, b.String())
 }
 
 func TestJSON_badWrite(t *testing.T) {
-	require.Panic(t, func() { streamer.New(nil, nil).Stream(vf.Integer(3), streamer.JSON(badWriter(0))) }, `bang`)
+	assert.Panic(t, func() { streamer.New(nil, nil).Stream(vf.Integer(3), streamer.JSON(badWriter(0))) }, `bang`)
 }
 
 func TestJSON_CanDoBinary(t *testing.T) {
 	v := vf.Values(vf.BinaryFromString(`AQID`))
 	b := bytes.Buffer{}
 	streamer.New(nil, nil).Stream(v, streamer.JSON(&b))
-	require.Equal(t, `[{"__type":"binary","__value":"AQID"}]`, b.String())
+	assert.Equal(t, `[{"__type":"binary","__value":"AQID"}]`, b.String())
 }
 
 func TestJSON_CanDoTime(t *testing.T) {
 	ts, _ := time.Parse(time.RFC3339, `2019-10-06T07:15:00-07:00`)
 	b := bytes.Buffer{}
 	streamer.New(nil, nil).Stream(vf.Time(ts), streamer.JSON(&b))
-	require.Equal(t, `{"__type":"time","__value":"2019-10-06T07:15:00-07:00"}`, b.String())
+	assert.Equal(t, `{"__type":"time","__value":"2019-10-06T07:15:00-07:00"}`, b.String())
+}
+
+func TestJSON_CanDoBigInt(t *testing.T) {
+	bi, _ := new(big.Int).SetString(`0x10000000000000000`, 0)
+	b := bytes.Buffer{}
+	streamer.New(nil, nil).Stream(vf.BigInt(bi), streamer.JSON(&b))
+	assert.Equal(t, `{"__type":"bigint","__value":"10000000000000000"}`, b.String())
+
+	bv, ok := streamer.UnmarshalJSON(b.Bytes(), nil).(dgo.BigInt)
+	assert.True(t, ok)
+	assert.True(t, bi.Cmp(bv.GoBigInt()) == 0)
+}
+
+func TestJSON_CanDoBigFloat(t *testing.T) {
+	bf, _ := new(big.Float).SetString(`1e10000`)
+	b := bytes.Buffer{}
+	streamer.New(nil, nil).Stream(vf.BigFloat(bf), streamer.JSON(&b))
+	assert.Equal(t, `{"__type":"bigfloat","__value":"0x.9b84ea28556bf269p+33220"}`, b.String())
+
+	bv, ok := streamer.UnmarshalJSON(b.Bytes(), nil).(dgo.BigFloat)
+	assert.True(t, ok)
+	assert.True(t, bf.Cmp(bv.GoBigFloat()) == 0)
 }
 
 func TestJSON_ComplexKeys(t *testing.T) {
 	v := vf.Map(vf.BinaryFromString(`AQID`), `value of binary`, `hey`, `value of hey`)
 	b := bytes.Buffer{}
 	streamer.New(nil, streamer.DefaultOptions()).Stream(v, streamer.JSON(&b))
-	require.Equal(t,
+	assert.Equal(t,
 		`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`,
 		b.String())
 }
@@ -72,23 +96,23 @@ func TestUnmarshalJSON_ref(t *testing.T) {
 	v := streamer.UnmarshalJSON(
 		[]byte(`[{"x":"xxxxxxxxxxxxxxxxxxxxx","y":{"__ref":3}}]`),
 		streamer.DgoDialect())
-	require.Equal(t, vf.Values(vf.Map(`x`, `xxxxxxxxxxxxxxxxxxxxx`, `y`, `xxxxxxxxxxxxxxxxxxxxx`)), v)
+	assert.Equal(t, vf.Values(vf.Map(`x`, `xxxxxxxxxxxxxxxxxxxxx`, `y`, `xxxxxxxxxxxxxxxxxxxxx`)), v)
 }
 
 func TestUnmarshalJSON_refBad(t *testing.T) {
-	require.Panic(t, func() {
+	assert.Panic(t, func() {
 		streamer.UnmarshalJSON([]byte(`{"x": {"z": ["a","b"]}, "y": {"__ref":"6"}}`), streamer.DgoDialect())
 	}, `expected integer after key "__ref"`)
 }
 
 func TestUnmarshalJSON_refSuperfluous(t *testing.T) {
-	require.Panic(t, func() {
+	assert.Panic(t, func() {
 		streamer.UnmarshalJSON([]byte(`{"x": {"z": ["a","b"]}, "y": {"__ref":6, "x": 1}}`), streamer.DgoDialect())
 	}, `expected end of object after "__ref": 6`)
 }
 
 func TestUnmarshalJSON_badDelim(t *testing.T) {
-	require.Panic(t, func() {
+	assert.Panic(t, func() {
 		streamer.UnmarshalJSON([]byte(``), streamer.DgoDialect())
 	}, `unexpected EOF`)
 }
@@ -98,11 +122,11 @@ func TestUnmarshalJSON_complexKeys(t *testing.T) {
 		[]byte(`{"__type":"map","__value":[{"__type":"binary","__value":"AQID"},"value of binary","hey","value of hey"]}`),
 		streamer.DgoDialect())
 	v2 := vf.Map(vf.BinaryFromString(`AQID`), `value of binary`, `hey`, `value of hey`)
-	require.Equal(t, v, v2)
+	assert.Equal(t, v, v2)
 }
 
 func TestUnmarshalJSON_badInput(t *testing.T) {
-	require.Panic(t, func() { streamer.UnmarshalJSON([]byte(`this is not json`), nil) }, `invalid character`)
+	assert.Panic(t, func() { streamer.UnmarshalJSON([]byte(`this is not json`), nil) }, `invalid character`)
 }
 
 func ExampleUnmarshalJSON() {

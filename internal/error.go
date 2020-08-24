@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -46,7 +45,7 @@ func (t errType) Instance(value interface{}) bool {
 	return ok
 }
 
-func (t errType) IsInstance(err error) bool {
+func (t errType) IsInstance(_ error) bool {
 	return true
 }
 
@@ -113,7 +112,7 @@ func (e *errw) ReflectTo(value reflect.Value) {
 }
 
 func (e *errw) String() string {
-	return fmt.Sprintf("error %q", e.error.Error())
+	return TypeString(e)
 }
 
 func (e *errw) Unwrap() error {

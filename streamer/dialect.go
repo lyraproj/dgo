@@ -21,7 +21,13 @@ type Dialect interface {
 	// AliasTypeName returns the string that denotes an alias. The default string is "alias"
 	AliasTypeName() dgo.String
 
-	// BinaryTypeName returns the string that denotes an alias. The default string is "binary"
+	// 	BigFloatTypeName() dgo.String returns the string that denotes a big float. The default string is "bigfloat"
+	BigFloatTypeName() dgo.String
+
+	// BigIntTypeName returns the string that denotes a big integer. The default string is "bigint"
+	BigIntTypeName() dgo.String
+
+	// BinaryTypeName returns the string that denotes a binary. The default string is "binary"
 	BinaryTypeName() dgo.String
 
 	// MapTypeName returns the string that denotes an map that contains non-string keys. The default string is "map"
@@ -50,6 +56,8 @@ var typeKey = vf.String(`__type`)
 var valueKey = vf.String(`__value`)
 var refKey = vf.String(`__ref`)
 var aliasType = vf.String(`alias`)
+var bigFloatType = vf.String(`bigfloat`)
+var bigIntType = vf.String(`bigint`)
 var binaryType = vf.String(`binary`)
 var sensitiveType = vf.String(`sensitive`)
 var mapType = vf.String(`map`)
@@ -69,6 +77,14 @@ func (d dgoDialect) RefKey() dgo.String {
 
 func (d dgoDialect) AliasTypeName() dgo.String {
 	return aliasType
+}
+
+func (d dgoDialect) BigFloatTypeName() dgo.String {
+	return bigFloatType
+}
+
+func (d dgoDialect) BigIntTypeName() dgo.String {
+	return bigIntType
 }
 
 func (d dgoDialect) BinaryTypeName() dgo.String {

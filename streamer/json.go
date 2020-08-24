@@ -181,6 +181,10 @@ func (j *jsonEncoder) AddRef(ref int) {
 	})
 }
 
+func (j *jsonEncoder) CanDoBigNumbers() bool {
+	return false
+}
+
 func (j *jsonEncoder) CanDoBinary() bool {
 	return false
 }

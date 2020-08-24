@@ -2,6 +2,7 @@ package streamer
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -69,6 +70,19 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 			panic(err)
 		}
 		v = vf.Time(t)
+	case ts.Equals(dl.BigFloatTypeName()):
+		bf, _, err := big.ParseFloat(mv.(dgo.String).GoString(), 0, 0, big.ToNearestEven)
+		if err != nil {
+			panic(err)
+		}
+		v = vf.BigFloat(bf)
+	case ts.Equals(dl.BigIntTypeName()):
+		s := mv.(dgo.String).GoString()
+		bi, ok := new(big.Int).SetString(s, 16)
+		if !ok {
+			panic(fmt.Errorf(`unable to parse big integer %q`, s))
+		}
+		v = vf.BigInt(bi)
 	case ts.Equals(dl.AliasTypeName()):
 		ad := mv.(dgo.Array)
 		v = dl.ParseType(nil, ad.Get(1).(dgo.String))
