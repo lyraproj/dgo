@@ -760,6 +760,23 @@ func TestArray_ReflectTo(t *testing.T) {
 	assert.NotEqual(t, os, as)
 }
 
+func TestArray_ReflectTo_nestedStructPointer(t *testing.T) {
+	m := vf.Values(vf.Map(
+		`First`, 1,
+		`Second`, 2.0))
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+
+	var sb []*structA
+	m.ReflectTo(reflect.ValueOf(&sb))
+	require.Equal(t, 1, len(sb))
+	assert.Equal(t, 1, sb[0].First)
+	assert.Equal(t, 2.0, sb[0].Second)
+}
+
 func TestArray_Remove(t *testing.T) {
 	s := vf.Integers(1, 2, 3, 4, 5)
 	a := s.Copy(false)

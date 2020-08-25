@@ -771,6 +771,108 @@ func TestMap_ReflectTo_struct(t *testing.T) {
 	assert.Panic(t, func() { m.ReflectTo(reflect.ValueOf(sb)) }, `reflectTo: nil pointer`)
 }
 
+func TestMap_ReflectTo_struct_missing_member(t *testing.T) {
+	m := vf.Map(
+		`First`, 1,
+		`Second`, 2.0)
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		structA
+		Third string
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	assert.Equal(t, 1, sb.First)
+	assert.Equal(t, 2.0, sb.Second)
+	assert.Equal(t, ``, sb.Third)
+}
+
+func TestMap_ReflectTo_nestedStruct(t *testing.T) {
+	m := vf.Map(`TheStruct`, vf.Map(
+		`First`, 1,
+		`Second`, 2.0))
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		TheStruct structA
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	assert.Equal(t, 1, sb.TheStruct.First)
+	assert.Equal(t, 2.0, sb.TheStruct.Second)
+}
+
+func TestMap_ReflectTo_nestedStructPointer(t *testing.T) {
+	m := vf.Map(`TheStruct`, vf.Map(
+		`First`, 1,
+		`Second`, 2.0))
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		TheStruct *structA
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	require.NotNil(t, sb.TheStruct)
+	assert.Equal(t, 1, sb.TheStruct.First)
+	assert.Equal(t, 2.0, sb.TheStruct.Second)
+}
+
+func TestMap_ReflectTo_nestedStructPointerSlice(t *testing.T) {
+	m := vf.Map(`TheStructs`, vf.Values(
+		vf.Map(
+			`First`, 1,
+			`Second`, 2.0),
+		vf.Map(
+			`First`, 11,
+			`Second`, 22.0)))
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		TheStructs []*structA
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	require.Equal(t, 2, len(sb.TheStructs))
+	assert.Equal(t, 1, sb.TheStructs[0].First)
+	assert.Equal(t, 2.0, sb.TheStructs[0].Second)
+	assert.Equal(t, 11, sb.TheStructs[1].First)
+	assert.Equal(t, 22.0, sb.TheStructs[1].Second)
+}
+
+func TestMap_ReflectTo_nestedStructPointer_missing(t *testing.T) {
+	m := vf.Map()
+
+	type structA struct {
+		First  int
+		Second float64
+	}
+	type structB struct {
+		TheStruct *structA
+	}
+
+	sb := &structB{}
+	m.ReflectTo(reflect.ValueOf(sb))
+	assert.Nil(t, sb.TheStruct)
+}
+
 func TestMap_ReflectTo_structElem(t *testing.T) {
 	m := vf.Map(
 		`First`, 1,

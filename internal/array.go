@@ -859,6 +859,13 @@ func arrayReflectTo(v dgo.Array, value reflect.Value) {
 	ptr := vt.Kind() == reflect.Ptr
 	if ptr {
 		vt = vt.Elem()
+		if value.IsNil() {
+			if value.CanAddr() {
+				value.Set(reflect.New(vt))
+			} else {
+				panic(catch.Error(`reflectTo: nil pointer`))
+			}
+		}
 	}
 	if vt.Kind() == reflect.Interface && vt.Name() == `` {
 		vt = v.Type().ReflectType()
@@ -880,7 +887,11 @@ func arrayReflectTo(v dgo.Array, value reflect.Value) {
 		x.Elem().Set(s)
 		s = x
 	}
-	value.Set(s)
+	if ptr {
+		value.Elem().Set(s.Elem())
+	} else {
+		value.Set(s)
+	}
 }
 
 func (v *array) removePos(pos int) dgo.Value {

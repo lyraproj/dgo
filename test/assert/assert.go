@@ -3,6 +3,7 @@
 package assert
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/lyraproj/dgo/dgo"
@@ -137,7 +138,7 @@ func NoError(t *testing.T, err error) {
 
 // Nil will fail unless v is nil
 func Nil(t *testing.T, v interface{}) {
-	if !(internal.Nil == v || v == nil) {
+	if !isNil(v) {
 		t.Helper()
 		t.Errorf(`%v is not nil`, internal.Value(v))
 	}
@@ -145,7 +146,7 @@ func Nil(t *testing.T, v interface{}) {
 
 // NotNil will fail if v is nil
 func NotNil(t *testing.T, v interface{}) {
-	if v == nil {
+	if isNil(v) {
 		t.Helper()
 		t.Errorf(`%v is nil`, internal.Value(v))
 	}
@@ -155,4 +156,18 @@ func NotNil(t *testing.T, v interface{}) {
 func Panic(t *testing.T, f func(), v string) {
 	t.Helper()
 	util.CheckPanic(t, f, v, false)
+}
+
+func isNil(v interface{}) bool {
+	if v == nil || internal.Nil == v {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		if reflect.ValueOf(v).IsNil() {
+			return true
+		}
+	}
+	return false
 }
