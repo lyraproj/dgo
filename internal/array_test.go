@@ -679,7 +679,7 @@ func TestArray_Insert(t *testing.T) {
 func TestArray_Map(t *testing.T) {
 	a := vf.Strings(`a`, `b`, `c`)
 	assert.Equal(t, vf.Strings(`d`, `e`, `f`), a.Map(func(e dgo.Value) interface{} {
-		return string([]byte{e.String()[1] + 3})
+		return string([]byte{e.String()[0] + 3})
 	}))
 	assert.Equal(t, vf.Values(vf.Nil, vf.Nil, vf.Nil), a.Map(func(e dgo.Value) interface{} {
 		return nil

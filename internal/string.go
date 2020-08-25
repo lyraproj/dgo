@@ -606,7 +606,7 @@ func (v *hstring) ReflectTo(value reflect.Value) {
 }
 
 func (v *hstring) String() string {
-	return TypeString(v)
+	return v.string
 }
 
 func (v *hstring) Type() dgo.Type {

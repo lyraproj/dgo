@@ -467,7 +467,7 @@ func (v intVal) ReflectType() reflect.Type {
 }
 
 func (v intVal) String() string {
-	return TypeString(v)
+	return strconv.FormatInt(int64(v), 10)
 }
 
 func (v intVal) ToBigInt() *big.Int {

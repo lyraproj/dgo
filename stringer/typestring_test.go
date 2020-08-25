@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/lyraproj/dgo/stringer"
+
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/tf"
@@ -16,7 +18,7 @@ func TestType_String_floatExact(t *testing.T) {
 }
 
 func TestType_String_stringExact(t *testing.T) {
-	assert.Equal(t, `"with \"quotes\" in it"`, vf.Value("with \"quotes\" in it").Type().String())
+	assert.Equal(t, `"with \"quotes\" in it"`, stringer.TypeString(vf.Value("with \"quotes\" in it").Type()))
 }
 
 func TestType_String_arrayExact(t *testing.T) {

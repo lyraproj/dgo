@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lyraproj/dgo/stringer"
+
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/test/assert"
 	"github.com/lyraproj/dgo/tf"
@@ -102,7 +104,7 @@ func TestStringExact(t *testing.T) {
 	assert.Same(t, typ.String, typ.Generic(tp))
 	assert.Equal(t, tp.HashCode(), tp.HashCode())
 	assert.NotEqual(t, 0, tp.HashCode())
-	assert.Equal(t, `"doh"`, tp.String())
+	assert.Equal(t, `"doh"`, stringer.TypeString(tp))
 	assert.Equal(t, typ.String.ReflectType(), tp.ReflectType())
 }
 
