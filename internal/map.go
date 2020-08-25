@@ -701,12 +701,15 @@ func (g *hashMap) ReflectTo(value reflect.Value) {
 			panic(catch.Error(`reflectTo: nil pointer`))
 		}
 		ht = ht.Elem()
-		if ht.Kind() == reflect.Struct {
-			v := value.Elem()
-			s := Struct(v, false)
-			s.PutAll(g)
-			return
+	}
+
+	if ht.Kind() == reflect.Struct {
+		if ptr {
+			value = value.Elem()
 		}
+		s := Struct(value, false)
+		s.PutAll(g)
+		return
 	}
 	if ht.Kind() == reflect.Interface && ht.Name() == `` {
 		ht = g.Type().ReflectType()
