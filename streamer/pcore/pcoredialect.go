@@ -24,7 +24,7 @@ var sensitiveTyp = vf.String(`Sensitive`)
 var mapType = vf.String(`Hash`)
 var timeType = vf.String(`Timestamp`)
 var bigFloatType = vf.String("Float")
-var bigIntegerType = vf.String("Float")
+var bigIntegerType = vf.String("Integer")
 
 func (d pcoreDialect) TypeKey() dgo.String {
 	return typeKey

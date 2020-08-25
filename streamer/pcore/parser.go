@@ -515,10 +515,7 @@ func tupleFromArgs(args dgo.Array) dgo.TupleType {
 		max = min
 	}
 	ta := args.Map(func(v dgo.Value) interface{} {
-		if tp, ok := v.(dgo.Type); ok {
-			return tp
-		}
-		panic(tf.IllegalAssignment(typ.Type, v))
+		return v
 	})
 	if min == int64(l) && min == max {
 		return tf.Tuple(ta.InterfaceSlice()...)
@@ -613,10 +610,7 @@ func variantType(p *pcoreParser) dgo.Value {
 		p.array()
 		args := p.PopLast().(dgo.Array)
 		return tf.AnyOf(args.Map(func(v dgo.Value) interface{} {
-			if tp, ok := v.(dgo.Type); ok {
-				return tp
-			}
-			panic(tf.IllegalAssignment(typ.Type, v))
+			return v
 		}).InterfaceSlice()...)
 	}
 	return typ.AnyOf

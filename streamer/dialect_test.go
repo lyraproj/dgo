@@ -14,6 +14,8 @@ import (
 func TestDgoDialect_names(t *testing.T) {
 	for k, v := range map[string]func(streamer.Dialect) dgo.String{
 		`alias`:     streamer.Dialect.AliasTypeName,
+		`bigfloat`:  streamer.Dialect.BigFloatTypeName,
+		`bigint`:    streamer.Dialect.BigIntTypeName,
 		`binary`:    streamer.Dialect.BinaryTypeName,
 		`map`:       streamer.Dialect.MapTypeName,
 		`sensitive`: streamer.Dialect.SensitiveTypeName,
