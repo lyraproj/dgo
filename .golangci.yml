@@ -9,6 +9,7 @@ issues:
       linters:
         - funlen
         - goconst
+        - gosec
         - lll
         - dupl
 

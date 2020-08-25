@@ -252,31 +252,23 @@ func arrayType(p *pcoreParser) dgo.Value {
 		args := vf.ArgumentsFromArray(p.PopLast().(dgo.Array))
 		args.AssertSize(`Array`, 1, 3)
 
-		var min dgo.Integer
-		var max dgo.Integer
-		et := typ.Any
 		argc := args.Len()
 		switch argc {
 		case 1, 2:
 			if i, ok := getIfInt(args, 0, 0); ok {
-				min = vf.Int64(i)
+				min := vf.Int64(i)
 				if argc > 1 {
-					max = getInt(`Array`, args, 1)
-					return tf.Array(min, max)
+					return tf.Array(min, getInt(`Array`, args, 1))
 				}
 				return tf.Array(min)
 			}
-			et = args.Arg(`Array`, 0, typ.Type).(dgo.Type)
+			et := args.Arg(`Array`, 0, typ.Type).(dgo.Type)
 			if argc > 1 {
-				min = getInt(`Array`, args, 1)
-				return tf.Array(et, min)
+				return tf.Array(et, getInt(`Array`, args, 1))
 			}
 			return tf.Array(et)
 		case 3:
-			et = args.Arg(`Array`, 0, typ.Type).(dgo.Type)
-			min = getInt(`Array`, args, 1)
-			max = getInt(`Array`, args, 2)
-			return tf.Array(et, min, max)
+			return tf.Array(args.Arg(`Array`, 0, typ.Type).(dgo.Type), getInt(`Array`, args, 1), getInt(`Array`, args, 2))
 		}
 	}
 	return typ.Array
