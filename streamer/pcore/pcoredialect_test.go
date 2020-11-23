@@ -19,6 +19,7 @@ func TestDgoDialect_names(t *testing.T) {
 		`Binary`:    pcoreDialect.BinaryTypeName,
 		`Hash`:      pcoreDialect.MapTypeName,
 		`Sensitive`: pcoreDialect.SensitiveTypeName,
+		`Timespan`:  pcoreDialect.DurationTypeName,
 		`Timestamp`: pcoreDialect.TimeTypeName,
 		`__pref`:    pcoreDialect.RefKey,
 		`__ptype`:   pcoreDialect.TypeKey,

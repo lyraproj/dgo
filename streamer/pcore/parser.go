@@ -517,7 +517,7 @@ func tupleFromArgs(args dgo.Array) dgo.TupleType {
 	ta := args.Map(func(v dgo.Value) interface{} {
 		return v
 	})
-	if min == int64(l) && min == max {
+	if min == int64(l) && max == int64(l) {
 		return tf.Tuple(ta.InterfaceSlice()...)
 	}
 	tps := ta.InterfaceSlice()

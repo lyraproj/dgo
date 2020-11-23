@@ -758,6 +758,10 @@ func TestArray_ReflectTo(t *testing.T) {
 	// test that os and as are different slices
 	as[0] = vf.String(`a`)
 	assert.NotEqual(t, os, as)
+
+	// Test reflect to nil pointer
+	var ax *string
+	assert.Panic(t, func() { a.ReflectTo(reflect.ValueOf(ax)) }, "reflectTo: nil pointer")
 }
 
 func TestArray_ReflectTo_nestedStructPointer(t *testing.T) {

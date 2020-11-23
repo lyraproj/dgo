@@ -22,6 +22,7 @@ var aliasType = vf.String(`Alias`)
 var binaryTyp = vf.String(`Binary`)
 var sensitiveTyp = vf.String(`Sensitive`)
 var mapType = vf.String(`Hash`)
+var durationType = vf.String(`Timespan`)
 var timeType = vf.String(`Timestamp`)
 var bigFloatType = vf.String("Float")
 var bigIntegerType = vf.String("Integer")
@@ -60,6 +61,10 @@ func (d pcoreDialect) MapTypeName() dgo.String {
 
 func (d pcoreDialect) SensitiveTypeName() dgo.String {
 	return sensitiveTyp
+}
+
+func (d pcoreDialect) DurationTypeName() dgo.String {
+	return durationType
 }
 
 func (d pcoreDialect) TimeTypeName() dgo.String {

@@ -74,6 +74,9 @@ var BigInt dgo.IntegerType = internal.DefaultBigIntType
 // Regexp is a type that represents all regexps
 var Regexp dgo.RegexpType = internal.DefaultRegexpType
 
+// Duration is a type that represents all durations
+var Duration dgo.Type = internal.DefaultDurationType
+
 // Time is a type that represents all timestamps
 var Time dgo.Type = internal.DefaultTimeType
 

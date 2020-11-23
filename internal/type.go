@@ -13,7 +13,7 @@ import (
 
 // CheckAssignableTo checks if the given type t implements the ReverseAssignable interface and if
 // so, returns the value of calling its AssignableTo method with the other type as an
-// argument. Otherwise, this goFunc returns false
+// argument. Otherwise, this function returns false
 func CheckAssignableTo(guard dgo.RecursionGuard, t, other dgo.Type) bool {
 	if lt, ok := t.(dgo.ReverseAssignable); ok {
 		if guard != nil {

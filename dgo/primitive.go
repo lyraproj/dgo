@@ -140,6 +140,19 @@ type (
 		GoRegexp() *regexp.Regexp
 	}
 
+	// Duration value is a time.Duration that implements the Value interface
+	Duration interface {
+		Value
+		ReflectedValue
+
+		// GoDuration returns the Go native representation of this value
+		GoDuration() time.Duration
+
+		// SecondsWithFraction returns the duration as seconds with a fraction value
+		// with nanosecond precision.
+		SecondsWithFraction() float64
+	}
+
 	// Time value is a *time.Time that implements the Value interface
 	Time interface {
 		Number

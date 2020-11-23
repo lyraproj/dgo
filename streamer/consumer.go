@@ -16,7 +16,11 @@ type Consumer interface {
 	// the Serializer to pass them verbatim to Add
 	CanDoBigNumbers() bool
 
-	// CanDoTime returns true if timestamp are handled efficiently. This tells
+	// CanDoDuration returns true if the value can handle duration efficiently. This tells
+	// the Serializer to pass dgo.Duration verbatim to Add
+	CanDoDuration() bool
+
+	// CanDoTime returns true if the value can handle timestamp efficiently. This tells
 	// the Serializer to pass dgo.Time verbatim to Add
 	CanDoTime() bool
 

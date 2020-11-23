@@ -57,6 +57,17 @@ func String(string string) dgo.String {
 	return internal.String(string)
 }
 
+// Duration returns the given duration as a dgo.Duration
+func Duration(d time.Duration) dgo.Duration {
+	return internal.Duration(d)
+}
+
+// DurationFromString returns the given duration string as a dgo.Duration. The string must be parsable
+// by time.ParseDuration(). The function will panic if the given string cannot be parsed.
+func DurationFromString(s string) dgo.Duration {
+	return internal.DurationFromString(s)
+}
+
 // Time returns the given timestamp as a dgo.Time
 func Time(ts time.Time) dgo.Time {
 	return internal.Time(ts)

@@ -19,6 +19,7 @@ func TestDgoDialect_names(t *testing.T) {
 		`binary`:    streamer.Dialect.BinaryTypeName,
 		`map`:       streamer.Dialect.MapTypeName,
 		`sensitive`: streamer.Dialect.SensitiveTypeName,
+		`duration`:  streamer.Dialect.DurationTypeName,
 		`time`:      streamer.Dialect.TimeTypeName,
 		`__ref`:     streamer.Dialect.RefKey,
 		`__type`:    streamer.Dialect.TypeKey,

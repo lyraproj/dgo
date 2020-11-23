@@ -413,9 +413,7 @@ func SizedStringType(min, max int64) dgo.StringType {
 		min = 0
 	}
 	if max < min {
-		tmp := max
-		max = min
-		min = tmp
+		max, min = min, max
 	}
 	if min == 0 && max == dgo.UnboundedSize {
 		return DefaultStringType

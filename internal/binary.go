@@ -62,9 +62,7 @@ func SizedBinaryType(min, max int) dgo.BinaryType {
 		min = 0
 	}
 	if max < min {
-		tmp := max
-		max = min
-		min = tmp
+		max, min = min, max
 	}
 	if min == 0 && max == dgo.UnboundedSize {
 		return DefaultBinaryType

@@ -52,7 +52,6 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 	}
 
 	var v dgo.Value
-
 	switch {
 	case ts.Equals(dl.MapTypeName()):
 		nm := mv.(dgo.Array).ToMap()
@@ -64,6 +63,12 @@ func (d *dataDecoder) decode(ts dgo.String, m dgo.Map) dgo.Value {
 		v = vf.Sensitive(mv)
 	case ts.Equals(dl.BinaryTypeName()):
 		v = vf.BinaryFromString(mv.(dgo.String).GoString())
+	case ts.Equals(dl.DurationTypeName()):
+		t, err := time.ParseDuration(mv.(dgo.String).GoString())
+		if err != nil {
+			panic(catch.Error(err))
+		}
+		v = vf.Duration(t)
 	case ts.Equals(dl.TimeTypeName()):
 		t, err := time.Parse(time.RFC3339Nano, mv.(dgo.String).GoString())
 		if err != nil {

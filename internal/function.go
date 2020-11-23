@@ -14,14 +14,14 @@ type (
 		returns   dgo.TupleType
 	}
 
-	// exactFunctionType is a dgo.FunctionType representation of a reflected goFunc
+	// exactFunctionType is a dgo.FunctionType representation of a reflected function
 	exactFunctionType struct {
 		funcType reflect.Type
 	}
 
 	// exactFunctionTuple is a dgo.Tuple type that is backed either by the NumIn() and In() methods or
 	// the NumOut() and Out() methods of a reflect.Type of kind reflect.Func so that the tuple either
-	// represents the arguments or the return values of a that goFunc
+	// represents the arguments or the return values of a that function
 	exactFunctionTuple struct {
 		count    func() int
 		element  func(index int) reflect.Type
@@ -259,7 +259,7 @@ func (t *functionType) Out() dgo.TupleType {
 }
 
 func (t *functionType) ReflectType() reflect.Type {
-	// There is currently no way to build a goFunc type dynamically
+	// There is currently no way to build a function type dynamically
 	panic(catch.Error(`unable to build reflect.Type of go func dynamically`))
 }
 

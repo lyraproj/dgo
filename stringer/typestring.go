@@ -161,6 +161,11 @@ func regexpValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	pio.WriteQuotedString(sb, typ.(dgo.Regexp).GoRegexp().String())
 }
 
+func durationValue(sb *typeBuilder, typ dgo.Type, _ int) {
+	pio.WriteString(sb, `duration `)
+	pio.WriteQuotedString(sb, typ.(dgo.Duration).GoDuration().String())
+}
+
 func timeValue(sb *typeBuilder, typ dgo.Type, _ int) {
 	pio.WriteString(sb, `time `)
 	pio.WriteQuotedString(sb, typ.(dgo.Time).GoTime().Format(time.RFC3339Nano))
@@ -347,6 +352,7 @@ func init() {
 		dgo.TiStringPattern: stringPattern,
 		dgo.TiStringSized:   stringSized,
 		dgo.TiStruct:        _struct,
+		dgo.TiDurationExact: durationValue,
 		dgo.TiTimeExact:     timeValue,
 		dgo.TiTuple:         tuple,
 		dgo.TiUint64Exact:   uintValue,

@@ -110,6 +110,8 @@ func (sc *context) emitData(value dgo.Value) {
 		sc.emitSensitive(value)
 	case dgo.Binary:
 		sc.emitBinary(value)
+	case dgo.Duration:
+		sc.emitDuration(value)
 	case dgo.Time:
 		sc.emitTime(value)
 	case dgo.NativeType:
@@ -217,6 +219,25 @@ func (sc *context) emitArray(value dgo.Array) {
 				sc.emitData(elem)
 			})
 		})
+	})
+}
+
+func (sc *context) emitDuration(value dgo.Duration) {
+	sc.process(value, func() {
+		if sc.consumer.CanDoDuration() {
+			sc.addData(value)
+		} else {
+			if !sc.config.RichData {
+				panic(sc.unknownSerialization(value))
+			}
+			sc.addMap(2, func() {
+				d := sc.config.Dialect
+				sc.addData(d.TypeKey())
+				sc.addData(d.DurationTypeName())
+				sc.addData(d.ValueKey())
+				sc.emitData(vf.String(value.GoDuration().String()))
+			})
+		}
 	})
 }
 

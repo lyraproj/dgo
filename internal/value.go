@@ -35,9 +35,9 @@ func New(typ dgo.Type, argument dgo.Value) dgo.Value {
 // is known, it will be more efficient to use explicit methods such as Float(), String(),
 // Map(), etc.
 func Value(v interface{}) dgo.Value {
-	// This goFunc is kept very small to enable inlining so this
+	// This function is kept very small to enable inlining so this
 	// if statement should not be baked in to the grand switch
-	// in the value goFunc
+	// in the value function
 	if gv, ok := v.(dgo.Value); ok {
 		return gv
 	}
@@ -47,6 +47,7 @@ func Value(v interface{}) dgo.Value {
 	return ValueFromReflected(reflect.ValueOf(v), false)
 }
 
+//nolint:gocyclo
 func value(v interface{}, frozen bool) dgo.Value {
 	var dv dgo.Value
 	switch v := v.(type) {
@@ -66,6 +67,8 @@ func value(v interface{}, frozen bool) dgo.Value {
 		dv = Integers(v)
 	case *regexp.Regexp:
 		dv = Regexp(v)
+	case time.Duration:
+		dv = durationVal(v)
 	case time.Time:
 		dv = &timeVal{v}
 	case *time.Time:
@@ -194,5 +197,6 @@ func ReflectTo(src dgo.Value, dest reflect.Value) {
 // Add well known types like regexp, time, etc. here
 var wellKnownTypes = map[reflect.Type]dgo.Type{
 	reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
+	reflect.TypeOf(time.Duration(0)): DefaultDurationType,
 	reflect.TypeOf(time.Time{}):      DefaultTimeType,
 }

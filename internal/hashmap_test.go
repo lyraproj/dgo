@@ -19,11 +19,11 @@ func buildStringKeys(count int) []string {
 	k := make([]string, count)
 	b := bytes.NewBufferString(``)
 	for i := 0; i < count; i++ {
-		s := strconv.Itoa(rand.Intn(count * rndFactor))
+		s := strconv.Itoa(rand.Intn(count * rndFactor)) //nolint:gosec
 		b.Reset()
 		l := len(s)
 		p := 0
-		for r := 0; r < rand.Intn(rndLen)+l; r++ {
+		for r := 0; r < rand.Intn(rndLen)+l; r++ { //nolint:gosec
 			pio.WriteByte(b, s[p])
 			p++
 			if p >= l {
@@ -82,7 +82,7 @@ func BenchmarkHashMapIntegers(b *testing.B) {
 	k := make([]dgo.Value, sz)
 	m := MapWithCapacity(sz)
 	for i := 0; i < sz; i++ {
-		key := intVal(rand.Intn(sz * rndFactor))
+		key := intVal(rand.Intn(sz * rndFactor)) //nolint:gosec
 		m.Put(key, intVal(i))
 		k[i] = key
 	}
@@ -118,7 +118,7 @@ func BenchmarkMapIntKeys(b *testing.B) {
 	m := make(map[int]int, sz)
 
 	for i := 0; i < sz; i++ {
-		key := rand.Intn(sz * rndFactor)
+		key := rand.Intn(sz * rndFactor) //nolint:gosec
 		m[key] = i
 		k[i] = key
 	}
@@ -154,7 +154,7 @@ func BenchmarkMapGenericKeysInteger(b *testing.B) {
 	m := make(map[interface{}]int, sz)
 
 	for i := 0; i < sz; i++ {
-		key := rand.Intn(sz * rndFactor)
+		key := rand.Intn(sz * rndFactor) //nolint:gosec
 		m[key] = i
 		k[i] = key
 	}

@@ -100,6 +100,13 @@ func TestEncode_binary(t *testing.T) {
 	assert.Same(t, v, c.Value())
 }
 
+func TestEncode_duration(t *testing.T) {
+	v := vf.Duration(4*time.Hour + 25*time.Minute)
+	c := streamer.NewCollector()
+	streamer.New(nil, nil).Stream(v, c)
+	require.Same(t, v, c.Value())
+}
+
 func TestEncode_time(t *testing.T) {
 	v := vf.Time(time.Now())
 	c := streamer.NewCollector()
@@ -172,6 +179,14 @@ func TestEncode_binary_not_rich(t *testing.T) {
 	o.RichData = false
 	assert.Panic(t, func() {
 		streamer.New(nil, o).Stream(vf.BinaryFromString(`AQID`), streamer.JSON(&bytes.Buffer{}))
+	}, `unable to serialize`)
+}
+
+func TestEncode_duration_not_rich(t *testing.T) {
+	o := streamer.DefaultOptions()
+	o.RichData = false
+	require.Panic(t, func() {
+		streamer.New(nil, o).Stream(vf.Duration(4*time.Minute), streamer.JSON(&bytes.Buffer{}))
 	}, `unable to serialize`)
 }
 

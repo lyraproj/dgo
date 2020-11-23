@@ -43,6 +43,7 @@ func Example_nextToken() {
 		}
 		fmt.Println(tokenString(tf))
 	}
+	//nolint:gocritic
 	// Output:
 	//constants
 	//':'

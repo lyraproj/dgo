@@ -36,6 +36,9 @@ type Dialect interface {
 	// SensitiveTypeName returns the string that denotes a sensitive value. The default string is "sensitive"
 	SensitiveTypeName() dgo.String
 
+	// DurationTypeName returns the string that denotes a duration. The default string is "duration"
+	DurationTypeName() dgo.String
+
 	// TimeTypeName returns the string that denotes a time. The default string is "time"
 	TimeTypeName() dgo.String
 
@@ -61,6 +64,7 @@ var bigIntType = vf.String(`bigint`)
 var binaryType = vf.String(`binary`)
 var sensitiveType = vf.String(`sensitive`)
 var mapType = vf.String(`map`)
+var durationType = vf.String(`duration`)
 var timeType = vf.String(`time`)
 
 func (d dgoDialect) TypeKey() dgo.String {
@@ -97,6 +101,10 @@ func (d dgoDialect) MapTypeName() dgo.String {
 
 func (d dgoDialect) SensitiveTypeName() dgo.String {
 	return sensitiveType
+}
+
+func (d dgoDialect) DurationTypeName() dgo.String {
+	return durationType
 }
 
 func (d dgoDialect) TimeTypeName() dgo.String {

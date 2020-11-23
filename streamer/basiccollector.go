@@ -74,6 +74,11 @@ func (c *BasicCollector) CanDoBinary() bool {
 	return true
 }
 
+// CanDoDuration returns true
+func (c *BasicCollector) CanDoDuration() bool {
+	return true
+}
+
 // CanDoTime returns true
 func (c *BasicCollector) CanDoTime() bool {
 	return true

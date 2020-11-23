@@ -98,7 +98,7 @@ func Time(ts time.Time) dgo.Time {
 }
 
 // TimeFromString returns the given time string as a dgo.Time. The string must conform to
-// the time.RFC3339 or time.RFC3339Nano format. The goFunc will panic if the given string
+// the time.RFC3339 or time.RFC3339Nano format. The function will panic if the given string
 // cannot be parsed.
 func TimeFromString(s string) dgo.Time {
 	ts, err := time.Parse(time.RFC3339Nano, s)

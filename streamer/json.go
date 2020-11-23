@@ -189,6 +189,10 @@ func (j *jsonEncoder) CanDoComplexKeys() bool {
 	return false
 }
 
+func (j *jsonEncoder) CanDoDuration() bool {
+	return false
+}
+
 func (j *jsonEncoder) CanDoTime() bool {
 	return false
 }

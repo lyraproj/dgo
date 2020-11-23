@@ -55,6 +55,13 @@ func TestJSON_CanDoBinary(t *testing.T) {
 	assert.Equal(t, `[{"__type":"binary","__value":"AQID"}]`, b.String())
 }
 
+func TestJSON_CanDoDuration(t *testing.T) {
+	d, _ := time.ParseDuration(`4m3s`)
+	b := bytes.Buffer{}
+	streamer.New(nil, nil).Stream(vf.Duration(d), streamer.JSON(&b))
+	require.Equal(t, `{"__type":"duration","__value":"4m3s"}`, b.String())
+}
+
 func TestJSON_CanDoTime(t *testing.T) {
 	ts, _ := time.Parse(time.RFC3339, `2019-10-06T07:15:00-07:00`)
 	b := bytes.Buffer{}

@@ -107,9 +107,7 @@ func newArrayType(elementType dgo.Type, min, max int64) dgo.ArrayType {
 		max = 0
 	}
 	if max < min {
-		t := max
-		max = min
-		min = t
+		max, min = min, max
 	}
 	if elementType == nil {
 		elementType = DefaultAnyType
@@ -118,7 +116,7 @@ func newArrayType(elementType dgo.Type, min, max int64) dgo.ArrayType {
 		// Unbounded
 		return DefaultArrayType
 	}
-	if min == 1 && min == max && dgo.IsExact(elementType) {
+	if min == 1 && max == 1 && dgo.IsExact(elementType) {
 		return makeFrozenArray([]dgo.Value{elementType}).(dgo.ArrayType)
 	}
 	return &sizedArrayType{sizeRange: sizeRange{min: uint32(min), max: uint32(max)}, elementType: elementType}
@@ -286,8 +284,8 @@ func Array(value interface{}) dgo.Array {
 	}
 }
 
-// arrayFromIterator creates an array from a size and an iterator goFunc. The
-// iterator goFunc is expected to call its actor exactly size number of times.
+// arrayFromIterator creates an array from a size and an iterator function. The
+// iterator function is expected to call its actor exactly size number of times.
 func arrayFromIterator(size int, each func(dgo.Consumer)) dgo.Array {
 	arr := make([]dgo.Value, size)
 	i := 0

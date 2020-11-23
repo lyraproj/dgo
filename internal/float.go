@@ -39,9 +39,7 @@ func Float64Type(min, max float64, inclusive bool) dgo.FloatType {
 		return floatVal(min).Type().(dgo.FloatType)
 	}
 	if max < min {
-		t := max
-		max = min
-		min = t
+		max, min = min, max
 	}
 	var minV dgo.Float
 	var maxV dgo.Float
@@ -70,9 +68,7 @@ func FloatType(min, max dgo.Float, inclusive bool) dgo.FloatType {
 			return min.(dgo.FloatType)
 		}
 		if cmp > 0 {
-			t := max
-			max = min
-			min = t
+			max, min = min, max
 		}
 	} else if min == nil && max == nil {
 		return DefaultFloatType

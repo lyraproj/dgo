@@ -39,9 +39,7 @@ func Integer64Type(min, max int64, inclusive bool) dgo.IntegerType {
 		return intVal(min).Type().(dgo.IntegerType)
 	}
 	if max < min {
-		t := max
-		max = min
-		min = t
+		max, min = min, max
 	}
 	var minV dgo.Integer
 	var maxV dgo.Integer
@@ -70,9 +68,7 @@ func IntegerType(min, max dgo.Integer, inclusive bool) dgo.IntegerType {
 			return min.(dgo.IntegerType)
 		}
 		if cmp > 0 {
-			t := max
-			max = min
-			min = t
+			max, min = min, max
 		}
 	} else if min == nil && max == nil {
 		return DefaultIntegerType

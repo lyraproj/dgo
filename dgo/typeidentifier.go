@@ -49,6 +49,9 @@ const (
 	// TiDgoString is the type identifier for for the DgoString type
 	TiDgoString
 
+	// TiDuration is the type identifier for for the Duration type
+	TiDuration
+
 	// TiError is the type identifier for for the Error type
 	TiError
 
@@ -131,6 +134,9 @@ const (
 	// TiBooleanExact is the type identifier for the exact Boolean type
 	TiBooleanExact
 
+	// TiDurationExact is the type identifier for the exact Duration type
+	TiDurationExact
+
 	// TiErrorExact is the type identifier for for the exact Error type
 	TiErrorExact
 
@@ -208,14 +214,16 @@ var tiLabels = map[TypeIdentifier]string{
 	TiNil:           `nil`,
 	TiNot:           `not`,
 	TiOneOf:         `one of`,
-	TiRegexp:        `regexp`,
-	TiRegexpExact:   `regexp`,
 	TiSensitive:     `sensitive`,
 	TiString:        `string`,
 	TiStringExact:   `string`,
 	TiStringPattern: `pattern`,
 	TiStringSized:   `string`,
 	TiStruct:        `struct`,
+	TiRegexp:        `regexp`,
+	TiRegexpExact:   `regexp`,
+	TiDuration:      `duration`,
+	TiDurationExact: `duration`,
 	TiTime:          `time`,
 	TiTimeExact:     `time`,
 	TiTuple:         `tuple`,

@@ -1037,9 +1037,7 @@ func newMapType(kt, vt dgo.Type, min, max int64) dgo.MapType {
 		max = 0
 	}
 	if max < min {
-		t := max
-		max = min
-		min = t
+		max, min = min, max
 	}
 	if kt == nil {
 		kt = DefaultAnyType

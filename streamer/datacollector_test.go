@@ -14,6 +14,7 @@ func TestDataCollector(t *testing.T) {
 		typ.String,
 		vf.Binary([]byte{1, 2, 3}, false),
 		vf.Sensitive(`secret`),
+		vf.DurationFromString(`2h48m3.3s`),
 		vf.TimeFromString(`2019-10-06T16:15:00.123-01:00`))
 
 	c := streamer.DataCollector()
@@ -23,6 +24,7 @@ func TestDataCollector(t *testing.T) {
 		vf.Map(`__type`, `string`),
 		vf.Map(`__type`, `binary`, `__value`, `AQID`),
 		vf.Map(`__type`, `sensitive`, `__value`, `secret`),
+		vf.Map(`__type`, `duration`, `__value`, `2h48m3.3s`),
 		vf.Map(`__type`, `time`, `__value`, `2019-10-06T16:15:00.123-01:00`),
 	), c.Value())
 }

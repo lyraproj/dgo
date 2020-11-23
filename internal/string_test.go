@@ -418,10 +418,10 @@ var fmtTests = []struct {
 	{"%#q", "\U0010ffff", "`􏿿`"},
 	{"%#+q", "\U0010ffff", "`􏿿`"},
 	// Runes that are not valid.
-	{"%q", string(0x110000), `"�"`},
-	{"%+q", string(0x110000), `"\ufffd"`},
-	{"%#q", string(0x110000), "`�`"},
-	{"%#+q", string(0x110000), "`�`"},
+	{"%q", string(rune(0x110000)), `"�"`},
+	{"%+q", string(rune(0x110000)), `"\ufffd"`},
+	{"%#q", string(rune(0x110000)), "`�`"},
+	{"%#+q", string(rune(0x110000)), "`�`"},
 
 	// characters
 	{"%c", uint('x'), "x"},

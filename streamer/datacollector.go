@@ -20,6 +20,10 @@ func (c *dataCollector) CanDoBinary() bool {
 	return false
 }
 
+func (c *dataCollector) CanDoDuration() bool {
+	return false
+}
+
 func (c *dataCollector) CanDoTime() bool {
 	return false
 }
