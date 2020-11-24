@@ -129,8 +129,15 @@ func (v durationVal) Integer() dgo.Integer {
 }
 
 func (v durationVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf(time.Duration(v))
-	value.Set(rv)
+	d := time.Duration(v)
+	switch value.Kind() {
+	case reflect.Interface:
+		value.Set(reflect.ValueOf(d))
+	case reflect.Ptr:
+		value.Set(reflect.ValueOf(&d))
+	default:
+		value.SetInt(int64(d))
+	}
 }
 
 func (v durationVal) SecondsWithFraction() float64 {

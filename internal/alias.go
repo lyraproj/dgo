@@ -114,6 +114,7 @@ func init() {
 			DefaultMetaType,
 			DefaultRegexpType,
 			DefaultSensitiveType,
+			DefaultDurationType,
 			DefaultTimeType,
 			Nil,
 			ArrayType([]interface{}{richDataAlias}),

@@ -1,10 +1,12 @@
 package parser_test
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/lyraproj/dgo/internal"
@@ -55,6 +57,35 @@ func TestParse_exact(t *testing.T) {
 	st = tf.ParseType(`{...}`)
 	assert.Equal(t, tf.StructMap(true), st)
 	assert.Equal(t, `{...}`, st.String())
+}
+
+func TestParseDuration(t *testing.T) {
+	dv := tf.Parse(`duration`)
+	assert.Equal(t, typ.Duration, dv)
+
+	dv = tf.Parse(`duration "2h32m"`)
+	assert.Equal(t, 2*time.Hour+32*time.Minute, dv)
+
+	dv = tf.Parse(fmt.Sprintf(`duration %d`, 2*time.Hour+32*time.Minute))
+	assert.Equal(t, 2*time.Hour+32*time.Minute, dv)
+
+	dv = tf.Parse(fmt.Sprintf(`duration %f`, 7200.0+32.0*60+0.5))
+	assert.Equal(t, 2*time.Hour+32*time.Minute+500*time.Millisecond, dv)
+}
+
+func TestParseTime(t *testing.T) {
+	tv := tf.Parse(`time`)
+	assert.Equal(t, typ.Time, tv)
+
+	ts := vf.TimeFromString(`2020-11-24T09:21:14Z`)
+	tv = tf.Parse(`time "2020-11-24T09:21:14Z"`)
+	assert.Equal(t, ts, tv)
+
+	tv = tf.Parse(fmt.Sprintf(`time %d`, ts.Integer()))
+	assert.Equal(t, ts, tv)
+
+	tv = tf.Parse(fmt.Sprintf(`time %f`, ts.Float()))
+	assert.Equal(t, ts, tv)
 }
 
 func TestParse_func(t *testing.T) {

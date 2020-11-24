@@ -120,4 +120,12 @@ func TestDuration_ReflectTo(t *testing.T) {
 	ec, ok := mi.(time.Duration)
 	require.True(t, ok)
 	assert.Same(t, ex, ec)
+
+	type ds struct {
+		Delay time.Duration
+	}
+	dsv := &ds{}
+	dm := vf.Map(`Delay`, v)
+	vf.ReflectTo(dm, reflect.ValueOf(dsv))
+	assert.Equal(t, v, dsv.Delay)
 }

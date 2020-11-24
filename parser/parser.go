@@ -601,6 +601,10 @@ func (p *parser) identifier(t *Token, returnUnknown bool) dgo.Value {
 		tp = p.sensitive()
 	case `func`:
 		tp = p.funcExpression()
+	case `duration`:
+		tp = p.factoryWithArg(internal.DefaultDurationType)
+	case `time`:
+		tp = p.factoryWithArg(internal.DefaultTimeType)
 	default:
 		if returnUnknown {
 			tp = &unknownIdentifier{internal.String(t.Value)}
@@ -685,6 +689,22 @@ func (p *parser) big() dgo.Value {
 		panic(badSyntax(n, exIntOrFloat))
 	}
 	return tp
+}
+
+func (p *parser) factoryWithArg(tp dgo.Factory) dgo.Value {
+	var arg dgo.Value
+	n := p.PeekToken()
+	switch n.Type {
+	case integer:
+		arg = tokenInt(p.NextToken(), false)
+	case float:
+		arg = tokenFloat(p.NextToken(), false)
+	case stringLiteral:
+		arg = internal.String(p.NextToken().Value)
+	default:
+		return tp.(dgo.Value)
+	}
+	return tp.New(arg)
 }
 
 func (p *parser) dotRange(t *Token, bg bool) dgo.Value {
