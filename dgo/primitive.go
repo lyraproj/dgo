@@ -38,6 +38,7 @@ type (
 	// ReflectedValue is implemented by all values that can be assigned to a reflected value in
 	// a go native form.
 	ReflectedValue interface {
+		Value
 		// ReflectTo assigns the go native form of this value to the given reflect.Value. The given
 		// reflect.Value must be of a type that the native form of this value is assignable to or a pointer
 		// to such a type.

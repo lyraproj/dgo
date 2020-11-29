@@ -259,6 +259,16 @@ func TestBigFloat_ReflectTo(t *testing.T) {
 	var m big.Float
 	bf.ReflectTo(reflect.ValueOf(&m).Elem())
 	assert.True(t, m.Cmp(bf.GoBigFloat()) == 0)
+
+	var mb *big.Int
+	bf.ReflectTo(reflect.ValueOf(&mb).Elem())
+	assert.True(t, mb.Cmp(bf.ToBigInt()) == 0)
+
+	var bi func() // Doesn't have a factory
+	assert.Panic(t, func() { bf.ReflectTo(reflect.ValueOf(&bi).Elem()) }, "cannot be assigned")
+
+	var f struct{}
+	assert.Panic(t, func() { bf.ReflectTo(reflect.ValueOf(&f).Elem()) }, "cannot be assigned")
 }
 
 func TestBigFloat_String(t *testing.T) {

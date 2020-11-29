@@ -318,4 +318,11 @@ func TestBinary_ReflectTo(t *testing.T) {
 	bc, ok := mi.([]byte)
 	require.True(t, ok)
 	assert.Equal(t, b, bc)
+
+	mi = nil
+	bm.ReflectTo(reflect.ValueOf(&mi).Elem())
+	bc, ok = mi.([]byte)
+	require.True(t, ok)
+	assert.Equal(t, bm, bc)
+
 }

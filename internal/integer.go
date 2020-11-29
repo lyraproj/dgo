@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/tada/catch"
@@ -213,7 +214,7 @@ func (t defaultIntegerType) Assignable(other dgo.Type) bool {
 }
 
 func (t defaultIntegerType) Equals(other interface{}) bool {
-	_, ok := other.(defaultIntegerType)
+	_, ok := Value(other).(defaultIntegerType)
 	return ok
 }
 
@@ -376,6 +377,13 @@ func (v intVal) GoInt() int64 {
 	return int64(v)
 }
 
+func (v intVal) GoUint64() uint64 {
+	if v >= 0 {
+		return uint64(v)
+	}
+	panic(catch.Error(`Int64.ToUint(): value %d cannot fit into an uint64`, v))
+}
+
 func (v intVal) HashCode() dgo.Hash {
 	return dgo.Hash(v ^ (v >> 32))
 }
@@ -396,43 +404,6 @@ func (v intVal) Integer() dgo.Integer {
 	return v
 }
 
-func (v intVal) intPointer(kind reflect.Kind) reflect.Value {
-	var p reflect.Value
-	switch kind {
-	case reflect.Int:
-		gv := int(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Int8:
-		gv := int8(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Int16:
-		gv := int16(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Int32:
-		gv := int32(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Uint:
-		gv := uint(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Uint8:
-		gv := uint8(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Uint16:
-		gv := uint16(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Uint32:
-		gv := uint32(v)
-		p = reflect.ValueOf(&gv)
-	case reflect.Uint64:
-		gv := uint64(v)
-		p = reflect.ValueOf(&gv)
-	default:
-		gv := int64(v)
-		p = reflect.ValueOf(&gv)
-	}
-	return p
-}
-
 func (v intVal) Max() dgo.Integer {
 	return v
 }
@@ -446,15 +417,13 @@ func (v intVal) New(arg dgo.Value) dgo.Value {
 }
 
 func (v intVal) ReflectTo(value reflect.Value) {
-	switch value.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	switch {
+	case strings.HasPrefix(value.Type().Name(), "int"):
 		value.SetInt(int64(v))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		value.SetUint(uint64(v))
-	case reflect.Ptr:
-		value.Set(v.intPointer(value.Type().Elem().Kind()))
+	case strings.HasPrefix(value.Type().Name(), "uint"):
+		value.SetUint(v.GoUint64())
 	default:
-		value.Set(reflect.ValueOf(int64(v)))
+		valueTypeReflectTo(v, int64(v), value)
 	}
 }
 

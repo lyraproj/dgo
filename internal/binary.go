@@ -297,19 +297,11 @@ func (v *binary) HashCode() dgo.Hash {
 }
 
 func (v *binary) ReflectTo(value reflect.Value) {
-	setReflected(value, v.bytes)
-}
-
-func setReflected(value reflect.Value, bs []byte) {
-	switch value.Kind() {
-	case reflect.Ptr:
-		x := reflect.New(reflectBinaryType)
-		x.Elem().SetBytes(bs)
-		value.Set(x)
-	case reflect.Slice:
-		value.SetBytes(bs)
-	default:
-		value.Set(reflect.ValueOf(bs))
+	tp := value.Type()
+	if tp.Kind() == reflect.Slice && tp.Elem().Kind() == reflect.Uint8 && tp.Name() == "" {
+		value.SetBytes(v.bytes)
+	} else {
+		valueTypeReflectTo(v, v.bytes, value)
 	}
 }
 
@@ -370,7 +362,12 @@ func (v *binaryFrozen) GoBytes() []byte {
 }
 
 func (v *binaryFrozen) ReflectTo(value reflect.Value) {
-	setReflected(value, bytesCopy(v.bytes))
+	tp := value.Type()
+	if tp.Kind() == reflect.Slice && tp.Elem().Kind() == reflect.Uint8 && tp.Name() == "" {
+		value.SetBytes(bytesCopy(v.bytes))
+	} else {
+		valueTypeReflectTo(v, bytesCopy(v.bytes), value)
+	}
 }
 
 func bytesCopy(bs []byte) []byte {

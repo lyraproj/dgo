@@ -77,7 +77,7 @@ func newTime(t dgo.Type, arg dgo.Value) dgo.Time {
 	case dgo.Time:
 		tv = arg
 	case dgo.Integer:
-		tv = Time(time.Unix(arg.GoInt(), 0))
+		tv = Time(time.Unix(0, arg.GoInt()))
 	case dgo.Float:
 		s, f := math.Modf(arg.GoFloat())
 		tv = Time(time.Unix(int64(s), int64(f*1000000000.0)))
@@ -145,16 +145,11 @@ func (v *timeVal) HashCode() dgo.Hash {
 }
 
 func (v *timeVal) Integer() dgo.Integer {
-	return intVal(v.Unix())
+	return intVal(v.UnixNano())
 }
 
 func (v *timeVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf(&v.Time)
-	k := value.Kind()
-	if !(k == reflect.Ptr || k == reflect.Interface) {
-		rv = rv.Elem()
-	}
-	value.Set(rv)
+	valueTypeReflectTo(v, v.Time, value)
 }
 
 func (v *timeVal) String() string {
@@ -166,7 +161,7 @@ func (v *timeVal) ToBigFloat() *big.Float {
 }
 
 func (v *timeVal) ToBigInt() *big.Int {
-	return big.NewInt(v.Unix())
+	return big.NewInt(v.UnixNano())
 }
 
 func (v *timeVal) ToFloat() (float64, bool) {
@@ -174,11 +169,11 @@ func (v *timeVal) ToFloat() (float64, bool) {
 }
 
 func (v *timeVal) ToInt() (int64, bool) {
-	return v.Unix(), true
+	return v.UnixNano(), true
 }
 
 func (v *timeVal) ToUint() (uint64, bool) {
-	if iv := v.Unix(); iv >= 0 {
+	if iv := v.UnixNano(); iv >= 0 {
 		return uint64(iv), true
 	}
 	return 0, false

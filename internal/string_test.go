@@ -1072,3 +1072,17 @@ func TestSprintf(t *testing.T) {
 		}
 	}
 }
+
+func TestString_ValueFrom(t *testing.T) {
+	i := vf.Int64(1234)
+	var s string
+	vf.FromValue(i, &s)
+	assert.Equal(t, "1234", s)
+
+	var x int
+	vf.FromValue(vf.String(s), &x)
+	assert.Equal(t, 1234, x)
+
+	var f func()
+	assert.Panic(t, func() { vf.FromValue(vf.String(s), &f) }, "cannot be assigned")
+}

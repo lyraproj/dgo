@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/tada/catch"
@@ -354,19 +355,10 @@ func (v floatVal) Integer() dgo.Integer {
 }
 
 func (v floatVal) ReflectTo(value reflect.Value) {
-	switch value.Kind() {
-	case reflect.Interface:
-		value.Set(reflect.ValueOf(float64(v)))
-	case reflect.Ptr:
-		if value.Type().Elem().Kind() == reflect.Float32 {
-			gv := float32(v)
-			value.Set(reflect.ValueOf(&gv))
-		} else {
-			gv := float64(v)
-			value.Set(reflect.ValueOf(&gv))
-		}
-	default:
+	if strings.HasPrefix(value.Type().Name(), "float") {
 		value.SetFloat(float64(v))
+	} else {
+		valueTypeReflectTo(v, float64(v), value)
 	}
 }
 

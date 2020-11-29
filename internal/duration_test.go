@@ -129,3 +129,15 @@ func TestDuration_ReflectTo(t *testing.T) {
 	vf.ReflectTo(dm, reflect.ValueOf(dsv))
 	assert.Equal(t, v, dsv.Delay)
 }
+
+func TestDuration_ValueFrom(t *testing.T) {
+	d1 := 2*time.Hour + 30*time.Minute
+	d2 := time.Duration(0)
+	iv := vf.Int64(int64(d1))
+	vf.FromValue(iv, &d2)
+	assert.Equal(t, d1, d2)
+
+	d2 = 0
+	vf.FromValue(vf.String("2h30m"), &d2)
+	assert.Equal(t, d1, d2)
+}

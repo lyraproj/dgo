@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"strings"
 
 	"github.com/lyraproj/dgo/dgo"
 	"github.com/tada/catch"
@@ -105,7 +106,7 @@ func (v uintVal) GoInt() int64 {
 	if v <= math.MaxInt64 {
 		return int64(v)
 	}
-	panic(catch.Error(`BigInt.ToInt(): value %d cannot fit into an int64`, v))
+	panic(catch.Error(`UInt64.ToInt(): value %d cannot fit into an int64`, v))
 }
 
 func (v uintVal) GoUint() uint64 {
@@ -132,17 +133,6 @@ func (v uintVal) Integer() dgo.Integer {
 	return v
 }
 
-func (v uintVal) intPointer(kind reflect.Kind) reflect.Value {
-	var p reflect.Value
-	if kind == reflect.Uint64 {
-		gv := uint64(v)
-		p = reflect.ValueOf(&gv)
-	} else {
-		p = intVal(v).intPointer(kind)
-	}
-	return p
-}
-
 func (v uintVal) Max() dgo.Integer {
 	return v
 }
@@ -156,15 +146,13 @@ func (v uintVal) New(arg dgo.Value) dgo.Value {
 }
 
 func (v uintVal) ReflectTo(value reflect.Value) {
-	switch value.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		value.SetInt(int64(v))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	switch {
+	case strings.HasPrefix(value.Type().Name(), "uint"):
 		value.SetUint(uint64(v))
-	case reflect.Ptr:
-		value.Set(v.intPointer(value.Type().Elem().Kind()))
+	case strings.HasPrefix(value.Type().Name(), "int"):
+		value.SetInt(v.GoInt())
 	default:
-		value.Set(reflect.ValueOf(uint64(v)))
+		valueTypeReflectTo(v, uint64(v), value)
 	}
 }
 

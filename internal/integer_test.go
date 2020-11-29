@@ -126,7 +126,7 @@ func TestIntegerType_New(t *testing.T) {
 	assert.True(t, ok)
 
 	now := time.Now()
-	assert.Equal(t, now.Unix(), vf.New(typ.Integer, vf.Arguments(vf.Time(now))))
+	assert.Equal(t, now.UnixNano(), vf.New(typ.Integer, vf.Arguments(vf.Time(now))))
 	assert.Panic(t, func() { vf.New(typ.Integer, vf.String(`true`)) }, `cannot be converted`)
 	assert.Panic(t, func() { vf.New(vf.Int64(4).Type(), vf.Int64(5)) }, `cannot be assigned`)
 	assert.Panic(t, func() { vf.New(tf.Integer64(1, 4, true), vf.Int64(5)) }, `cannot be assigned`)
@@ -329,6 +329,9 @@ func TestInteger_ReflectTo(t *testing.T) {
 	var uip64 *uint64
 	iv.ReflectTo(reflect.ValueOf(&uip64).Elem())
 	assert.Equal(t, uix64, *uip64)
+
+	iv = vf.Int64(-1)
+	assert.Panic(t, func() { iv.ReflectTo(reflect.ValueOf(&ui64).Elem()) }, "value -1 cannot fit into an uint64")
 }
 
 func TestInteger_String(t *testing.T) {

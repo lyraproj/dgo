@@ -146,14 +146,10 @@ func (v boolean) HashCode() dgo.Hash {
 }
 
 func (v boolean) ReflectTo(value reflect.Value) {
-	b := bool(v)
-	switch value.Kind() {
-	case reflect.Interface:
-		value.Set(reflect.ValueOf(b))
-	case reflect.Ptr:
-		value.Set(reflect.ValueOf(&b))
-	default:
-		value.SetBool(b)
+	if value.Type().Name() == "bool" {
+		value.SetBool(bool(v))
+	} else {
+		valueTypeReflectTo(v, bool(v), value)
 	}
 }
 

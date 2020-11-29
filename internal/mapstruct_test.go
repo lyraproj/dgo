@@ -53,7 +53,7 @@ func TestMap_Put_structTypeIllegalValue(t *testing.T) {
 		Port int
 	}
 	m := vf.Map(&st{Host: `example.com`, Port: 22}).Copy(false)
-	assert.Panic(t, func() { m.Put(`Port`, `22`) }, `reflect: call of reflect.Value.SetString on int Value`)
+	assert.Panic(t, func() { m.Put(`Port`, `http`) }, `the value 'http' cannot be converted to an int`)
 }
 
 func TestStructType_Get(t *testing.T) {

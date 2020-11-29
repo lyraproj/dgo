@@ -119,12 +119,7 @@ func (v *regexpVal) HashCode() dgo.Hash {
 }
 
 func (v *regexpVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf((*regexp.Regexp)(v))
-	k := value.Kind()
-	if !(k == reflect.Ptr || k == reflect.Interface) {
-		rv = rv.Elem()
-	}
-	value.Set(rv)
+	pointerTypeReflectTo(v, reflect.ValueOf((*regexp.Regexp)(v)), value)
 }
 
 func (v *regexpVal) String() string {

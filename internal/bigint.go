@@ -35,6 +35,11 @@ func (t *defaultBigIntType) ReflectType() reflect.Type {
 	return reflectBigIntType
 }
 
+func (t *defaultBigIntType) Equals(other interface{}) bool {
+	_, ok := Value(other).(*defaultBigIntType)
+	return ok
+}
+
 func (t *bigIntType) New(arg dgo.Value) dgo.Value {
 	return newBigInt(t, arg)
 }
@@ -204,12 +209,7 @@ func (v *bigIntVal) New(arg dgo.Value) dgo.Value {
 }
 
 func (v *bigIntVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf(v.Int)
-	k := value.Kind()
-	if !(k == reflect.Ptr || k == reflect.Interface) {
-		rv = rv.Elem()
-	}
-	value.Set(rv)
+	pointerTypeReflectTo(v, reflect.ValueOf(v.Int), value)
 }
 
 func (v *bigIntVal) ReflectType() reflect.Type {

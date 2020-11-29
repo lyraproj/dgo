@@ -32,6 +32,11 @@ var DefaultBigFloatType = &defaultBigFloatType{}
 
 var reflectBigFloatType = reflect.TypeOf(&big.Float{})
 
+func (t *defaultBigFloatType) Equals(other interface{}) bool {
+	_, ok := Value(other).(*defaultBigFloatType)
+	return ok
+}
+
 func (t *defaultBigFloatType) New(arg dgo.Value) dgo.Value {
 	return newBigFloat(t, arg)
 }
@@ -169,12 +174,7 @@ func (v *bigFloatVal) New(arg dgo.Value) dgo.Value {
 }
 
 func (v *bigFloatVal) ReflectTo(value reflect.Value) {
-	rv := reflect.ValueOf(v._bf)
-	k := value.Kind()
-	if !(k == reflect.Ptr || k == reflect.Interface) {
-		rv = rv.Elem()
-	}
-	value.Set(rv)
+	pointerTypeReflectTo(v, reflect.ValueOf(v._bf), value)
 }
 
 func (v *bigFloatVal) ReflectType() reflect.Type {

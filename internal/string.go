@@ -593,13 +593,10 @@ func (v *hstring) HashCode() dgo.Hash {
 }
 
 func (v *hstring) ReflectTo(value reflect.Value) {
-	switch value.Kind() {
-	case reflect.Interface:
-		value.Set(reflect.ValueOf(v.string))
-	case reflect.Ptr:
-		value.Set(reflect.ValueOf(&v.string))
-	default:
+	if value.Type().Name() == "string" {
 		value.SetString(v.string)
+	} else {
+		valueTypeReflectTo(v, v.string, value)
 	}
 }
 

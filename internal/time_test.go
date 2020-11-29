@@ -35,7 +35,7 @@ func TestTimeType_New(t *testing.T) {
 	assert.Same(t, tv, vf.New(typ.Time, tv))
 	assert.Same(t, tv, vf.New(tv.Type(), tv))
 	assert.Same(t, tv, vf.New(tv.Type(), vf.Arguments(tv)))
-	assert.Equal(t, tv, vf.New(typ.Time, vf.Int64(tv.GoTime().Unix())))
+	assert.Equal(t, tv, vf.New(typ.Time, vf.Int64(tv.GoTime().UnixNano())))
 	assert.Equal(t, tv, vf.New(typ.Time, vf.Float(tv.SecondsWithFraction())))
 	assert.Equal(t, tv, vf.New(typ.Time, vf.String(`2019-11-11T17:57:00-00:00`)))
 	assert.Panic(t, func() { vf.New(tv.Type(), vf.String(`2019-10-06T07:15:00-07:00`)) }, `cannot be assigned`)
@@ -67,7 +67,7 @@ func TestTimeExact(t *testing.T) {
 	require.True(t, ok)
 	i, ok := n.ToInt()
 	require.True(t, ok)
-	assert.Equal(t, now.Unix(), i)
+	assert.Equal(t, now.UnixNano(), i)
 	u, ok := n.ToUint()
 	require.True(t, ok)
 	assert.Equal(t, i, u)
@@ -81,7 +81,7 @@ func TestTimeExact(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, ts.SecondsWithFraction(), f)
 
-	assert.Equal(t, big.NewInt(now.Unix()), n.ToBigInt())
+	assert.Equal(t, big.NewInt(now.UnixNano()), n.ToBigInt())
 	assert.Equal(t, big.NewFloat(ts.SecondsWithFraction()), n.ToBigFloat())
 }
 
@@ -140,7 +140,15 @@ func TestTime_ReflectTo(t *testing.T) {
 	var mi interface{}
 	mip := &mi
 	vf.ReflectTo(v, reflect.ValueOf(mip).Elem())
-	ec, ok := mi.(*time.Time)
+	ec, ok := mi.(time.Time)
 	require.True(t, ok)
-	assert.Same(t, ex, ec)
+	assert.Equal(t, ex, ec)
+}
+
+func TestTime_ValueFrom(t *testing.T) {
+	now := time.Now()
+	i := vf.Int64(now.UnixNano())
+	var n2 time.Time
+	vf.FromValue(i, &n2)
+	assert.Equal(t, now, n2)
 }

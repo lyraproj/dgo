@@ -173,6 +173,50 @@ func ValueFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	return Native(vr)
 }
 
+func pointerTypeReflectTo(v dgo.ReflectedValue, src, dest reflect.Value) {
+	destType := dest.Type()
+	srcType := src.Type()
+	if srcType.AssignableTo(destType) {
+		dest.Set(src)
+	} else {
+		t := TypeFromReflected(destType)
+		f, ok := t.(dgo.Factory)
+		switch {
+		case ok:
+			ReflectTo(f.New(v), dest)
+		case destType.Kind() == reflect.Struct:
+			if srcType.Elem().AssignableTo(destType) {
+				// copy by value
+				dest.Set(src.Elem())
+				break
+			}
+			fallthrough
+		default:
+			panic(IllegalAssignment(t, v))
+		}
+	}
+}
+
+func valueTypeReflectTo(v dgo.ReflectedValue, src interface{}, dest reflect.Value) {
+	destType := dest.Type()
+	if v.Type().ReflectType().AssignableTo(destType) {
+		dest.Set(reflect.ValueOf(src))
+	} else {
+		t := TypeFromReflected(destType)
+		f, ok := t.(dgo.Factory)
+		switch {
+		case ok:
+			ReflectTo(f.New(v), dest)
+		case destType.Kind() == reflect.Ptr:
+			ev := reflect.New(destType.Elem())
+			v.ReflectTo(ev.Elem())
+			dest.Set(ev)
+		default:
+			panic(IllegalAssignment(t, v))
+		}
+	}
+}
+
 // FromValue converts a dgo.Value into a go native value. The given `dest` must be a pointer
 // to the expected native value.
 func FromValue(src dgo.Value, dest interface{}) {
@@ -196,7 +240,9 @@ func ReflectTo(src dgo.Value, dest reflect.Value) {
 
 // Add well known types like regexp, time, etc. here
 var wellKnownTypes = map[reflect.Type]dgo.Type{
-	reflect.TypeOf(&regexp.Regexp{}): DefaultRegexpType,
-	reflect.TypeOf(time.Duration(0)): DefaultDurationType,
-	reflect.TypeOf(time.Time{}):      DefaultTimeType,
+	reflect.TypeOf(&regexp.Regexp{}):  DefaultRegexpType,
+	reflect.TypeOf(time.Duration(0)):  DefaultDurationType,
+	reflect.TypeOf(time.Time{}):       DefaultTimeType,
+	reflect.TypeOf((*big.Float)(nil)): DefaultBigFloatType,
+	reflect.TypeOf((*big.Int)(nil)):   DefaultBigIntType,
 }
