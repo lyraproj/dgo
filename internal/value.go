@@ -173,7 +173,7 @@ func ValueFromReflected(vr reflect.Value, frozen bool) dgo.Value {
 	return Native(vr)
 }
 
-func pointerTypeReflectTo(v dgo.ReflectedValue, src, dest reflect.Value) {
+func pointerTypeReflectTo(v dgo.Value, src, dest reflect.Value) {
 	destType := dest.Type()
 	srcType := src.Type()
 	if srcType.AssignableTo(destType) {
